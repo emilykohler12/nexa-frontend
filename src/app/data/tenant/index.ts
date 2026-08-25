@@ -1,0 +1,11 @@
+// src/app/data/tenant/index.ts
+export * from './tenant.data'
+export { TENANT_SERVICES } from './services.data'
+export * from './products.data'
+export * from './navigation.data'
+export * from './professionals.data'
+export * from './contact.data'
+export * from './about.data'
+export * from './policies.data'
+export * from './statistics.data'
+export * from './testimonials.data'

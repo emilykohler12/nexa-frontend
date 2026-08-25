@@ -1,0 +1,295 @@
+/* src/pages/client/AppointmentsPage.css */
+.appointments-page {
+  width: 100%;
+  padding: 32px 32px;
+  font-family: 'Playfair Display', serif;
+  box-sizing: border-box;
+}
+
+.appointments-welcome {
+  margin-bottom: 24px;
+}
+
+.appointments-welcome h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.appointments-welcome p {
+  font-size: 15px;
+  color: #666;
+  margin: 0;
+}
+
+.appointments-new-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: opacity 0.15s;
+}
+.appointments-new-btn:hover { opacity: 0.9; }
+
+.appointments-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.appointments-filter-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.appointments-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #bbb;
+}
+
+.appointments-empty-icon {
+  display: block;
+  margin: 0 auto 12px;
+  opacity: 0.3;
+}
+
+.appointments-empty p {
+  font-size: 16px;
+}
+
+.appointments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.appointment-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  transition: box-shadow 0.15s;
+}
+.appointment-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+
+.appointment-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.appointment-card-top h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.appointment-professional {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #888;
+}
+
+.appointment-status {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.appointment-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.appointment-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.appointment-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.appointment-price {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.appointment-cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #e53935;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  transition: color 0.15s;
+}
+.appointment-cancel-btn:hover { color: #c62828; }
+
+.appointment-rebook-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  transition: opacity 0.15s;
+}
+.appointment-rebook-btn:hover { opacity: 0.75; }
+
+.appointment-reschedule-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #069494;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  transition: color 0.15s;
+}
+.appointment-reschedule-btn:hover { color: #047a7a; }
+
+.appointment-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── Modal de reprogramación ─────────────────────────────── */
+.reschedule-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.reschedule-modal {
+  background: #fff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Playfair Display', serif;
+}
+
+.reschedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.reschedule-header h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.reschedule-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reschedule-body {
+  overflow-y: auto;
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.reschedule-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 24px 0;
+}
+
+.reschedule-error {
+  color: #e53935;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 24px;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+.reschedule-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.reschedule-cancel-btn {
+  padding: 10px 18px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.reschedule-save-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 700;
+  transition: opacity 0.15s;
+}
+.reschedule-save-btn:hover { opacity: 0.9; }
+.reschedule-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }

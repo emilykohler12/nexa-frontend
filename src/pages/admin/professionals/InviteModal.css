@@ -1,0 +1,217 @@
+.invite-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.invite-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 500px;
+  font-family: 'Lato', sans-serif;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.invite-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.invite-modal-header h2 {
+  font-size: 23px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.invite-close-btn:hover { background: #f0f0f0; }
+
+.invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.invite-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 16px;
+  color: #111;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-field input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #111;
+  outline: none;
+}
+
+.invite-field input:focus { border-color: #069494; }
+
+.invite-field-error {
+  color: #e53935;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-field-hint {
+  color: #555;
+  font-size: 14px;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Lato', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  align-self: flex-start;
+}
+
+.invite-btn-primary:hover    { opacity: 0.9; }
+.invite-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.invite-result         { margin-bottom: 24px; }
+
+.invite-result-label {
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
+  margin: 0 0 8px;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-link-box {
+  background: #f5f5f5;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #111;
+  word-break: break-all;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 12px;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-share-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.invite-share-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 11px 0;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.invite-share-btn:hover     { opacity: 0.85; }
+.invite-share-btn.copy      { background: #f0f0f0; color: #111; }
+.invite-share-btn.whatsapp  { background: #25d366; color: #fff; }
+.invite-share-btn.email     { background: #069494; color: #fff; }
+.invite-share-btn.qr        { background: #7986cb; color: #fff; }
+
+.invite-history { margin-top: 8px; }
+
+.invite-history-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 10px;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-history-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 16px;
+  font-family: 'Lato', sans-serif;
+  color: #111;
+}
+
+.invite-history-active {
+  color: #069494;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-history-used {
+  color: #888;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+}
+
+.invite-copy-small {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.invite-copy-small:hover { color: #069494; }

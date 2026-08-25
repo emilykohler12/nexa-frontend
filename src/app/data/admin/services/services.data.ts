@@ -1,0 +1,48 @@
+import type { AdminService } from '@/pages/admin/services/types';
+
+export const ADMIN_SERVICES: AdminService[] = [
+  {
+    id: 's1',
+    name: 'Corte y peinado',
+    categoryId: 'cabello',
+    description: 'Corte profesional y peinado personalizado',
+    duration: 60,
+    price: 4500,
+    image: null,
+    status: 'active',
+    isCombo: false,
+  },
+  {
+    id: 's2',
+    name: 'Limpieza facial',
+    categoryId: 'rostro',
+    description: 'Limpieza profunda e hidratación',
+    duration: 45,
+    price: 3500,
+    image: null,
+    status: 'active',
+    isCombo: false,
+  },
+  {
+    id: 's3',
+    name: 'Manicura',
+    categoryId: 'unas',
+    description: 'Manicura clásica con esmaltado',
+    duration: 30,
+    price: 2000,
+    image: null,
+    status: 'active',
+    isCombo: false,
+  },
+  {
+    id: 's4',
+    name: 'Depilación definitiva',
+    categoryId: 'cuerpo',
+    description: 'Sesión de depilación definitiva por zona',
+    duration: 30,
+    price: 6000,
+    image: null,
+    status: 'inactive',
+    isCombo: false,
+  },
+];

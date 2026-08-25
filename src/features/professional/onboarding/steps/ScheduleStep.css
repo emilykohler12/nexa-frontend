@@ -1,0 +1,143 @@
+/* src/features/professional/onboarding/steps/ScheduleStep.css */
+
+.schedule-step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: 'Lato', sans-serif;
+}
+
+.schedule-step-info {
+  border-radius: 9px;
+  padding: 13px 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+
+.schedule-day-card {
+  border: 1.5px solid;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.schedule-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px;
+  cursor: pointer;
+  user-select: none;
+  gap: 8px;
+}
+
+.schedule-day-check-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-day-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.schedule-day-checkmark {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.schedule-day-name {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+}
+
+.schedule-day-slots-count {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.schedule-day-body {
+  padding: 0 14px 14px;
+}
+
+/* Fila de horas — se convierte en columna en pantallas muy chicas */
+.schedule-time-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 13px;
+  flex-wrap: wrap;
+}
+
+.schedule-time-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.schedule-time-input {
+  border: 1.5px solid #ddd;
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  outline: none;
+  transition: border-color 0.15s;
+  /* Evita que se corte en mobile */
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 130px;
+}
+
+.schedule-time-input:focus { border-color: #069494; }
+
+.schedule-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.schedule-slot-chip {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.schedule-slots-error {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: #e53935;
+  margin: 0;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .schedule-time-row { gap: 8px; }
+  .schedule-time-input { max-width: 110px; font-size: 14px; }
+  .schedule-day-name  { font-size: 15px; }
+}

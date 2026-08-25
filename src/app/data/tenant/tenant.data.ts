@@ -1,0 +1,23 @@
+export const tenant = {
+  id: "loren",
+  name: "Loren",
+  slogan: "Tu belleza, nuestra pasión",
+  copyright: "© 2026 Loren Estudio de Belleza",
+  logo: "/images/logo.jpg",
+  heroImage: "/images/hero-beauty.jpg",
+  heroTitle: "Bienvenida/o",
+  heroSubtitle: "Tu destino de belleza y bienestar",
+  heroSubtitle2: "Donde cada detalle cuenta para realzar tu belleza natural",
+  primaryColor: "#069494",
+  accentColor: "#d4af37",
+  whatsapp: "5493765018665",
+  instagram: "https://www.instagram.com/loren_estudio",
+  facebook: null as string | null,
+  twitter: null as string | null,
+  tiktok: null as string | null,
+  ubicacion: "https://maps.app.goo.gl/RzvEdSEFRLH88ayD8",
+  kologic: {
+    logo: "/images/logoKologic.svg",
+    email: "emilynoralikohler@gmail.com",
+  },
+};

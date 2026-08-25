@@ -1,0 +1,331 @@
+/* src/features/professional/settings/Settings.css */
+
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Lato', sans-serif;
+  width: 100%;
+}
+
+.settings-loading {
+  padding: 48px;
+  text-align: center;
+  color: #000;
+  font-family: 'Lato', sans-serif;
+  font-size: 17px;
+}
+
+.settings-header { }
+
+.settings-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 29px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 4px;
+}
+
+.settings-subtitle {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #000;
+  margin: 0;
+}
+
+/* ── Tabs — scrollable en mobile ───────────────────── */
+.settings-tabs-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* ocultar scrollbar visualmente */
+  scrollbar-width: none;
+}
+.settings-tabs-wrap::-webkit-scrollbar { display: none; }
+
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 3px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.settings-tab {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #000;
+  background: transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.settings-tab:not(.active):hover { background: rgba(0,0,0,0.06); }
+
+/* ── Card ──────────────────────────────────────────── */
+.settings-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-photo-wrap {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ── Grid — 2 cols desktop, 1 col mobile ──────────── */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.settings-grid--single {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* ── Fields ────────────────────────────────────────── */
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settings-field-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.settings-input {
+  padding: 11px 13px;
+  border: 1.5px solid #ddd;
+  border-radius: 9px;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #000;
+  outline: none;
+  width: 100%;
+  background: #fff;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.settings-input:focus { border-color: #069494; }
+
+.settings-textarea {
+  resize: none;
+  min-height: 80px;
+}
+
+/* Email bloqueado */
+.settings-input-locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 13px;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 9px;
+  background: #f8f8f8;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.settings-locked-email {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.settings-locked-badge {
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+  background: #eeeeee;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Contraseña con ojito ──────────────────────────── */
+.settings-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.settings-password-wrap .settings-input {
+  padding-right: 44px;
+}
+
+.settings-eye-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.settings-eye-btn:hover { color: #069494; }
+
+.settings-pw-hint {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: #d4af37;
+  font-weight: 600;
+  margin: -8px 0 0;
+}
+
+/* ── Sesión ────────────────────────────────────────── */
+.settings-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  background: #f8f8f8;
+  border-radius: 9px;
+}
+
+.settings-session-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  color: #000;
+  font-weight: 600;
+}
+
+.settings-session-value {
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  color: #000;
+  font-weight: 700;
+}
+
+/* ── Section title ─────────────────────────────────── */
+.settings-section-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ── Feedback ──────────────────────────────────────── */
+.settings-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.settings-retry-btn {
+  background: none;
+  border: 1px solid #c33;
+  border-radius: 6px;
+  color: #c33;
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.settings-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ── Acciones ──────────────────────────────────────── */
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.settings-save-btn {
+  padding: 11px 28px;
+  border: none;
+  border-radius: 10px;
+  background: #069494;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  transition: background 0.2s, opacity 0.15s;
+}
+
+.settings-save-btn.saved { background: #16a34a; }
+.settings-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 600px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-card {
+    padding: 16px;
+    gap: 14px;
+  }
+  .settings-title { font-size: 22px; }
+  .settings-save-btn { width: 100%; }
+  .settings-actions { justify-content: stretch; }
+}

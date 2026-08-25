@@ -1,0 +1,65 @@
+.prof-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Lato', sans-serif;
+}
+
+.prof-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.prof-page-title {
+  font-size: 29px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 4px;
+  font-family: 'Lato', sans-serif;
+}
+
+.prof-page-subtitle {
+  font-size: 16px;
+  color: #333;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+.prof-section-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 12px;
+  font-family: 'Lato', sans-serif;
+}
+
+.prof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.prof-page-error {
+  color: #e53935;
+  font-size: 15px;
+  font-family: 'Lato', sans-serif;
+}
+
+.prof-page-loading {
+  color: #888;
+  font-size: 15px;
+  font-family: 'Lato', sans-serif;
+}
+
+.prof-page-empty {
+  color: #888;
+  font-size: 16px;
+  font-family: 'Lato', sans-serif;
+  text-align: center;
+  padding: 48px 0;
+}

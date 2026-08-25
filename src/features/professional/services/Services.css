@@ -1,0 +1,271 @@
+/* src/features/professional/services/Services.css */
+
+.services-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Lato', sans-serif;
+}
+
+.services-loading,
+.services-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: #000;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  text-align: center;
+}
+
+.services-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.services-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 29px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 4px;
+}
+
+.services-subtitle {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #000;
+  margin: 0;
+}
+
+.services-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.services-section-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 12px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.service-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  font-family: 'Lato', sans-serif;
+}
+
+.service-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.service-card-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 17px;
+  color: #000;
+  font-family: 'Lato', sans-serif;
+}
+
+.service-card-meta {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: #000;
+  font-family: 'Lato', sans-serif;
+}
+
+.service-card-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.service-card-desc {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: #000;
+  font-family: 'Lato', sans-serif;
+}
+
+.service-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.service-card-price {
+  font-size: 21px;
+  font-weight: 700;
+  font-family: 'Lato', sans-serif;
+}
+
+.services-error {
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ── Modal ─────────────────────────────────────────── */
+.service-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.service-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Lato', sans-serif;
+  overflow: hidden;
+}
+
+.service-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.service-modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #000;
+  font-family: 'Lato', sans-serif;
+}
+
+.service-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #000;
+  display: flex;
+}
+
+.service-modal-body {
+  padding: 8px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.service-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+}
+
+.service-modal-item input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.service-modal-item-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 15.5px;
+  color: #000;
+}
+
+.service-modal-item-meta {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  color: #000;
+}
+
+.service-modal-empty {
+  text-align: center;
+  color: #aaa;
+  padding: 30px 0;
+  font-size: 15px;
+}
+
+.service-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.service-modal-btn-cancel {
+  padding: 10px 18px;
+  border: 1px solid #ddd;
+  border-radius: 9px;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.service-modal-btn-save {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 9px;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+@media (max-width: 600px) {
+  .services-grid { grid-template-columns: 1fr; }
+}

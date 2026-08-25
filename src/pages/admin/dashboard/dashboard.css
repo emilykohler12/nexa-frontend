@@ -1,0 +1,47 @@
+.service-stats-layout, .status-payments-layout {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.service-stats-pie, .status-payments-pie { width: 160px; height: 160px; flex-shrink: 0; }
+.status-payments-pie { width: 120px; height: 120px; }
+.service-stats-list, .status-payments-list { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 10px; }
+
+.service-stats-row, .status-payments-row { display: flex; align-items: center; gap: 9px; }
+.service-stats-dot, .status-payments-dot, .professional-stats-dot {
+  width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; display: inline-block;
+}
+.service-stats-name, .status-payments-label {
+  flex: 1; font-size: 15px; font-weight: 600; color: #2a2a2a;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.service-stats-count   { font-size: 14px; font-weight: 600; color: #444; flex-shrink: 0; }
+.service-stats-revenue { font-size: 15px; font-weight: 700; color: #1a1a1a; min-width: 90px; text-align: right; }
+
+.status-payments-count   { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.status-payments-percent { font-size: 14px; font-weight: 600; color: #444; min-width: 42px; text-align: right; }
+
+.professional-stats-table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 16px; }
+.professional-stats-table th {
+  text-align: left; font-size: 12px; font-weight: 700;
+  color: #444; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px;
+}
+.professional-stats-table td { padding: 9px 8px; color: #2a2a2a; font-size: 15px; }
+.professional-stats-table .professional-stats-dot { margin-right: 8px; }
+.professional-stats-cancel { color: #e53935; font-weight: 700; }
+
+.status-payments-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+.status-payments-bars { display: flex; flex-direction: column; gap: 12px; }
+.status-payments-bar-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 15px; }
+.status-payments-amount { font-weight: 700; color: #1a1a1a; font-size: 15px; }
+.status-payments-bar-track { height: 7px; background: #eeeeee; border-radius: 4px; overflow: hidden; }
+.status-payments-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.status-payments-total { margin-top: 10px; padding-top: 12px; border-top: 1px solid #e5e5e5; display: flex; justify-content: space-between; }
+.status-payments-total-amount { font-size: 17px; font-weight: 700; color: var(--primary); }
+
+@media (max-width: 480px) {
+  .service-stats-layout, .status-payments-layout { flex-direction: column; align-items: stretch; }
+  .service-stats-pie, .status-payments-pie { width: 140px; height: 140px; margin: 0 auto; }
+}

@@ -1,0 +1,52 @@
+import type { DashboardData } from './types';
+
+export const yearData: DashboardData = {
+  totalRevenue: 1820000,    prevRevenue: 1540000,
+  totalAppointments: 1140,  prevAppointments: 980,
+  newClients: 210,          prevNewClients: 175,
+  avgTicket: 1596,          prevAvgTicket: 1571,
+  revenueChart: [
+    { label: 'Ene', revenue: 120000, appointments: 74  },
+    { label: 'Feb', revenue: 135000, appointments: 82  },
+    { label: 'Mar', revenue: 148000, appointments: 91  },
+    { label: 'Abr', revenue: 142000, appointments: 88  },
+    { label: 'May', revenue: 160000, appointments: 98  },
+    { label: 'Jun', revenue: 156000, appointments: 96  },
+    { label: 'Jul', revenue: 165000, appointments: 102 },
+    { label: 'Ago', revenue: 158000, appointments: 97  },
+    { label: 'Sep', revenue: 172000, appointments: 106 },
+    { label: 'Oct', revenue: 168000, appointments: 104 },
+    { label: 'Nov', revenue: 175000, appointments: 108 },
+    { label: 'Dic', revenue: 121000, appointments: 94  },
+  ],
+  serviceStats: [
+    { name: 'Coloración',          count: 288, revenue: 2304000, color: '#7986cb' },
+    { name: 'Corte y peinado',     count: 384, revenue: 1920000, color: '#069494' },
+    { name: 'Manicura',            count: 240, revenue: 720000,  color: '#e57373' },
+    { name: 'Maquillaje',          count: 144, revenue: 864000,  color: '#a1887f' },
+    { name: 'Pedicura',            count: 192, revenue: 672000,  color: '#f06292' },
+    { name: 'Depilación',          count: 96,  revenue: 384000,  color: '#90a4ae' },
+    { name: 'Tratamiento capilar', count: 144, revenue: 648000,  color: '#4db6ac' },
+  ],
+  professionalStats: [
+    { name: 'Ana López',      appointments: 384, revenue: 1920000, cancellations: 32, color: '#d4af37' },
+    { name: 'María García',   appointments: 288, revenue: 864000,  cancellations: 14, color: '#e57373' },
+    { name: 'Laura Pérez',    appointments: 240, revenue: 1920000, cancellations: 28, color: '#7986cb' },
+    { name: 'Sofía Ruiz',     appointments: 192, revenue: 864000,  cancellations: 10, color: '#4db6ac' },
+    { name: 'Valentina Sosa', appointments: 144, revenue: 504000,  cancellations: 48, color: '#f06292' },
+    { name: 'Camila Torres',  appointments: 192, revenue: 1152000, cancellations: 12, color: '#a1887f' },
+    { name: 'Lucía Méndez',   appointments: 144, revenue: 576000,  cancellations: 6,  color: '#90a4ae' },
+    { name: 'Administrador',  appointments: 96,  revenue: 480000,  cancellations: 2,  color: '#069494' },
+  ],
+  appointmentStatus: [
+    { status: 'confirmed', label: 'Confirmados', count: 910, color: '#069494' },
+    { status: 'pending',   label: 'Pendientes',  count: 120, color: '#d4af37' },
+    { status: 'cancelled', label: 'Cancelados',  count: 82,  color: '#e57373' },
+    { status: 'no_show',   label: 'No asistió',  count: 28,  color: '#90a4ae' },
+  ],
+  paymentStats: [
+    { label: 'Señas cobradas',   amount: 1140000, color: '#069494' },
+    { label: 'Señas pendientes', amount: 240000,  color: '#d4af37' },
+    { label: 'Señas devueltas',  amount: 96000,   color: '#e57373' },
+  ],
+};

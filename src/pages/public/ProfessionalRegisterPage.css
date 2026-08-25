@@ -1,0 +1,213 @@
+/* src/pages/public/ProfessionalRegisterPage.css */
+.prof-reg-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #069494 0%, #047a7a 100%);
+  padding: 24px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.prof-reg-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Logo ───────────────────────────────────────────────── */
+.prof-reg-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.prof-reg-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #d4af37;
+}
+
+/* ── Títulos ────────────────────────────────────────────── */
+.prof-reg-title {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+  margin: 0 0 6px;
+}
+
+.prof-reg-subtitle {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 16px;
+  color: #333;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+/* ── Formulario ─────────────────────────────────────────── */
+.prof-reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Grupo de campo — línea inferior estilo RegisterForm */
+.prof-reg-field-group {
+  display: flex;
+  align-items: center;
+  border-bottom: 1.5px solid #ddd;
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  transition: border-color 0.2s;
+}
+
+.prof-reg-field-group:focus-within {
+  border-color: #069494;
+}
+
+.prof-reg-field-group--disabled {
+  opacity: 0.6;
+}
+
+.prof-reg-field-icon {
+  color: #aaa;
+  margin-right: 10px;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.prof-reg-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 17px;
+  color: #111;
+  background: transparent;
+  width: 100%;
+}
+
+.prof-reg-input::placeholder {
+  color: #bbb;
+  font-size: 16px;
+}
+
+.prof-reg-input:disabled {
+  color: #888;
+  cursor: not-allowed;
+}
+
+.prof-reg-select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.prof-reg-eye {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #bbb;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+}
+
+.prof-reg-eye:hover {
+  color: #069494;
+}
+
+/* ── Error ──────────────────────────────────────────────── */
+.prof-reg-error {
+  color: #e53935;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+/* ── Botón submit ───────────────────────────────────────── */
+.prof-reg-submit {
+  padding: 13px;
+  border: none;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #069494, #08b8b8);
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  box-shadow: 0 6px 20px rgba(6, 148, 148, 0.4);
+  transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.prof-reg-submit:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 8px 28px rgba(6, 148, 148, 0.55);
+  transform: translateY(-1px);
+}
+
+.prof-reg-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prof-reg-submit-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Spinner */
+.prof-reg-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Status screens ─────────────────────────────────────── */
+.prof-reg-status {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Open Sans', sans-serif;
+  background: linear-gradient(135deg, #069494 0%, #047a7a 100%);
+}
+
+.prof-reg-status--loading {
+  font-size: 19px;
+  color: #fff;
+  text-align: center;
+  max-width: 400px;
+}
+
+.prof-reg-status--error {
+  font-size: 19px;
+  color: #fff;
+  text-align: center;
+  max-width: 400px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 24px 32px;
+  border-radius: 14px;
+}

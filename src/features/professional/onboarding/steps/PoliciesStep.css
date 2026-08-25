@@ -1,0 +1,63 @@
+/* src/features/professional/onboarding/steps/PoliciesStep.css */
+
+.policies-step {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Lato', sans-serif;
+}
+
+.policies-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.policies-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.policies-field-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.policies-input {
+  padding: 10px 13px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 9px;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #111;
+  outline: none;
+  width: 100%;
+  resize: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.policies-input:focus { border-color: #069494; }
+
+.policies-payment-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.policies-payment-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}

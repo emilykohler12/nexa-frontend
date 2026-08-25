@@ -1,0 +1,50 @@
+/* src/features/professional/onboarding/steps/WorkStep.css */
+
+.work-step {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Lato', sans-serif;
+}
+
+.work-step-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.work-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.work-field-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.work-field-hint {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: #888;
+}
+
+.work-input {
+  padding: 11px 13px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 9px;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #111;
+  outline: none;
+  width: 100%;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.work-textarea { resize: none; }

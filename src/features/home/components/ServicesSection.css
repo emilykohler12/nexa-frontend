@@ -1,0 +1,193 @@
+/* src/features/home/components/ServicesSection.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
+
+.services-section {
+  width: 100%;
+}
+
+.services-section-header {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.services-section-title {
+  font-family: var(--font-playfair);
+  font-size: clamp(32px, 5vw, 48px);
+  margin: 0 0 16px;
+  font-weight: 400;
+}
+
+.services-section-subtitle {
+  font-family: 'Lato', sans-serif;
+  font-size: 18px;
+  color: #444444;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ── Categorías ─────────────────────────────────────────── */
+.services-categories-bar {
+  width: 100%;
+  padding: 56px 0;
+}
+
+.services-categories-inner {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  text-align: center;
+}
+
+.services-category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.services-category-icon {
+  width: 160px;
+  height: 110px;
+  object-fit: contain;
+  transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
+}
+
+.services-category-item:hover .services-category-icon {
+  transform: scale(1.05);
+}
+
+.services-category-label {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  transition: color 0.3s ease, font-weight 0.3s ease;
+}
+
+/* ── Lista de servicios ─────────────────────────────────── */
+.services-list-section {
+  width: 100%;
+  background: #ffffff;
+  padding: 48px 24px;
+}
+
+.services-list-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+.services-list-empty {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #888888;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.services-grid {
+  max-width: 1024px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.service-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 24px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  background: #fff;
+}
+
+.service-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.service-card-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.service-card-desc {
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  color: #555555;
+  margin: 0 0 16px;
+}
+
+.service-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.service-card-duration {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: #888888;
+}
+
+.service-card-price {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.service-card-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.service-card-btn:hover { opacity: 0.88; }
+
+/* ── Hint selección ─────────────────────────────────────── */
+.services-section-hint {
+  width: 100%;
+  padding: 32px 0;
+  background: #fff;
+  text-align: center;
+}
+
+.services-section-hint p {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  color: #888888;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .services-categories-inner {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .services-section-title {
+    font-size: 2.25rem;
+  }
+  .services-category-icon { width: 100px; height: 70px; }
+  .services-category-label { font-size: 18px; }
+}
+
+@media (max-width: 480px) {
+  .services-section-header { padding: 40px 16px; }
+  .services-categories-inner { padding: 0 16px; }
+}

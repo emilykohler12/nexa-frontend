@@ -1,0 +1,79 @@
+/* src/features/professional/onboarding/steps/PersonalStep.css */
+
+.personal-step {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.ps-section {
+  background: #fafafa;
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.ps-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 16px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.ps-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.personal-step-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ps-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ps-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.ps-input {
+  padding: 10px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1a1a1a;
+  outline: none;
+  font-family: 'Open Sans', sans-serif;
+  width: 100%;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.ps-input:focus {
+  border-color: #069494;
+}
+
+.ps-textarea {
+  resize: none;
+}
+
+.ps-photo-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+}
