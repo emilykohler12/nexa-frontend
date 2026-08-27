@@ -6,6 +6,7 @@ import { ServiceStep } from './steps/ServiceStep'
 import { ProviderStep } from './steps/ProviderStep'
 import { DateTimeStep } from './steps/DateTimeStep'
 import '@/pages/client/AppointmentsPage.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 interface Props {
   appointmentId: string
@@ -33,6 +34,7 @@ export function RescheduleModal({
   const [time, setTime]                     = useState<string | null>(initialTime)
   const [saving, setSaving]                 = useState(false)
   const [error, setError]                   = useState<string | null>(null)
+  const [refreshSignal, setRefreshSignal]   = useState(0)
 
   if (!business) return null
   const { primaryColor } = business
@@ -61,7 +63,18 @@ export function RescheduleModal({
       })
       onSuccess(res.data.appointment)
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'No se pudo reprogramar el turno.')
+      const code = err?.response?.data?.code
+      if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+        setError('Ese horario ya se ocupó. Elegí otro horario disponible.')
+        setTime(null)
+        setRefreshSignal(s => s + 1)
+      } else {
+        setError(
+          code === 'COMBO_NOT_RESCHEDULABLE'
+            ? 'Este turno es parte de un combo y no se puede reprogramar. Cancelalo y reservá de nuevo si necesitás cambiar el horario.'
+            : safeErrorMessage(err, 'No se pudo reprogramar el turno.')
+        )
+      }
     } finally {
       setSaving(false)
     }
@@ -80,17 +93,19 @@ export function RescheduleModal({
         <div className="reschedule-body">
           <ServiceStep
             selectedServiceId={serviceId}
-            onSelect={id => { setServiceId(id); if (id !== serviceId) handleProfessionalChange('') }}
+            onSelect={service => { setServiceId(service.id); if (service.id !== serviceId) handleProfessionalChange('') }}
           />
           <div className="reschedule-divider" />
           <ProviderStep serviceId={serviceId} selectedProfessionalId={professionalId} onSelect={handleProfessionalChange} />
           <div className="reschedule-divider" />
           <DateTimeStep
             professionalId={professionalId}
+            serviceId={serviceId}
             selectedDate={date}
             selectedTime={time}
             onSelectDate={handleDateChange}
             onSelectTime={setTime}
+            refreshSignal={refreshSignal}
           />
         </div>
 

@@ -1,5 +1,6 @@
 import type { Appointment } from '@/features/professional/types/appointment'
 import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
+import { groupByCombo } from '@/shared/utils/comboGroup'
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7)
 const DAYS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
@@ -55,26 +56,36 @@ export function AgendaWeek({ appointments, weekStart, primary, onEventClick }: P
                 const appts = getAppts(day, hour)
                 return (
                   <td key={di} style={{ borderTop: '1px solid #f0f0f0', borderLeft: '1px solid #f5f5f5', padding: '3px', verticalAlign: 'top', height: '56px', background: isToday(day) ? 'rgba(6,148,148,0.02)' : '#fff' }}>
-                    {appts.map(a => {
-                      const cfg = appointmentStatusConfig[a.status]
-                      return (
-                        <button
-                          key={a.id}
-                          onClick={() => onEventClick(a)}
-                          title={`${a.client.name} — ${a.serviceName}`}
-                          style={{
-                            display: 'block', width: '100%', border: 'none', borderRadius: '5px',
-                            padding: '4px 7px', fontSize: '12px', fontWeight: 600,
-                            fontFamily: "'Lato', sans-serif",
-                            textAlign: 'left', cursor: 'pointer', marginBottom: '2px',
-                            background: cfg.bg, color: cfg.color,
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {a.time} {a.client.name}
-                        </button>
-                      )
-                    })}
+                    {groupByCombo(appts).map((group, gi) => (
+                      <div
+                        key={group.comboGroupId ?? gi}
+                        style={group.items.length > 1 ? { border: '1px dashed #d4af37', borderRadius: '6px', padding: '2px', marginBottom: '2px' } : undefined}
+                      >
+                        {group.items.length > 1 && (
+                          <div style={{ fontSize: '9px', fontWeight: 700, color: '#8a6800', padding: '0 2px 1px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Combo</div>
+                        )}
+                        {group.items.map(a => {
+                          const cfg = appointmentStatusConfig[a.status]
+                          return (
+                            <button
+                              key={a.id}
+                              onClick={() => onEventClick(a)}
+                              title={`${a.client.name} — ${a.serviceName}`}
+                              style={{
+                                display: 'block', width: '100%', border: 'none', borderRadius: '5px',
+                                padding: '4px 7px', fontSize: '12px', fontWeight: 600,
+                                fontFamily: "'Lato', sans-serif",
+                                textAlign: 'left', cursor: 'pointer', marginBottom: '2px',
+                                background: cfg.bg, color: cfg.color,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {a.time} {a.serviceName}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ))}
                   </td>
                 )
               })}

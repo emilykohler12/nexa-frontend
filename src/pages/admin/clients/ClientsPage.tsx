@@ -29,12 +29,19 @@ export function ClientsPage() {
     setShowCreate(false)
   }
 
+  const handleToggleBlock = async (client: AdminClient) => {
+    const res = await api.patch<{ client: AdminClient }>(`/api/admin/clients/${client.id}/block`, { blocked: !client.blocked })
+    setClients(prev => prev.map(c => c.id === client.id ? res.data.client : c))
+    setSelected(res.data.client)
+  }
+
   if (selected) {
     return (
       <ClientDetail
         client={selected}
         onBack={() => setSelected(null)}
         onSave={handleSave}
+        onToggleBlock={handleToggleBlock}
       />
     )
   }

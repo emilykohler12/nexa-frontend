@@ -9,11 +9,13 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
 import { PostBookingDetails } from './PostBookingDetails'
+import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const HOLD_MINUTES = 15
 
 type Method = 'qr' | 'link' | 'card'
-type Phase  = 'paying' | 'processing' | 'details' | 'success' | 'expired'
+type Phase  = 'paying' | 'processing' | 'details' | 'success' | 'expired' | 'slotTaken'
 
 interface Props {
   summary:   ConfirmedSummary
@@ -28,6 +30,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(HOLD_MINUTES * 60)
   const [payError, setPayError] = useState<string | null>(null)
   const [appointmentId, setAppointmentId] = useState<string | null>(null)
+  const [assignedProfessionalId, setAssignedProfessionalId]     = useState<string | null>(null)
+  const [assignedProfessionalName, setAssignedProfessionalName] = useState<string | null>(null)
+  const [careInfo, setCareInfo] = useState<{ priorRecommendations: string | null; afterCare: string | null } | null>(null)
   const deadlineRef = useRef(Date.now() + HOLD_MINUTES * 60 * 1000)
 
   useEffect(() => {
@@ -49,6 +54,22 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     if (phase === 'details' && !appointmentId) setPhase('success')
   }, [phase, appointmentId])
 
+  // Al llegar a éxito, traemos las recomendaciones/cuidados que cargó el
+  // profesional para mostrárselas al cliente junto con la confirmación.
+  useEffect(() => {
+    if (phase !== 'success') return
+    const proId = assignedProfessionalId ?? summary.professionalId
+    if (!proId || proId === ANY_PROFESSIONAL_ID) return
+    api.get<{ professionals: { id: string; priorRecommendations?: string | null; afterCare?: string | null }[] }>('/api/professional/public')
+      .then(res => {
+        const pro = res.data.professionals.find(p => p.id === proId)
+        if (pro && (pro.priorRecommendations || pro.afterCare)) {
+          setCareInfo({ priorRecommendations: pro.priorRecommendations ?? null, afterCare: pro.afterCare ?? null })
+        }
+      })
+      .catch(() => {})
+  }, [phase])
+
   if (!business) return null
   const { primaryColor, accentColor } = business
 
@@ -62,17 +83,27 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     setPayError(null)
     setTimeout(async () => {
       try {
-        const res = await api.post<{ appointment: { id: string } }>('/api/client/appointments', {
+        const res = await api.post<{ appointment: { id: string; professionalId?: string; professionalName?: string } }>('/api/client/appointments', {
           serviceId:      summary.serviceId,
           professionalId: summary.professionalId,
           date:           summary.date,
           time:           summary.time,
         })
         setAppointmentId(res.data.appointment?.id ?? null)
+        // Si se reservó con "Cualquiera", el backend ya asignó un profesional real.
+        if (summary.professionalId === ANY_PROFESSIONAL_ID) {
+          if (res.data.appointment?.professionalName) setAssignedProfessionalName(res.data.appointment.professionalName)
+          if (res.data.appointment?.professionalId)   setAssignedProfessionalId(res.data.appointment.professionalId)
+        }
         setPhase('details')
       } catch (err: any) {
-        setPayError(err?.response?.data?.error ?? 'No pudimos confirmar el turno. Intentá de nuevo.')
-        setPhase('paying')
+        const code = err?.response?.data?.code
+        if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+          setPhase('slotTaken')
+        } else {
+          setPayError(safeErrorMessage(err, 'No pudimos confirmar el turno. Intentá de nuevo.'))
+          setPhase('paying')
+        }
       }
     }, 1200)
   }
@@ -100,12 +131,36 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     )
   }
 
+  if (phase === 'slotTaken') {
+    return (
+      <div className="text-center py-10">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#fee2e2' }}>
+          <Clock size={28} color="#e53935" />
+        </div>
+        <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+          Ese horario ya se ocupó
+        </h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
+          Alguien reservó el mismo horario justo antes que vos. Elegí otro horario disponible para tu turno.
+        </p>
+        <button
+          onClick={onExpire}
+          className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90"
+          style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+        >
+          Elegir otro horario
+        </button>
+      </div>
+    )
+  }
+
   if (phase === 'details' && appointmentId) {
     return (
       <PostBookingDetails
         appointmentId={appointmentId}
         categoryId={summary.categoryId}
         onDone={() => setPhase('success')}
+        onCancel={() => setPhase('success')}
       />
     )
   }
@@ -120,8 +175,34 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           ¡Turno reservado!
         </h2>
         <p className="text-gray-500 max-w-md mx-auto mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
-          Te esperamos el {summary.dateLabel} a las {summary.time} para tu turno de {summary.serviceName} con {summary.professionalName}.
+          Te esperamos el {summary.dateLabel} a las {summary.time} para tu turno de {summary.serviceName} con {assignedProfessionalName ?? summary.professionalName}.
         </p>
+
+        {careInfo && (careInfo.priorRecommendations || careInfo.afterCare) && (
+          <div className="text-left max-w-md mx-auto mb-6 flex flex-col gap-4">
+            {careInfo.priorRecommendations && (
+              <div className="rounded-xl p-4" style={{ background: '#f3f4f6' }}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+                  Antes de tu turno
+                </p>
+                <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#333', lineHeight: 1.5 }}>
+                  {careInfo.priorRecommendations}
+                </p>
+              </div>
+            )}
+            {careInfo.afterCare && (
+              <div className="rounded-xl p-4" style={{ background: '#f3f4f6' }}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+                  Cuidados posteriores
+                </p>
+                <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#333', lineHeight: 1.5 }}>
+                  {careInfo.afterCare}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           onClick={onSuccess}
           className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90"

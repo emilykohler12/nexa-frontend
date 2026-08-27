@@ -9,8 +9,13 @@ import { appointmentStatus } from '@/app/data/shared/status.data'
 import { Calendar, Clock, User, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
+import type { AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
 import { AppointmentDetailModal } from './AppointmentDetailModal'
 import './AppointmentsPage.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
+import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
+import { InfoModal } from '@/shared/ui/molecules/InfoModal'
 
 type Filter = 'upcoming' | 'history' | 'cancelled'
 
@@ -21,18 +26,25 @@ const FILTERS: { id: Filter; label: string }[] = [
 ]
 
 interface Appointment {
-  id:               string
-  serviceId:        string
-  serviceName:      string
-  professionalId:   string
-  professionalName: string
-  date:             string
-  time:             string
-  duration:         number
-  price:            number
-  depositAmount:    number
-  status:           AppointmentStatus
-  paymentStatus:    'pending' | 'partial' | 'paid' | 'refunded'
+  id:                string
+  serviceId:         string
+  serviceName:       string
+  categoryId:        string
+  professionalId:    string
+  professionalName:  string
+  date:              string
+  time:              string
+  duration:          number
+  price:             number
+  depositAmount:     number
+  status:            AppointmentStatus
+  paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
+  details?:          AppointmentDetailsValue | null
+  comboGroupId?:     string | null
+  // Presente cuando el turno se reprogramó y el cliente todavía no vio el aviso.
+  rescheduleNoticePending?: boolean
+  previousDate?:            string | null
+  previousTime?:            string | null
 }
 
 export function AppointmentsPage() {
@@ -43,16 +55,29 @@ export function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading]  = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [message, setMessage]  = useState<string | null>(null)
+  const [toast, setToast] = useState<{ text: string; type: ToastType } | null>(null)
   const [reschedulingAppt, setReschedulingAppt] = useState<Appointment | null>(null)
   const [detailAppt, setDetailAppt] = useState<Appointment | null>(null)
+  const [confirmCancelAppt, setConfirmCancelAppt] = useState<Appointment | null>(null)
+  const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
 
   useEffect(() => {
     api.get<{ appointments: Appointment[] }>('/api/client/appointments')
-      .then(res => setAppointments(res.data.appointments ?? []))
+      .then(res => {
+        const list = res.data.appointments ?? []
+        setAppointments(list)
+        setRescheduleNoticeQueue(list.filter(a => a.rescheduleNoticePending))
+      })
       .catch(() => setAppointments([]))
       .finally(() => setLoading(false))
   }, [])
+
+  const dismissRescheduleNotice = () => {
+    const appt = rescheduleNoticeQueue[0]
+    if (!appt) return
+    setRescheduleNoticeQueue(prev => prev.slice(1))
+    api.patch(`/api/client/appointments/${appt.id}/acknowledge-reschedule`).catch(() => {})
+  }
 
   if (!business || !user) return null
   const { primaryColor, accentColor } = business
@@ -61,37 +86,73 @@ export function AppointmentsPage() {
   const firstTime = isFirstVisit(user)
 
   // Compara fecha + hora reales, no solo la fecha — un turno de hoy a una hora
-  // que ya pasó debe verse como historial, no como próximo.
-  const isPast = (a: Appointment) => new Date(`${a.date}T${a.time}`).getTime() <= Date.now()
+  // que ya pasó debe verse como historial, no como próximo. Si la hora viene en
+  // un formato que no se puede parsear, no queda "atascado" como próximo para siempre.
+  const isPast = (a: Appointment) => {
+    const dt = new Date(`${a.date}T${a.time}`)
+    if (!isNaN(dt.getTime())) return dt.getTime() <= Date.now()
+    return a.date < new Date().toISOString().split('T')[0]
+  }
+
+  // Cada turno cae en un único balde: el estado manda cuando ya está resuelto
+  // (finished/no_show/cancelled), y solo se usa la fecha/hora para los que
+  // todavía dependen de si ya pasaron o no. Así nunca puede aparecer duplicado.
+  const isUpcomingStatus = (a: Appointment) => a.status === 'confirmed' || a.status === 'pending'
 
   const filtered = appointments.filter(a => {
-    if (filter === 'upcoming')  return !isPast(a) && a.status !== 'cancelled'
-    if (filter === 'history')   return isPast(a) || a.status === 'finished'
+    if (filter === 'upcoming')  return isUpcomingStatus(a) && !isPast(a)
+    if (filter === 'history')   return a.status === 'finished' || (isUpcomingStatus(a) && isPast(a))
     if (filter === 'cancelled') return a.status === 'cancelled'
     return true
   })
 
-  const handleCancel = async (appt: Appointment) => {
-    const ok = window.confirm(`¿Cancelar el turno de ${appt.serviceName} del ${appt.date}?`)
-    if (!ok) return
-
+  const confirmCancel = async () => {
+    const appt = confirmCancelAppt
+    if (!appt) return
     setCancellingId(appt.id)
-    setMessage(null)
     try {
-      const res = await api.patch<{ appointment: Appointment; refunded: boolean }>(
+      const res = await api.patch<{ appointment: Appointment; refunded: boolean; appointments?: Appointment[] }>(
         `/api/client/appointments/${appt.id}/cancel`
       )
-      setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
-      setMessage(
-        res.data.refunded
-          ? 'Turno cancelado. La seña se reembolsa según la política del negocio.'
-          : 'Turno cancelado. La seña no se reembolsa por cancelarse fuera del plazo permitido.'
-      )
+      // Si el turno es parte de un combo, el backend cancela todas las patas
+      // juntas y las devuelve en `appointments` — hay que actualizar todas,
+      // no solo la que se pidió cancelar.
+      if (res.data.appointments?.length) {
+        const updatedById = new Map(res.data.appointments.map(a => [a.id, a]))
+        setAppointments(prev => prev.map(a => updatedById.get(a.id) ?? a))
+        setToast({
+          type: res.data.refunded ? 'success' : 'info',
+          text: res.data.refunded
+            ? 'Se canceló el combo completo. Las señas se reembolsan según la política del negocio.'
+            : 'Se canceló el combo completo. Las señas no se reembolsan por cancelarse fuera del plazo permitido.',
+        })
+      } else {
+        setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
+        setToast({
+          type: res.data.refunded ? 'success' : 'info',
+          text: res.data.refunded
+            ? 'Turno cancelado. La seña se reembolsa según la política del negocio.'
+            : 'Turno cancelado. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
+        })
+      }
     } catch (err: any) {
-      setMessage(err?.response?.data?.error ?? 'No se pudo cancelar el turno.')
+      setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el turno.') })
     } finally {
       setCancellingId(null)
+      setConfirmCancelAppt(null)
     }
+  }
+
+  const handleRescheduleClick = (appt: Appointment) => {
+    if (appt.comboGroupId) {
+      setToast({ type: 'info', text: 'Este turno es parte de un combo y no se puede reprogramar desde acá. Cancelalo y reservá de nuevo si necesitás cambiar el horario.' })
+      return
+    }
+    setReschedulingAppt(appt)
+  }
+
+  const handleRebook = (appt: Appointment) => {
+    navigate(ROUTES.CLIENT_BOOK, { state: { serviceId: appt.serviceId, professionalId: appt.professionalId } })
   }
 
   return (
@@ -112,10 +173,6 @@ export function AppointmentsPage() {
       >
         + Reservar nuevo turno
       </button>
-
-      {message && (
-        <p style={{ fontSize: '14px', color: '#000', fontWeight: 600, margin: '0 0 12px' }}>{message}</p>
-      )}
 
       {/* Filtros */}
       <div className="appointments-filters">
@@ -184,16 +241,18 @@ export function AppointmentsPage() {
                   </span>
                   {(appt.status === 'confirmed' || appt.status === 'pending') && !isPast(appt) ? (
                     <div className="appointment-actions">
-                      <button
-                        className="appointment-reschedule-btn"
-                        onClick={e => { e.stopPropagation(); setReschedulingAppt(appt) }}
-                        disabled={cancellingId === appt.id}
-                      >
-                        <CalendarClock size={14} /> Reprogramar
-                      </button>
+                      {!appt.comboGroupId && (
+                        <button
+                          className="appointment-reschedule-btn"
+                          onClick={e => { e.stopPropagation(); handleRescheduleClick(appt) }}
+                          disabled={cancellingId === appt.id}
+                        >
+                          <CalendarClock size={14} /> Reprogramar
+                        </button>
+                      )}
                       <button
                         className="appointment-cancel-btn"
-                        onClick={e => { e.stopPropagation(); handleCancel(appt) }}
+                        onClick={e => { e.stopPropagation(); setConfirmCancelAppt(appt) }}
                         disabled={cancellingId === appt.id}
                       >
                         <X size={14} /> {cancellingId === appt.id ? 'Cancelando...' : 'Cancelar'}
@@ -201,7 +260,7 @@ export function AppointmentsPage() {
                     </div>
                   ) : (
                     <button
-                      onClick={e => { e.stopPropagation(); navigate(ROUTES.CLIENT_BOOK) }}
+                      onClick={e => { e.stopPropagation(); handleRebook(appt) }}
                       className="appointment-rebook-btn"
                       style={{ color: primaryColor }}
                     >
@@ -226,13 +285,52 @@ export function AppointmentsPage() {
           onSuccess={updated => {
             setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a))
             setReschedulingAppt(null)
-            setMessage('Turno reprogramado con éxito.')
+            setToast({ type: 'success', text: 'Turno reprogramado con éxito.' })
           }}
         />
       )}
 
       {detailAppt && (
-        <AppointmentDetailModal appointment={detailAppt} onClose={() => setDetailAppt(null)} />
+        <AppointmentDetailModal
+          appointment={detailAppt}
+          onClose={() => setDetailAppt(null)}
+          onDetailsUpdated={value => {
+            setAppointments(prev => prev.map(a => a.id === detailAppt.id ? { ...a, details: value } : a))
+            setDetailAppt(prev => prev ? { ...prev, details: value } : prev)
+          }}
+        />
+      )}
+
+      {confirmCancelAppt && (
+        <ConfirmModal
+          title="¿Cancelar este turno?"
+          message={
+            confirmCancelAppt.comboGroupId
+              ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date}.`
+              : `${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date} a las ${confirmCancelAppt.time}.`
+          }
+          confirmLabel="Sí, cancelar"
+          cancelLabel="Volver"
+          accentColor={primaryColor}
+          loading={cancellingId === confirmCancelAppt.id}
+          onConfirm={confirmCancel}
+          onCancel={() => setConfirmCancelAppt(null)}
+        />
+      )}
+
+      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
+
+      {rescheduleNoticeQueue.length > 0 && (
+        <InfoModal
+          title="Tu turno se reprogramó"
+          message={
+            rescheduleNoticeQueue[0].previousDate && rescheduleNoticeQueue[0].previousTime
+              ? `${rescheduleNoticeQueue[0].serviceName} se movió del ${rescheduleNoticeQueue[0].previousDate} a las ${rescheduleNoticeQueue[0].previousTime}, al ${rescheduleNoticeQueue[0].date} a las ${rescheduleNoticeQueue[0].time}.`
+              : `${rescheduleNoticeQueue[0].serviceName} ahora es el ${rescheduleNoticeQueue[0].date} a las ${rescheduleNoticeQueue[0].time}.`
+          }
+          accentColor={primaryColor}
+          onClose={dismissRescheduleNotice}
+        />
       )}
     </div>
   )

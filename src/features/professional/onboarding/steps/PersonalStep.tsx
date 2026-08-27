@@ -26,17 +26,10 @@ export function PersonalStep({ data, onChange }: Props) {
 
       <Section title="Datos personales">
         <div className="personal-step-grid">
-          <Field label="Nombre *">
-            <input className="ps-input" value={data.firstName}
-              onChange={e => onChange({ firstName: e.target.value })}
-              placeholder="Tu nombre"
-              onFocus={e => e.currentTarget.style.borderColor = primary}
-              onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
-          </Field>
-          <Field label="Apellido *">
-            <input className="ps-input" value={data.lastName}
-              onChange={e => onChange({ lastName: e.target.value })}
-              placeholder="Tu apellido"
+          <Field label="Nombre completo *">
+            <input className="ps-input" value={data.name}
+              onChange={e => onChange({ name: e.target.value })}
+              placeholder="Tu nombre y apellido"
               onFocus={e => e.currentTarget.style.borderColor = primary}
               onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
           </Field>
@@ -70,13 +63,6 @@ export function PersonalStep({ data, onChange }: Props) {
             <input className="ps-input" type="email" value={data.email}
               onChange={e => onChange({ email: e.target.value })}
               placeholder="tu@email.com"
-              onFocus={e => e.currentTarget.style.borderColor = primary}
-              onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
-          </Field>
-          <Field label="DNI">
-            <input className="ps-input" value={data.dni}
-              onChange={e => onChange({ dni: e.target.value })}
-              placeholder="12.345.678"
               onFocus={e => e.currentTarget.style.borderColor = primary}
               onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
           </Field>

@@ -1,10 +1,14 @@
 //src/pages/public/HomePage.tsx
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { HeroSection }        from '@/features/home/components/HeroSection';
 import { StatsSection }       from '@/features/home/components/StatsSection';
 import { TestimonialsSection }from '@/features/home/components/TestimonialsSection';
 import { GallerySection }     from '@/features/home/components/GallerySection';
+import { ServicePromotionsSection } from '@/features/home/components/ServicePromotionsSection';
+import { ProductPromotionsSection } from '@/features/home/components/ProductPromotionsSection';
+import { JoinUsSection }      from '@/features/home/components/JoinUsSection';
 import { Footer }             from '@/features/home/components/Footer';
 import { KologicBar }         from '@/features/home/components/KologicBar';
 import { WhatsAppButton }     from '@/shared/ui/atoms/WhatsAppButton';
@@ -16,8 +20,17 @@ import { AboutSection }       from '@/features/home/components/AboutSection';
 type SectionId = 'servicios' | 'profesionales' | 'tienda' | 'nosotros';
 
 export function HomePage() {
-  const [activeSection, setActiveSection] = useState<SectionId | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openCart = searchParams.get('openCart') === '1';
+  const [activeSection, setActiveSection] = useState<SectionId | null>(openCart ? 'tienda' : null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!openCart) return;
+    setActiveSection('tienda');
+    setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    setSearchParams({}, { replace: true });
+  }, [openCart]);
 
   const navigateTo = (section: SectionId | null) => {
     setActiveSection(section);
@@ -34,7 +47,7 @@ export function HomePage() {
     switch (activeSection) {
       case 'servicios':     return <ServicesSection />;
       case 'profesionales': return <ProfessionalsSection />;
-      case 'tienda':        return <StoreSection />;
+      case 'tienda':        return <StoreSection autoOpenCart={openCart} />;
       case 'nosotros':      return <AboutSection />;
       default:              return null;
     }
@@ -51,8 +64,11 @@ export function HomePage() {
       )}
 
       <StatsSection />
+      <ServicePromotionsSection />
       <TestimonialsSection />
       <GallerySection />
+      <ProductPromotionsSection />
+      <JoinUsSection />
       <Footer onNavigate={navigateTo} />
       <KologicBar />
       <WhatsAppButton />

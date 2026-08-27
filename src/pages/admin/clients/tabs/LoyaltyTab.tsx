@@ -20,7 +20,7 @@ export function LoyaltyTab({ client }: { client: AdminClient }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
         {stats.map(({ label, value }) => (
           <div key={label} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '12px', padding: '20px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -47,7 +47,7 @@ export function LoyaltyTab({ client }: { client: AdminClient }) {
           </div>
         )}
         <p style={{ margin: '16px 0 0', fontSize: '13px', color: '#777' }}>
-          Programa de puntos — cada visita suma 10 puntos. 100 puntos = $500 de descuento. (Lógica pendiente de backend)
+          Programa de puntos — cada visita suma 10 puntos. 100 puntos = $500 de descuento.
         </p>
       </div>
     </div>

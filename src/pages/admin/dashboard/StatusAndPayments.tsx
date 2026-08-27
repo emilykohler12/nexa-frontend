@@ -22,7 +22,7 @@ export function StatusAndPayments({ statusData, paymentData, serviceData }: Prop
       {/* Estado de turnos */}
       <DashboardCard title="Estado de turnos">
         {statusData.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', padding: '24px 0', margin: 0 }}>
+          <p style={{ textAlign: 'center', color: '#000', fontSize: '15px', padding: '24px 0', margin: 0 }}>
             Todavía no hay turnos registrados
           </p>
         ) : (
@@ -68,7 +68,7 @@ export function StatusAndPayments({ statusData, paymentData, serviceData }: Prop
       {/* Estado de señas */}
       <DashboardCard title="Estado de señas">
         {paymentData.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', padding: '24px 0', margin: 0 }}>
+          <p style={{ textAlign: 'center', color: '#000', fontSize: '15px', padding: '24px 0', margin: 0 }}>
             Todavía no hay señas registradas
           </p>
         ) : (
@@ -78,7 +78,7 @@ export function StatusAndPayments({ statusData, paymentData, serviceData }: Prop
             return (
               <div key={i} className="status-payments-bar-row">
                 <div className="status-payments-bar-header">
-                  <span style={{ color: '#222', fontWeight: 700, fontSize: '15px' }}>{p.label}</span>
+                  <span style={{ color: '#000', fontWeight: 700, fontSize: '16px' }}>{p.label}</span>
                   <span className="status-payments-amount">{formatCurrency(p.amount)}</span>
                 </div>
                 <div className="status-payments-bar-track">
@@ -88,7 +88,7 @@ export function StatusAndPayments({ statusData, paymentData, serviceData }: Prop
             )
           })}
           <div className="status-payments-total">
-            <span style={{ color: '#222', fontWeight: 700, fontSize: '16px' }}>Total señas</span>
+            <span style={{ color: '#000', fontWeight: 700, fontSize: '17px' }}>Total señas</span>
             <span className="status-payments-total-amount">{formatCurrency(totalPayments)}</span>
           </div>
         </div>

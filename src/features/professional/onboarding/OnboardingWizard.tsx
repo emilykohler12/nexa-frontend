@@ -13,8 +13,9 @@ import { ConfirmationStep } from './steps/ConfirmationStep'
 import {
   EMPTY_AVAILABILITY, EMPTY_PERSONAL, EMPTY_WORK, EMPTY_POLICIES,
 } from './types'
-import type { OnboardingData } from './types'
+import type { OnboardingData, PersonalData } from './types'
 import './OnboardingWizard.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const STEPS = [
   { id: 'personal',     label: 'Perfil'      },
@@ -36,7 +37,13 @@ export function OnboardingWizard({ onComplete }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
   const [data, setData]       = useState<OnboardingData>({
-    personal:     { ...EMPTY_PERSONAL, email: user?.email ?? '' },
+    personal: {
+      ...EMPTY_PERSONAL,
+      name:   user?.name  ?? '',
+      email:  user?.email ?? '',
+      phone:  user?.phone ?? '',
+      gender: (user?.gender as PersonalData['gender']) ?? '',
+    },
     work:         EMPTY_WORK,
     availability: EMPTY_AVAILABILITY,
     services:     [],
@@ -48,12 +55,12 @@ export function OnboardingWizard({ onComplete }: Props) {
   const isLast = step === STEPS.length - 1
 
   const validate = (): string | null => {
-    if (step === 0 && (!data.personal.firstName || !data.personal.lastName || !data.personal.phone))
-      return 'Completá nombre, apellido y teléfono.'
+    if (step === 0 && (!data.personal.name || !data.personal.phone))
+      return 'Completá tu nombre y teléfono.'
     if (step === 1 && !data.work.specialty)
       return 'Ingresá tu especialidad principal.'
     if (step === 2) {
-      const active = Object.values(data.availability).some(r => r !== null)
+      const active = Object.values(data.availability).some(ranges => ranges.length > 0)
       if (!active) return 'Activá al menos un día de trabajo.'
     }
     return null
@@ -73,7 +80,9 @@ export function OnboardingWizard({ onComplete }: Props) {
     setError(null)
     try {
       await api.post('/api/professional/onboarding', {
-        personal:     data.personal,
+        // Si no eligió género, no mandamos la clave — el backend espera un
+        // enum válido o directamente ausente, nunca un string vacío.
+        personal:     { ...data.personal, gender: data.personal.gender || undefined },
         work:         data.work,
         availability: data.availability,
         services:     data.services,
@@ -81,7 +90,7 @@ export function OnboardingWizard({ onComplete }: Props) {
       })
       onComplete()
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'Error al guardar. Intentá de nuevo.')
+      setError(safeErrorMessage(err, 'Error al guardar. Intentá de nuevo.'))
     } finally {
       setLoading(false)
     }

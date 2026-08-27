@@ -12,8 +12,8 @@ interface Props {
   title: string
 }
 
-const axisTick      = { fontSize: 14, fill: '#000', fontWeight: 600, fontFamily: "'Lato', sans-serif" }
-const axisTickSmall = { fontSize: 13, fill: '#000', fontWeight: 600, fontFamily: "'Lato', sans-serif" }
+const axisTick      = { fontSize: 15, fill: '#000', fontWeight: 600, fontFamily: "'Lato', sans-serif" }
+const axisTickSmall = { fontSize: 14, fill: '#000', fontWeight: 600, fontFamily: "'Lato', sans-serif" }
 
 export function RevenueChart({ data, title }: Props) {
   return (

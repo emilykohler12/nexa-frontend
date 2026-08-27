@@ -89,8 +89,13 @@ function ClientCard({ client, onClick }: { client: AdminClient; onClick: () => v
           : initials}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: '17px', color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '17px', color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {displayName}
+          {client.blocked && (
+            <span style={{ fontSize: '10px', fontWeight: 700, color: '#e53935', background: 'rgba(229,57,53,0.1)', padding: '2px 7px', borderRadius: '20px', flexShrink: 0 }}>
+              Bloqueado
+            </span>
+          )}
         </p>
         <p style={{ margin: '2px 0 0', fontSize: '14px', color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {client.phone}

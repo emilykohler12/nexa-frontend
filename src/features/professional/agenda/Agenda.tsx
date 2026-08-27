@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { AgendaDay }   from './components/AgendaDay'
 import { AgendaWeek }  from './components/AgendaWeek'
 import { AgendaMonth } from './components/AgendaMonth'
 import { AppointmentDialog } from './dialogs/AppointmentDialog'
+import { CreateAppointmentModal } from './dialogs/CreateAppointmentModal'
 import type { Appointment } from '@/features/professional/types/appointment'
 
 type View = 'day' | 'week' | 'month'
@@ -26,6 +27,7 @@ export function Agenda() {
   const [current, setCurrent]       = useState(new Date())
   const [selected, setSelected]     = useState<Appointment | null>(null)
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [showCreate, setShowCreate] = useState(false)
 
   useEffect(() => {
     api.get<{ appointments: Appointment[] }>('/api/professional/appointments')
@@ -35,6 +37,9 @@ export function Agenda() {
 
   if (!business) return null
   const { primaryColor: primary, accentColor: accent } = business
+
+  // Los turnos cancelados no deberían seguir ocupando lugar en la agenda.
+  const visibleAppointments = appointments.filter(a => a.status !== 'cancelled')
 
   const navigate = (dir: 1 | -1) => {
     const d = new Date(current)
@@ -49,7 +54,9 @@ export function Agenda() {
     if (view === 'day')   return current.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     const ws = getWeekStart(current)
     const we = new Date(ws); we.setDate(ws.getDate() + 6)
-    return `${ws.getDate()} ${MONTH_NAMES[ws.getMonth()].slice(0,3)} — ${we.getDate()} ${MONTH_NAMES[we.getMonth()].slice(0,3)} ${we.getFullYear()}`
+    const sameMonth = ws.getMonth() === we.getMonth()
+    const start = sameMonth ? `${ws.getDate()}` : `${ws.getDate()} ${MONTH_NAMES[ws.getMonth()].slice(0,3)}`
+    return `${start} – ${we.getDate()} ${MONTH_NAMES[we.getMonth()].slice(0,3)} ${we.getFullYear()}`
   }
 
   const handleSave = async (updated: Appointment) => {
@@ -85,13 +92,24 @@ export function Agenda() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px',
+              border: 'none', borderRadius: '9px', background: primary, color: '#fff',
+              cursor: 'pointer', fontSize: '14px', fontWeight: 700, fontFamily: "'Lato', sans-serif",
+            }}
+          >
+            <Plus size={15} /> Crear turno manual
+          </button>
+
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
             <NavBtn onClick={() => navigate(-1)}><ChevronLeft size={16} /></NavBtn>
             <button onClick={() => setCurrent(new Date())} style={{ ...btnStyle(false), border: '1px solid #e0e0e0', fontSize: '14px' }}>Hoy</button>
             <NavBtn onClick={() => navigate(1)}><ChevronRight size={16} /></NavBtn>
           </div>
 
-          <span style={{ fontSize: '17px', fontWeight: 700, color: '#000', textTransform: 'capitalize' }}>
+          <span style={{ fontSize: '17px', fontWeight: 700, color: '#000', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
             {getTitle()}
           </span>
 
@@ -104,9 +122,9 @@ export function Agenda() {
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-        {view === 'day'   && <AgendaDay   appointments={appointments} day={current}                   primary={primary} onEventClick={setSelected} />}
-        {view === 'week'  && <AgendaWeek  appointments={appointments} weekStart={getWeekStart(current)} primary={primary} onEventClick={setSelected} />}
-        {view === 'month' && <AgendaMonth appointments={appointments} month={current}                  primary={primary} onEventClick={setSelected} />}
+        {view === 'day'   && <AgendaDay   appointments={visibleAppointments} day={current}                   primary={primary} onEventClick={setSelected} />}
+        {view === 'week'  && <AgendaWeek  appointments={visibleAppointments} weekStart={getWeekStart(current)} primary={primary} onEventClick={setSelected} />}
+        {view === 'month' && <AgendaMonth appointments={visibleAppointments} month={current}                  primary={primary} onEventClick={setSelected} />}
       </div>
 
       {selected && (
@@ -116,6 +134,17 @@ export function Agenda() {
           accent={accent}
           onClose={() => setSelected(null)}
           onSave={handleSave}
+        />
+      )}
+
+      {showCreate && (
+        <CreateAppointmentModal
+          primary={primary}
+          onClose={() => setShowCreate(false)}
+          onCreated={created => {
+            setAppointments(prev => [...prev, created])
+            setShowCreate(false)
+          }}
         />
       )}
     </div>

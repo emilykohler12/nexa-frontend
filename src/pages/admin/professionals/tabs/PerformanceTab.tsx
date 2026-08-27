@@ -21,7 +21,9 @@ export function PerformanceTab({ professional: p }: Props) {
 
   useEffect(() => {
     api.get<{ history: ProfessionalAppointmentHistory[] }>(`/api/professionals/${p.id}/history`)
-      .then(res => setHistory(res.data.history ?? []))
+      // Defensivo: solo turnos que el admin o el profesional ya marcaron como
+      // finalizados cuentan como "realizados" acá — nunca los próximos/confirmados.
+      .then(res => setHistory((res.data.history ?? []).filter(a => a.status === 'finished')))
       .catch(() => setHistory([]))
       .finally(() => setLoading(false));
   }, [p.id]);

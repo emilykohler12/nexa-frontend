@@ -27,6 +27,10 @@ export function Client() {
     c.email.toLowerCase().includes(search.toLowerCase())
   )
 
+  // Solo cuenta como "visita" un turno que ya se marcó como finalizado — un
+  // turno próximo/confirmado todavía no pasó, no es una visita real todavía.
+  const finishedVisits = (c: ProfessionalClient) => c.visits.filter(v => !v.status || v.status === 'finished')
+
   if (selected) {
     return <ClientDetail client={selected} primary={primary} accent={accent} onBack={() => setSelected(null)} />
   }
@@ -78,7 +82,7 @@ export function Client() {
               <p style={{ margin: '2px 0 0', fontSize: '15px', color: '#000' }}>{client.email} · {client.phone}</p>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <p style={{ margin: 0, fontSize: '23px', fontWeight: 700, color: accent }}>{client.visits.length}</p>
+              <p style={{ margin: 0, fontSize: '23px', fontWeight: 700, color: accent }}>{finishedVisits(client).length}</p>
               <p style={{ margin: 0, fontSize: '13px', color: '#000' }}>visitas</p>
             </div>
             {client.nextAppointment && (

@@ -6,6 +6,7 @@ import { useAuth }    from '@/features/auth/AuthContext'
 import { api }        from '@/shared/utils/api'
 import { ForgotPasswordModal } from '@/features/auth/components/ForgotPasswordModal'
 import './ProfilePage.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function ProfilePage() {
   const { business }  = useTenant()
@@ -29,7 +30,7 @@ export function ProfilePage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'Error al guardar. Intentá de nuevo.')
+      setError(safeErrorMessage(err, 'Error al guardar. Intentá de nuevo.'))
     }
   }
 

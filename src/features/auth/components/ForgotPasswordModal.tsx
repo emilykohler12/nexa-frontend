@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { z }        from 'zod'
 import { api }      from '@/shared/utils/api'
 import './ForgotPasswordModal.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 interface Props {
   onClose: () => void
@@ -53,7 +54,7 @@ export function ForgotPasswordModal({ onClose, defaultEmail }: Props) {
       await api.post('/api/auth/reset-password', { token: cleanCode, password })
       setStep('done')
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'Código inválido o expirado. Solicitá uno nuevo.')
+      setError(safeErrorMessage(err, 'Código inválido o expirado. Solicitá uno nuevo.'))
     } finally {
       setLoading(false)
     }

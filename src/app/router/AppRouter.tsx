@@ -31,6 +31,7 @@ import { ServicesPage }      from '@/pages/admin/ServicesPage'
 import { StorePage }         from '@/pages/admin/StorePage'
 import { ProfessionalsPage } from '@/pages/admin/ProfessionalsPage'
 import { ActivityPage }      from '@/pages/admin/ActivityPage'
+import { PromotionsPage }    from '@/pages/admin/PromotionsPage'
 import { SettingsPage }      from '@/pages/admin/SettingsPage'
 import { ClientsPage as AdminClientsPage } from '@/pages/admin/ClientsPage'
 
@@ -77,6 +78,7 @@ export function AppRouter() {
           <Route path={ROUTES.ADMIN_PROFESSIONALS} element={<ProfessionalsPage />} />
           <Route path={ROUTES.ADMIN_CLIENTS}       element={<AdminClientsPage />} />
           <Route path={ROUTES.ADMIN_ACTIVITY}      element={<ActivityPage />} />
+          <Route path={ROUTES.ADMIN_PROMOTIONS}    element={<PromotionsPage />} />
           <Route path={ROUTES.ADMIN_SETTINGS}      element={<SettingsPage />} />
         </Route>
 

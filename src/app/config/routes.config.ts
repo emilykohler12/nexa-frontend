@@ -28,5 +28,6 @@ export const ROUTES = {
   ADMIN_CLIENTS:       '/admin/clients',
   ADMIN_PROFESSIONALS: '/admin/professionals',
   ADMIN_ACTIVITY:      '/admin/activity',
+  ADMIN_PROMOTIONS:    '/admin/promotions',
   ADMIN_SETTINGS:      '/admin/settings',
 } as const

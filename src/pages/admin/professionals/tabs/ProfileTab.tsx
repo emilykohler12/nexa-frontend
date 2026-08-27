@@ -6,6 +6,7 @@ import { validateAllSocials } from '@/shared/utils/social';
 import type { AdminProfessional, CommissionType } from '../types';
 import '../professionals.css';
 import '@/shared/ui/admin/admin-controls.css';
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const DAY_LABELS: Record<string, string> = {
   monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles',
@@ -101,7 +102,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.error ?? 'No se pudo guardar el perfil. Intentá de nuevo.');
+      setSaveError(safeErrorMessage(err, 'No se pudo guardar el perfil. Intentá de nuevo.'));
     } finally {
       setSaving(false);
     }

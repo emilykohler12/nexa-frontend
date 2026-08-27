@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api }        from '@/shared/utils/api'
 import type { BookingSelection } from '../types'
+import { ANY_PROFESSIONAL_ID } from './ProviderStep'
 
 interface Service {
   id:         string
@@ -38,9 +39,12 @@ interface Props {
   onConfirm: (summary: ConfirmedSummary) => void
 }
 
+// La seña fija que configura el admin es siempre la misma, sin importar el
+// precio del servicio — no se recorta al precio (eso hacía que un servicio
+// de $0 mostrara una seña de $0 en vez de la seña real configurada).
 function computeDeposit(price: number, settings: PaymentSettings): number {
   if (settings.depositPercent) return Math.round((price * settings.depositAmount) / 100)
-  return Math.min(settings.depositAmount, price)
+  return settings.depositAmount
 }
 
 export function ConfirmationStep({ selection, onConfirm }: Props) {
@@ -58,7 +62,11 @@ export function ConfirmationStep({ selection, onConfirm }: Props) {
     ])
       .then(([servicesRes, professionalsRes, paymentsRes]) => {
         setService(servicesRes.data.services.find(s => s.id === selection.serviceId) ?? null)
-        setProfessional(professionalsRes.data.professionals.find(p => p.id === selection.professionalId) ?? null)
+        setProfessional(
+          selection.professionalId === ANY_PROFESSIONAL_ID
+            ? { id: ANY_PROFESSIONAL_ID, name: 'Cualquier profesional disponible' }
+            : professionalsRes.data.professionals.find(p => p.id === selection.professionalId) ?? null
+        )
         setPaymentSettings(paymentsRes.data.settings)
       })
       .catch(() => {

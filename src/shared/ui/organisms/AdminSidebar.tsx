@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   CalendarDays, LayoutDashboard, Scissors, ShoppingBag,
-  Users, UserCheck, Activity, Settings, LogOut, Menu, X, Home,
+  Users, UserCheck, Activity, Settings, LogOut, Menu, X, Home, Tag,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/AuthContext'
 import { ROUTES } from '@/app/config/routes.config'
@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.ADMIN_STORE,         icon: ShoppingBag,     label: 'Tienda'        },
   { to: ROUTES.ADMIN_CLIENTS,       icon: UserCheck,       label: 'Clientes'      },
   { to: ROUTES.ADMIN_ACTIVITY,      icon: Activity,        label: 'Actividad'     },
+  { to: ROUTES.ADMIN_PROMOTIONS,    icon: Tag,             label: 'Promociones'   },
   { to: ROUTES.ADMIN_SETTINGS,      icon: Settings,        label: 'Configuración' },
 ]
 
@@ -100,7 +101,13 @@ export function AdminSidebar({ onWidthChange }: { onWidthChange?: (w: number) =>
             </button>
           </div>
 
-          <div className="sidebar-avatar">L</div>
+          <div className="sidebar-avatar">
+            {user?.photo ? (
+              <img src={user.photo} alt={user.name ?? 'Administrador'} />
+            ) : (
+              (user?.name?.charAt(0) ?? 'A').toUpperCase()
+            )}
+          </div>
 
           {(isExpanded || isMobile) && (
             <p className="sidebar-username">

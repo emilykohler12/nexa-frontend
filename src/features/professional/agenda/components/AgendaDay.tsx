@@ -1,5 +1,6 @@
 import type { Appointment } from '@/features/professional/types/appointment'
 import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
+import { groupByCombo } from '@/shared/utils/comboGroup'
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7)
 
@@ -29,28 +30,38 @@ export function AgendaDay({ appointments, day, primary, onEventClick }: Props) {
                   {String(hour).padStart(2, '0')}:00
                 </td>
                 <td style={{ borderTop: '1px solid #f0f0f0', padding: '4px', height: '64px', verticalAlign: 'top' }}>
-                  {appts.map(a => {
-                    const cfg = appointmentStatusConfig[a.status]
-                    return (
-                      <button
-                        key={a.id}
-                        onClick={() => onEventClick(a)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '8px',
-                          width: '100%', border: 'none', borderRadius: '8px',
-                          padding: '8px 12px', marginBottom: '3px',
-                          background: `${primary}15`,
-                          borderLeft: `3px solid ${primary}`,
-                          cursor: 'pointer', textAlign: 'left',
-                          fontFamily: "'Lato', sans-serif",
-                        }}
-                      >
-                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#000', flex: 1 }}>{a.client.name}</span>
-                        <span style={{ fontSize: '13px', color: '#000' }}>{a.serviceName}</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
-                      </button>
-                    )
-                  })}
+                  {groupByCombo(appts).map((group, gi) => (
+                    <div
+                      key={group.comboGroupId ?? gi}
+                      style={group.items.length > 1 ? { border: '1px dashed #d4af37', borderRadius: '10px', padding: '3px', marginBottom: '3px' } : undefined}
+                    >
+                      {group.items.length > 1 && (
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#8a6800', padding: '0 4px 2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Combo</div>
+                      )}
+                      {group.items.map(a => {
+                        const cfg = appointmentStatusConfig[a.status]
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => onEventClick(a)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '8px',
+                              width: '100%', border: 'none', borderRadius: '8px',
+                              padding: '8px 12px', marginBottom: '3px',
+                              background: `${primary}15`,
+                              borderLeft: `3px solid ${primary}`,
+                              cursor: 'pointer', textAlign: 'left',
+                              fontFamily: "'Lato', sans-serif",
+                            }}
+                          >
+                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#000', flex: 1 }}>{a.client.name}</span>
+                            <span style={{ fontSize: '13px', color: '#000' }}>{a.serviceName}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ))}
                 </td>
               </tr>
             )

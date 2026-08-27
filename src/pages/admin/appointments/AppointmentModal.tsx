@@ -37,11 +37,20 @@ export function AppointmentModal({
 }: Props) {
   const [editing, setEditing]             = useState(false);
   const [form, setForm]                   = useState<Appointment | null>(appointment);
+  const [editDate, setEditDate]           = useState('');
+  const [editTime, setEditTime]           = useState('');
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [saving, setSaving]               = useState(false);
   const [actionError, setActionError]     = useState<string | null>(null);
 
   if (!appointment || !form) return null;
+
+  const startEditing = () => {
+    const start = new Date(appointment.start);
+    setEditDate(start.toISOString().split('T')[0]);
+    setEditTime(`${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`);
+    setEditing(true);
+  };
 
   const prof = professionals.find(p => p.id === appointment.professionalId);
   const profColor = prof?.color ?? '#069494';
@@ -52,7 +61,14 @@ export function AppointmentModal({
   const handleSave = async () => {
     setSaving(true);
     setActionError(null);
-    const error = await onSave(form);
+    // Recalcula el inicio/fin del turno con la fecha/hora elegidas — así "Editar"
+    // también sirve para reprogramar sin un flujo aparte.
+    const [h, m] = editTime.split(':').map(Number);
+    const newStart = new Date(`${editDate}T00:00:00`);
+    newStart.setHours(h, m, 0, 0);
+    const newEnd = new Date(newStart.getTime() + form.serviceDuration * 60000);
+    const updated: Appointment = { ...form, start: newStart.toISOString(), end: newEnd.toISOString() };
+    const error = await onSave(updated);
     setSaving(false);
     if (error) { setActionError(error); return; }
     setEditing(false);
@@ -150,14 +166,27 @@ export function AppointmentModal({
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
           {/* Fecha y hora */}
-          <Section>
-            <InfoRow icon={<Calendar size={14} />} label="Fecha">
-              {formatDate(appointment.start)}
-            </InfoRow>
-            <InfoRow icon={<Clock size={14} />} label="Horario">
-              {formatTime(appointment.start)} — {formatTime(appointment.end)}
-            </InfoRow>
-          </Section>
+          {editing ? (
+            <Section>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '140px' }}>
+                  <EditField label="Fecha" type="date" value={editDate} onChange={setEditDate} />
+                </div>
+                <div style={{ flex: 1, minWidth: '100px' }}>
+                  <EditField label="Hora" type="time" value={editTime} onChange={setEditTime} />
+                </div>
+              </div>
+            </Section>
+          ) : (
+            <Section>
+              <InfoRow icon={<Calendar size={14} />} label="Fecha">
+                {formatDate(appointment.start)}
+              </InfoRow>
+              <InfoRow icon={<Clock size={14} />} label="Horario">
+                {formatTime(appointment.start)} — {formatTime(appointment.end)}
+              </InfoRow>
+            </Section>
+          )}
 
           <Divider />
 
@@ -183,7 +212,9 @@ export function AppointmentModal({
           </Section>
 
           {appointment.details && (
-            appointment.details.allergies || appointment.details.accompanied || appointment.details.designPreference?.value
+            appointment.details.allergies || appointment.details.accompanied || appointment.details.designPreference?.value ||
+            appointment.details.hasOtherSalonPolish || appointment.details.isNailReconstruction || appointment.details.hairLength ||
+            appointment.details.wantsExtensions || appointment.details.skinType
           ) && (
             <>
               <Divider />
@@ -212,6 +243,23 @@ export function AppointmentModal({
                   ) : (
                     <InfoRow icon={<FileText size={14} />} label="Diseño">{appointment.details.designPreference.value}</InfoRow>
                   )
+                )}
+                {appointment.details.hasOtherSalonPolish && (
+                  <InfoRow icon={<AlertCircle size={14} color="#d4af37" />} label="Esmaltado previo">Tiene de otro salón para retirar</InfoRow>
+                )}
+                {appointment.details.isNailReconstruction && (
+                  <InfoRow icon={<FileText size={14} />} label="Reconstrucción">
+                    {appointment.details.nailReconstructionCount ? `${appointment.details.nailReconstructionCount} uñas` : 'Sí'}
+                  </InfoRow>
+                )}
+                {appointment.details.hairLength && (
+                  <InfoRow icon={<FileText size={14} />} label="Largo de cabello">{appointment.details.hairLength}</InfoRow>
+                )}
+                {appointment.details.wantsExtensions && (
+                  <InfoRow icon={<FileText size={14} />} label="Extensiones">Sí</InfoRow>
+                )}
+                {appointment.details.skinType && (
+                  <InfoRow icon={<FileText size={14} />} label="Tipo de piel">{appointment.details.skinType}</InfoRow>
                 )}
               </Section>
             </>
@@ -368,7 +416,7 @@ export function AppointmentModal({
               ) : (
                 <Btn onClick={() => setConfirmCancel(true)} variant="danger" disabled={saving}>Cancelar turno</Btn>
               )}
-              <Btn onClick={() => setEditing(true)} variant="primary" disabled={saving}>Editar</Btn>
+              <Btn onClick={startEditing} variant="primary" disabled={saving}>Editar / reprogramar</Btn>
             </>
           )}
         </div>

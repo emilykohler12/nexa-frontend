@@ -11,6 +11,7 @@ export interface User {
   email:           string
   role:            UserRole
   phone?:          string | null
+  gender?:         string | null
   photo?:          string | null
   createdAt?:      string
   profileComplete?: boolean

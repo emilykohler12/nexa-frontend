@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { AdminClient } from '../types'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const GENDER_LABEL: Record<string, string> = {
   female:          'Femenino',
@@ -35,7 +36,7 @@ export function InfoTab({ client, onSave }: Props) {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'No se pudo guardar. Intentá de nuevo.')
+      setError(safeErrorMessage(err, 'No se pudo guardar. Intentá de nuevo.'))
     } finally {
       setSaving(false)
     }

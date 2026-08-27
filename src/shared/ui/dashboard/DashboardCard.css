@@ -4,13 +4,13 @@
   border-radius: 14px;
   padding: 20px 22px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Lato', sans-serif;
 }
 
 .dashboard-card-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: #999;
+  color: #000;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin: 0 0 16px;

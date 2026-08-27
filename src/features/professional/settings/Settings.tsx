@@ -6,8 +6,17 @@ import { useTenant }    from '@/features/tenant/TenantContext'
 import { api }          from '@/shared/utils/api'
 import { PhotoUpload }  from '@/shared/ui/atoms/PhotoUpload'
 import './Settings.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import type { PaymentMethod } from '@/features/professional/onboarding/types'
 
-type Tab = 'personal' | 'security'
+type Tab = 'personal' | 'work' | 'security'
+
+// Mercado Pago eliminado — solo efectivo, transferencia y tarjeta
+const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
+  { value: 'cash',     label: 'Efectivo'      },
+  { value: 'transfer', label: 'Transferencia' },
+  { value: 'card',     label: 'Tarjeta'       },
+]
 
 interface ProfileForm {
   name:      string
@@ -19,11 +28,28 @@ interface ProfileForm {
   facebook:  string
   tiktok:    string
   twitter:   string
+  // Experiencia
+  yearsExperience: number
+  languages:       string
+  certifications:  string
+  // Políticas
+  toleranceMinutes:     number
+  latePenalty:          string
+  cancellationPolicy:   string
+  reschedulePolicy:     string
+  depositPolicy:        string
+  priorRecommendations: string
+  afterCare:            string
+  paymentMethods:       PaymentMethod[]
 }
 
 const EMPTY_FORM: ProfileForm = {
   name: '', phone: '', bio: '', photo: null,
   specialty: '', instagram: '', facebook: '', tiktok: '', twitter: '',
+  yearsExperience: 0, languages: '', certifications: '',
+  toleranceMinutes: 15, latePenalty: '', cancellationPolicy: '',
+  reschedulePolicy: '', depositPolicy: '', priorRecommendations: '', afterCare: '',
+  paymentMethods: ['cash', 'transfer'],
 }
 
 export function Settings() {
@@ -65,10 +91,21 @@ export function Settings() {
           facebook:  p.facebook  ?? '',
           tiktok:    p.tiktok    ?? '',
           twitter:   p.twitter   ?? '',
+          yearsExperience:      p.yearsExperience      ?? 0,
+          languages:            p.languages            ?? '',
+          certifications:       p.certifications       ?? '',
+          toleranceMinutes:     p.toleranceMinutes      ?? 15,
+          latePenalty:          p.latePenalty          ?? '',
+          cancellationPolicy:   p.cancellationPolicy   ?? '',
+          reschedulePolicy:     p.reschedulePolicy     ?? '',
+          depositPolicy:        p.depositPolicy        ?? '',
+          priorRecommendations: p.priorRecommendations ?? '',
+          afterCare:            p.afterCare            ?? '',
+          paymentMethods:       p.paymentMethods        ?? ['cash', 'transfer'],
         })
       })
       .catch((err: any) => {
-        const msg = err?.response?.data?.error ?? 'No se pudo cargar el perfil'
+        const msg = safeErrorMessage(err, 'No se pudo cargar el perfil')
         setLoadError(msg)
         console.error('[Settings] Error cargando perfil:', err)
       })
@@ -85,7 +122,7 @@ export function Settings() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? 'Error al guardar los cambios'
+      const msg = safeErrorMessage(err, 'Error al guardar los cambios')
       setSaveError(msg)
     } finally {
       setSaving(false)
@@ -119,7 +156,7 @@ export function Settings() {
       setConfirmPassword('')
       setTimeout(() => setPwSaved(false), 3000)
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? 'Error al cambiar la contraseña'
+      const msg = safeErrorMessage(err, 'Error al cambiar la contraseña')
       setPwError(msg)
       console.error('[Settings] Error cambiando contraseña:', err)
     } finally {
@@ -127,9 +164,19 @@ export function Settings() {
     }
   }
 
+  const togglePayment = (method: PaymentMethod) => {
+    setForm(f => ({
+      ...f,
+      paymentMethods: f.paymentMethods.includes(method)
+        ? f.paymentMethods.filter(m => m !== method)
+        : [...f.paymentMethods, method],
+    }))
+  }
+
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'personal', label: 'Datos personales' },
-    { id: 'security', label: 'Seguridad'         },
+    { id: 'personal', label: 'Datos personales'      },
+    { id: 'work',     label: 'Experiencia y políticas' },
+    { id: 'security', label: 'Seguridad'              },
   ]
 
   if (loading) {
@@ -257,6 +304,146 @@ export function Settings() {
                 placeholder="https://x.com/..." />
             </Field>
           </div>
+
+          <div className="settings-actions">
+            <button
+              className={`settings-save-btn${saved ? ' saved' : ''}`}
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar cambios'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: experiencia y políticas */}
+      {tab === 'work' && (
+        <div className="settings-card">
+          {saveError && <div className="settings-error">{saveError}</div>}
+
+          <div className="settings-section-title">Experiencia</div>
+          <div className="settings-grid">
+            <Field label="Años de experiencia">
+              <input
+                className="settings-input"
+                type="number"
+                min={0}
+                value={form.yearsExperience}
+                onChange={e => setForm(f => ({ ...f, yearsExperience: Number(e.target.value) }))}
+                placeholder="0"
+              />
+            </Field>
+            <Field label="Idiomas que habla">
+              <input
+                className="settings-input"
+                value={form.languages}
+                onChange={e => setForm(f => ({ ...f, languages: e.target.value }))}
+                placeholder="Español, Inglés..."
+              />
+            </Field>
+          </div>
+          <Field label="Certificaciones y cursos">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={3}
+              value={form.certifications}
+              onChange={e => setForm(f => ({ ...f, certifications: e.target.value }))}
+              placeholder="Certificaciones, cursos y formación relevante..."
+            />
+          </Field>
+
+          <div className="settings-section-title">Políticas</div>
+          <div className="settings-grid">
+            <Field label="Tolerancia por llegada tarde (minutos)">
+              <input
+                className="settings-input"
+                type="number"
+                min={0}
+                value={form.toleranceMinutes}
+                onChange={e => setForm(f => ({ ...f, toleranceMinutes: Number(e.target.value) }))}
+                placeholder="15"
+              />
+            </Field>
+            <Field label="Métodos de pago que aceptás">
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {PAYMENT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => togglePayment(opt.value)}
+                    style={{
+                      padding: '9px 16px',
+                      borderRadius: '9px',
+                      border: `1.5px solid ${form.paymentMethods.includes(opt.value) ? primary : '#ddd'}`,
+                      background: form.paymentMethods.includes(opt.value) ? `${primary}14` : '#fff',
+                      color: form.paymentMethods.includes(opt.value) ? primary : '#444',
+                      fontFamily: 'var(--font-lato, "Lato", sans-serif)',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          </div>
+          <Field label="Política de llegadas tarde">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={2}
+              value={form.latePenalty}
+              onChange={e => setForm(f => ({ ...f, latePenalty: e.target.value }))}
+              placeholder="Qué pasa si el cliente llega tarde..."
+            />
+          </Field>
+          <Field label="Política de cancelación">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={2}
+              value={form.cancellationPolicy}
+              onChange={e => setForm(f => ({ ...f, cancellationPolicy: e.target.value }))}
+              placeholder="Condiciones para cancelar un turno..."
+            />
+          </Field>
+          <Field label="Política de reprogramación">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={2}
+              value={form.reschedulePolicy}
+              onChange={e => setForm(f => ({ ...f, reschedulePolicy: e.target.value }))}
+              placeholder="Condiciones para reprogramar un turno..."
+            />
+          </Field>
+          <Field label="Política de señas">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={2}
+              value={form.depositPolicy}
+              onChange={e => setForm(f => ({ ...f, depositPolicy: e.target.value }))}
+              placeholder="Condiciones sobre la seña..."
+            />
+          </Field>
+          <Field label="Recomendaciones previas al turno">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={2}
+              value={form.priorRecommendations}
+              onChange={e => setForm(f => ({ ...f, priorRecommendations: e.target.value }))}
+              placeholder="Qué debería saber o hacer el cliente antes de venir..."
+            />
+          </Field>
+          <Field label="Cuidados posteriores">
+            <textarea
+              className="settings-input settings-textarea"
+              rows={2}
+              value={form.afterCare}
+              onChange={e => setForm(f => ({ ...f, afterCare: e.target.value }))}
+              placeholder="Cuidados que debería tener el cliente después del servicio..."
+            />
+          </Field>
 
           <div className="settings-actions">
             <button

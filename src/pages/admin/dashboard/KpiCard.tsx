@@ -38,7 +38,7 @@ export function KpiCard({ label, value, prev, changePercent, icon, accentColor =
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
-          fontSize: '13px',
+          fontSize: '14px',
           fontWeight: 700,
           color: '#000',
           textTransform: 'uppercase',
@@ -56,7 +56,7 @@ export function KpiCard({ label, value, prev, changePercent, icon, accentColor =
         </div>
       </div>
 
-      <div style={{ fontSize: '34px', fontWeight: 700, color: '#000', lineHeight: 1 }}>
+      <div style={{ fontSize: '35px', fontWeight: 700, color: '#000', lineHeight: 1 }}>
         {value}
       </div>
 
@@ -67,13 +67,13 @@ export function KpiCard({ label, value, prev, changePercent, icon, accentColor =
           color: trendColor,
           borderRadius: '20px',
           padding: '4px 12px',
-          fontSize: '15px',
+          fontSize: '16px',
           fontWeight: 700,
         }}>
           <TrendIcon size={15} />
           <span>{isFlat ? 'Sin cambio' : `${isUp ? '+' : '-'}${absChange}%`}</span>
         </div>
-        <span style={{ fontSize: '14px', color: '#000', fontWeight: 600 }}>
+        <span style={{ fontSize: '15px', color: '#000', fontWeight: 600 }}>
           vs {prev} anterior
         </span>
       </div>

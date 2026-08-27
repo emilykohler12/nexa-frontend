@@ -4,20 +4,23 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { api }        from '@/shared/utils/api'
 import { SERVICE_CATEGORIES } from '@/app/data/shared'
 
-interface Service {
-  id:          string
-  name:        string
-  categoryId:  string
-  description: string
-  duration:    number
-  price:       number
-  image:       string | null
-  status:      string
+export interface Service {
+  id:               string
+  name:             string
+  categoryId:       string
+  description:      string
+  duration:         number
+  price:            number
+  image:            string | null
+  status:           string
+  isCombo?:         boolean
+  comboServiceIds?: string[]
+  simultaneous?:    boolean
 }
 
 interface Props {
   selectedServiceId: string | null
-  onSelect: (serviceId: string) => void
+  onSelect: (service: Service) => void
 }
 
 export function ServiceStep({ selectedServiceId, onSelect }: Props) {
@@ -60,7 +63,7 @@ export function ServiceStep({ selectedServiceId, onSelect }: Props) {
   const ServiceButton = ({ service }: { service: Service }) => (
     <button
       key={service.id}
-      onClick={() => onSelect(service.id)}
+      onClick={() => onSelect(service)}
       className="flex items-center justify-between p-4 rounded-xl border text-left transition-all"
       style={{
         borderColor: selectedServiceId === service.id ? primaryColor : '#e5e5e5',
@@ -68,9 +71,19 @@ export function ServiceStep({ selectedServiceId, onSelect }: Props) {
       }}
     >
       <div>
-        <p className="font-semibold" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-          {service.name}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="font-semibold" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+            {service.name}
+          </p>
+          {service.isCombo && service.simultaneous && (service.comboServiceIds?.length ?? 0) >= 2 && (
+            <span
+              className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+              style={{ background: `${accentColor}20`, color: accentColor, fontFamily: 'var(--font-lato)' }}
+            >
+              Simultáneo
+            </span>
+          )}
+        </div>
         <p className="text-sm text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
           {service.duration} min
         </p>

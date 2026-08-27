@@ -1,5 +1,5 @@
 export type ActivityLevel   = 'info' | 'warning' | 'error' | 'success'
-export type ActivityModule  = 'appointments' | 'clients' | 'professionals' | 'services' | 'store' | 'payments' | 'config' | 'auth' | 'chatbot' | 'system'
+export type ActivityModule  = 'appointments' | 'clients' | 'professionals' | 'services' | 'store' | 'payments' | 'config' | 'auth' | 'system' | 'jobs'
 
 export interface ActivityLog {
   id:        string
@@ -20,8 +20,8 @@ export const ACTIVITY_MODULE_LABEL: Record<ActivityModule, string> = {
   payments:      'Pagos',
   config:        'Configuración',
   auth:          'Sesiones',
-  chatbot:       'Chatbot',
   system:        'Sistema',
+  jobs:          'Postulaciones',
 }
 
 export const ACTIVITY_LEVEL_CONFIG: Record<ActivityLevel, { label: string; color: string }> = {
@@ -29,4 +29,36 @@ export const ACTIVITY_LEVEL_CONFIG: Record<ActivityLevel, { label: string; color
   success: { label: 'Éxito',     color: '#4caf50' },
   warning: { label: 'Aviso',     color: '#d4af37' },
   error:   { label: 'Error',     color: '#e53935' },
+}
+
+// Colores por tipo de evento — más específico que el nivel genérico, así se
+// distingue de un vistazo un turno nuevo de uno cancelado, de una compra, etc.
+const MODULE_COLOR: Partial<Record<ActivityModule, string>> = {
+  clients:       '#5c6bc0', // índigo
+  professionals: '#8e24aa', // violeta
+  services:      '#0097a7', // celeste
+  payments:      '#d4af37', // dorado (marca)
+  config:        '#8d6e63', // marrón
+  auth:          '#607d8b', // gris azulado
+  system:        '#546e7a', // gris oscuro
+  jobs:          '#00897b', // verde azulado
+}
+
+export function getActivityColor(log: Pick<ActivityLog, 'module' | 'action' | 'level'>): string {
+  const action = log.action?.toLowerCase() ?? ''
+
+  if (log.module === 'appointments') {
+    if (action.includes('cancel'))               return '#e53935' // rojo
+    if (action.includes('reprogram'))             return '#1b5e20' // verde oscuro
+    if (action.includes('nuevo') || action.includes('reserv')) return '#43a047' // verde
+    return '#069494'
+  }
+
+  if (log.module === 'store') {
+    if (action.includes('compra'))  return '#f57c00' // naranja
+    if (action.includes('stock'))   return '#ef6c00'
+    return '#fb8c00'
+  }
+
+  return MODULE_COLOR[log.module] ?? ACTIVITY_LEVEL_CONFIG[log.level].color
 }

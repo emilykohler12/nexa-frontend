@@ -12,6 +12,10 @@ export interface AdminService {
   image: string | null;
   status: ServiceStatus;
   isCombo: boolean;
+  // Servicios que componen el combo (ids de otros servicios) y si se pueden
+  // realizar en simultáneo con profesionales distintos (ej: cejas + uñas).
+  comboServiceIds?: string[];
+  simultaneous?: boolean;
 }
 
 export type ServiceFormValues = Omit<AdminService, 'id'>;

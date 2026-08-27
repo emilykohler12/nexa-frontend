@@ -3,6 +3,7 @@ import { api } from '@/shared/utils/api';
 import { mockPaymentSettings } from '@/app/data/admin/settings/settings.data';
 import type { PaymentSettings } from '@/app/data/admin/settings/types';
 import { SectionCard, Field, SaveBar } from './SettingsShared';
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function PaymentsSection() {
   const [form, setForm]       = useState<PaymentSettings>(mockPaymentSettings);
@@ -17,7 +18,7 @@ export function PaymentsSection() {
     api.get<{ settings: PaymentSettings }>('/api/settings/payments')
       .then(res => setForm(res.data.settings))
       .catch((err: any) => {
-        setLoadError(err?.response?.data?.error ?? 'No se pudo cargar la configuración de pagos');
+        setLoadError(safeErrorMessage(err, 'No se pudo cargar la configuración de pagos'));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -35,7 +36,7 @@ export function PaymentsSection() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.error ?? 'Error al guardar los cambios');
+      setSaveError(safeErrorMessage(err, 'Error al guardar los cambios'));
     } finally {
       setSaving(false);
     }

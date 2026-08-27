@@ -56,8 +56,8 @@ export function DashboardPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Dashboard</h1>
-          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Métricas y rendimiento del negocio</p>
+          <h1 style={{ fontSize: '30px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Dashboard</h1>
+          <p style={{ fontSize: '17px', color: '#000', margin: 0 }}>Métricas y rendimiento del negocio</p>
         </div>
         <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: '10px', padding: '3px', gap: '2px' }}>
           {PERIOD_OPTIONS.map(({ key, label }) => (
@@ -66,7 +66,7 @@ export function DashboardPage() {
               onClick={() => setPeriod(key)}
               style={{
                 padding: '7px 18px', border: 'none', borderRadius: '8px',
-                fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                fontSize: '15px', fontWeight: 600, cursor: 'pointer',
                 fontFamily: "'Lato', sans-serif",
                 background: period === key ? '#069494' : 'transparent',
                 color: period === key ? '#fff' : '#000',
@@ -80,7 +80,7 @@ export function DashboardPage() {
       </div>
 
       {loading ? (
-        <p style={{ fontFamily: "'Lato', sans-serif", color: '#000', fontSize: '16px' }}>Cargando métricas...</p>
+        <p style={{ fontFamily: "'Lato', sans-serif", color: '#000', fontSize: '17px' }}>Cargando métricas...</p>
       ) : (
         <>
           {/* KPIs */}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import type { AdminClient, ClientGender } from './types'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const GENDER_LABEL: Record<ClientGender, string> = {
   female: 'Femenino', male: 'Masculino', other: 'Otro', prefer_not_to_say: 'Prefiero no decirlo',
@@ -48,7 +49,7 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
       })
       onCreated(res.data.client)
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'No se pudo crear el cliente. Intentá de nuevo.')
+      setError(safeErrorMessage(err, 'No se pudo crear el cliente. Intentá de nuevo.'))
     } finally {
       setSaving(false)
     }

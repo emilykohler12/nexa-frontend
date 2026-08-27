@@ -13,7 +13,7 @@ export function ServiceStats({ data }: Props) {
   if (data.length === 0) {
     return (
       <DashboardCard title="Servicios más realizados">
-        <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', padding: '24px 0', margin: 0 }}>
+        <p style={{ textAlign: 'center', color: '#000', fontSize: '15px', padding: '24px 0', margin: 0 }}>
           Todavía no hay datos de servicios
         </p>
       </DashboardCard>

@@ -15,7 +15,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
 
-  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','pending','finished','cancelled','no_show']
+  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished','cancelled','no_show']
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={onClose}>
@@ -49,7 +49,9 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
 
           {/* Info cargada por el cliente al reservar */}
           {appointment.details && (
-            appointment.details.allergies || appointment.details.accompanied || appointment.details.designPreference?.value
+            appointment.details.allergies || appointment.details.accompanied || appointment.details.designPreference?.value ||
+            appointment.details.hasOtherSalonPolish || appointment.details.isNailReconstruction || appointment.details.hairLength ||
+            appointment.details.wantsExtensions || appointment.details.skinType
           ) && (
             <Section title="Info del turno (cargada por el cliente)">
               {appointment.details.allergies && (
@@ -71,6 +73,21 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
                 ) : (
                   <Row><FileText size={14} /><span>Diseño: {appointment.details.designPreference.value}</span></Row>
                 )
+              )}
+              {appointment.details.hasOtherSalonPolish && (
+                <Row><AlertCircle size={14} color="#d4af37" /><span>Tiene esmaltado de otro salón para retirar</span></Row>
+              )}
+              {appointment.details.isNailReconstruction && (
+                <Row><FileText size={14} /><span>Reconstrucción de uñas{appointment.details.nailReconstructionCount ? ` (${appointment.details.nailReconstructionCount})` : ''}</span></Row>
+              )}
+              {appointment.details.hairLength && (
+                <Row><FileText size={14} /><span>Largo de cabello: {appointment.details.hairLength}</span></Row>
+              )}
+              {appointment.details.wantsExtensions && (
+                <Row><FileText size={14} /><span>Quiere extensiones</span></Row>
+              )}
+              {appointment.details.skinType && (
+                <Row><FileText size={14} /><span>Tipo de piel: {appointment.details.skinType}</span></Row>
               )}
             </Section>
           )}

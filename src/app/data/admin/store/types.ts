@@ -4,7 +4,7 @@ export type PaymentStatus  = 'pending' | 'paid' | 'refunded'
 export type MovementType   = 'entry' | 'exit'
 
 export interface StoreProduct {
-  id: string; name: string; brand: string; category: string
+  id: string; name: string; brand: string; category: string; description: string
   imageUrl: string | null; price: number; stock: number; minStock: number; status: ProductStatus
 }
 

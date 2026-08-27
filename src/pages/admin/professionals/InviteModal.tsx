@@ -4,6 +4,7 @@ import { X, Copy, Check } from 'lucide-react'
 import { api }            from '@/shared/utils/api'
 import { useTenant }      from '@/features/tenant/TenantContext'
 import './InviteModal.css'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 interface GeneratedLink {
   email:     string
@@ -64,7 +65,7 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
       setEmail('')
       setExpiresAt('')
     } catch (err: any) {
-      setApiError(err?.response?.data?.error ?? 'Error al generar la invitación')
+      setApiError(safeErrorMessage(err, 'Error al generar la invitación'))
     } finally {
       setLoading(false)
     }

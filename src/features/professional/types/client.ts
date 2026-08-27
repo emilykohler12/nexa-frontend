@@ -1,9 +1,11 @@
 export interface ClientVisit {
-  id:          string
-  date:        string
-  serviceName: string
-  price:       number
-  notes:       string
+  id:             string
+  date:           string
+  serviceName:    string
+  price:          number
+  notes:          string
+  status?:        string
+  internalNotes?: string | null
 }
 
 export interface ProfessionalClient {

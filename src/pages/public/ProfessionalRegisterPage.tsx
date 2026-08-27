@@ -5,6 +5,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '@/shared/utils/api'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import './ProfessionalRegisterPage.css'
 
 type State = 'loading' | 'valid' | 'invalid' | 'expired' | 'used'
@@ -114,8 +115,7 @@ function RegisterForm({ token, email, onSuccess }: RegisterFormProps) {
       })
       onSuccess()
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      setError(message ?? 'Error al completar el registro')
+      setError(safeErrorMessage(err, 'Error al completar el registro'))
     } finally {
       setLoading(false)
     }

@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react';
 import { api } from '@/shared/utils/api';
 import type { BusinessSettings } from '@/app/data/admin/settings/types';
 import { SectionCard, Field, SaveBar } from './SettingsShared';
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const EMPTY_SETTINGS: BusinessSettings = {
   name: '',
@@ -33,7 +34,7 @@ export function GeneralSection() {
         setPoliciesText((res.data.settings.policies ?? []).join('\n'));
       })
       .catch((err: any) => {
-        setLoadError(err?.response?.data?.error ?? 'No se pudo cargar la información del negocio');
+        setLoadError(safeErrorMessage(err, 'No se pudo cargar la información del negocio'));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -69,7 +70,7 @@ export function GeneralSection() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.error ?? 'Error al guardar los cambios');
+      setSaveError(safeErrorMessage(err, 'Error al guardar los cambios'));
     } finally {
       setSaving(false);
     }

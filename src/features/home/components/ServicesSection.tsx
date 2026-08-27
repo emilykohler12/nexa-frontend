@@ -7,6 +7,8 @@ import { api }                 from '@/shared/utils/api'
 import { SERVICE_CATEGORIES }  from '@/app/data/shared'
 import { ROUTES }              from '@/app/config/routes.config'
 import { FavoriteStarButton }  from '@/shared/ui/atoms/FavoriteStarButton'
+import { ServiceDetailModal }  from './ServiceDetailModal'
+import { setPendingBookingPreselect } from '@/shared/utils/pendingBookingPreselect'
 
 const COMBOS_ID = 'combos'
 
@@ -29,11 +31,13 @@ export function ServicesSection() {
   const [services,  setServices]          = useState<Service[]>([])
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
   const [loading, setLoading]             = useState(true)
+  const [detailService, setDetailService] = useState<Service | null>(null)
 
-  const handleReservar = () => {
+  const handleReservar = (serviceId?: string) => {
     if (isAuthenticated && user?.role === 'client') {
-      navigate(ROUTES.CLIENT_BOOK)
+      navigate(ROUTES.CLIENT_BOOK, { state: serviceId ? { serviceId } : undefined })
     } else {
+      if (serviceId) setPendingBookingPreselect({ serviceId })
       navigate(ROUTES.LOGIN)
     }
   }
@@ -162,10 +166,12 @@ export function ServicesSection() {
                 {filteredServices.map(service => (
                   <div
                     key={service.id}
+                    onClick={() => setDetailService(service)}
                     style={{
                       display: 'flex', flexDirection: 'column', height: '100%',
                       border: '1px solid #e5e5e5', borderRadius: '14px', padding: '20px',
                       background: '#fff', transition: 'border-color 0.2s, box-shadow 0.2s',
+                      cursor: 'pointer',
                     }}
                     onMouseEnter={e => {
                       e.currentTarget.style.borderColor = accentColor
@@ -176,17 +182,35 @@ export function ServicesSection() {
                       e.currentTarget.style.boxShadow = 'none'
                     }}
                   >
+                    <div style={{
+                      width: '100%', height: '140px', borderRadius: '10px', marginBottom: '14px',
+                      overflow: 'hidden', flexShrink: 0,
+                      background: `${primaryColor}10`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {service.image ? (
+                        <img
+                          src={service.image}
+                          alt={service.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '32px', color: `${primaryColor}50` }}>✂️</span>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', margin: '0 0 8px' }}>
                       <h4 style={{ fontFamily: 'var(--font-playfair)', color: primaryColor, margin: 0, fontSize: '1.1rem' }}>
                         {service.name}
                       </h4>
-                      <FavoriteStarButton
-                        type="service"
-                        id={service.id}
-                        name={service.name}
-                        detail={`${service.duration} min — $${Number(service.price).toLocaleString('es-AR')}`}
-                        color={accentColor}
-                      />
+                      <div onClick={e => e.stopPropagation()}>
+                        <FavoriteStarButton
+                          type="service"
+                          id={service.id}
+                          name={service.name}
+                          detail={`${service.duration} min — $${Number(service.price).toLocaleString('es-AR')}`}
+                          color={accentColor}
+                        />
+                      </div>
                     </div>
                     <p style={{ flex: 1, fontSize: '14px', color: '#666', margin: '0 0 14px' }}>
                       {service.description}
@@ -198,7 +222,7 @@ export function ServicesSection() {
                       </span>
                     </div>
                     <button
-                      onClick={handleReservar}
+                      onClick={e => { e.stopPropagation(); handleReservar(service.id) }}
                       style={{
                         width: '100%', padding: '10px', border: 'none', borderRadius: '8px',
                         background: primaryColor, color: '#fff', cursor: 'pointer',
@@ -222,6 +246,16 @@ export function ServicesSection() {
         <div style={{ padding: '32px', textAlign: 'center', background: '#fff' }}>
           <p style={{ color: '#aaa' }}>Seleccioná una categoría para ver los servicios</p>
         </div>
+      )}
+
+      {detailService && (
+        <ServiceDetailModal
+          service={detailService}
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          onClose={() => setDetailService(null)}
+          onReserve={() => { const id = detailService.id; setDetailService(null); handleReservar(id) }}
+        />
       )}
 
     </section>

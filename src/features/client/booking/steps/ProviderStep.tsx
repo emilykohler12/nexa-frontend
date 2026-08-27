@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
+import { Shuffle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api }        from '@/shared/utils/api'
+
+// Sentinel para "cualquier profesional disponible" — el backend resuelve
+// quién queda asignado (priorizando a quien tenga menos turnos).
+export const ANY_PROFESSIONAL_ID = 'any'
 
 interface Professional {
   id:        string
@@ -8,6 +13,7 @@ interface Professional {
   photo:     string | null
   specialty: string | null
   services?: string[]
+  status?:   string
 }
 
 interface Props {
@@ -32,11 +38,11 @@ export function ProviderStep({ serviceId, selectedProfessionalId, onSelect }: Pr
   if (!business) return null
   const { primaryColor } = business
 
-  // Filtro defensivo por si el backend todavía no filtra server-side por serviceId
-  // pero sí devuelve la lista de servicios de cada profesional.
-  const filteredProfessionals = serviceId
-    ? professionals.filter(p => !p.services || p.services.includes(serviceId))
-    : professionals
+  // Filtro defensivo por si el backend todavía no filtra server-side —
+  // ni por servicio, ni por profesionales desactivados/de vacaciones.
+  const filteredProfessionals = professionals
+    .filter(p => !p.status || p.status === 'active')
+    .filter(p => !serviceId || !p.services || p.services.includes(serviceId))
 
   if (loading) {
     return (
@@ -60,6 +66,28 @@ export function ProviderStep({ serviceId, selectedProfessionalId, onSelect }: Pr
         ¿Con quién querés atenderte?
       </h2>
       <div className="flex flex-col gap-3">
+        {filteredProfessionals.length > 1 && (
+          <button
+            onClick={() => onSelect(ANY_PROFESSIONAL_ID)}
+            className="flex items-center gap-4 p-4 rounded-xl border text-left transition-all"
+            style={{
+              borderColor: selectedProfessionalId === ANY_PROFESSIONAL_ID ? primaryColor : '#e5e5e5',
+              backgroundColor: selectedProfessionalId === ANY_PROFESSIONAL_ID ? `${primaryColor}10` : 'white',
+            }}
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${primaryColor}15` }}>
+              <Shuffle size={18} color={primaryColor} />
+            </div>
+            <div>
+              <p className="font-semibold" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+                Cualquiera
+              </p>
+              <p className="text-sm text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
+                Te asignamos quien tenga más disponibilidad
+              </p>
+            </div>
+          </button>
+        )}
         {filteredProfessionals.map(pro => (
           <button
             key={pro.id}

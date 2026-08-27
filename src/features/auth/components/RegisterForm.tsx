@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '../model/schemas'
 import { useRegister } from '../hooks/useAuth'
 import { useTenant }   from '@/features/tenant/TenantContext'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function RegisterForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
@@ -16,7 +17,7 @@ export function RegisterForm() {
   const [showPass, setShowPass] = useState(false)
 
   const errorMessage = registerUser.error
-    ? ((registerUser.error as any)?.response?.data?.error ?? 'Error al registrarse. Intentá de nuevo.')
+    ? safeErrorMessage(registerUser.error, 'Error al registrarse. Intentá de nuevo.')
     : null
 
   return (

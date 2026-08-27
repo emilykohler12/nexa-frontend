@@ -2,28 +2,62 @@ import { useState, useRef } from 'react'
 import { Upload, PenLine } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 // Categorías de servicio donde tiene sentido preguntar por un diseño de referencia
 const DESIGN_CATEGORIES = ['unas', 'cabello', 'rostro']
 
+const HAIR_LENGTH_OPTIONS = ['Corto', 'Media melena', 'Largo']
+const SKIN_TYPE_OPTIONS = ['Normal', 'Seca', 'Grasa', 'Mixta', 'Sensible']
+
 type DesignMode = 'image' | 'text'
+
+export interface AppointmentDetailsValue {
+  allergies:        string | null
+  accompanied:      boolean
+  companionName:    string | null
+  designPreference: { type: DesignMode; value: string | null } | null
+  // Uñas
+  hasOtherSalonPolish:     boolean | null
+  isNailReconstruction:    boolean | null
+  nailReconstructionCount: number | null
+  // Cabello
+  hairLength:      string | null
+  wantsExtensions: boolean | null
+  // Rostro
+  skinType: string | null
+}
 
 interface Props {
   appointmentId: string
   categoryId:    string
-  onDone:        () => void
+  initial?:      AppointmentDetailsValue | null
+  editMode?:     boolean
+  onDone:        (value: AppointmentDetailsValue) => void
+  onCancel?:     () => void
 }
 
-export function PostBookingDetails({ appointmentId, categoryId, onDone }: Props) {
+export function PostBookingDetails({ appointmentId, categoryId, initial, editMode, onDone, onCancel }: Props) {
   const { business } = useTenant()
   const showDesignQuestion = DESIGN_CATEGORIES.includes(categoryId)
+  const isNails  = categoryId === 'unas'
+  const isHair   = categoryId === 'cabello'
+  const isFace   = categoryId === 'rostro'
 
-  const [allergies, setAllergies]         = useState('')
-  const [accompanied, setAccompanied]     = useState<boolean | null>(null)
-  const [companionName, setCompanionName] = useState('')
-  const [designMode, setDesignMode]       = useState<DesignMode>('text')
-  const [designText, setDesignText]       = useState('')
-  const [designImage, setDesignImage]     = useState<string | null>(null)
+  const [allergies, setAllergies]         = useState(initial?.allergies ?? '')
+  const [accompanied, setAccompanied]     = useState<boolean | null>(initial?.accompanied ?? null)
+  const [companionName, setCompanionName] = useState(initial?.companionName ?? '')
+  const [designMode, setDesignMode]       = useState<DesignMode>(initial?.designPreference?.type ?? 'text')
+  const [designText, setDesignText]       = useState(initial?.designPreference?.type === 'text' ? initial.designPreference.value ?? '' : '')
+  const [designImage, setDesignImage]     = useState<string | null>(initial?.designPreference?.type === 'image' ? initial.designPreference.value : null)
+
+  const [hasOtherSalonPolish, setHasOtherSalonPolish]         = useState<boolean | null>(initial?.hasOtherSalonPolish ?? null)
+  const [isNailReconstruction, setIsNailReconstruction]       = useState<boolean | null>(initial?.isNailReconstruction ?? null)
+  const [nailReconstructionCount, setNailReconstructionCount] = useState(initial?.nailReconstructionCount ? String(initial.nailReconstructionCount) : '')
+  const [hairLength, setHairLength]           = useState<string | null>(initial?.hairLength ?? null)
+  const [wantsExtensions, setWantsExtensions] = useState<boolean | null>(initial?.wantsExtensions ?? null)
+  const [skinType, setSkinType]               = useState<string | null>(initial?.skinType ?? null)
+
   const [saving, setSaving]               = useState(false)
   const [error, setError]                 = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -42,18 +76,27 @@ export function PostBookingDetails({ appointmentId, categoryId, onDone }: Props)
   const handleSubmit = async () => {
     setSaving(true)
     setError(null)
+    const payload: AppointmentDetailsValue = {
+      allergies:       allergies.trim() || null,
+      accompanied:     accompanied ?? false,
+      companionName:   accompanied ? (companionName.trim() || null) : null,
+      designPreference: showDesignQuestion
+        ? { type: designMode, value: designMode === 'image' ? designImage : designText.trim() || null }
+        : null,
+      hasOtherSalonPolish:     isNails ? hasOtherSalonPolish : null,
+      isNailReconstruction:    isNails ? isNailReconstruction : null,
+      nailReconstructionCount: isNails && isNailReconstruction && nailReconstructionCount
+        ? Number(nailReconstructionCount) : null,
+      hairLength:      isHair ? hairLength : null,
+      wantsExtensions: isHair ? wantsExtensions : null,
+      skinType:        isFace ? skinType : null,
+    }
     try {
-      await api.patch(`/api/client/appointments/${appointmentId}/details`, {
-        allergies:       allergies.trim() || null,
-        accompanied:     accompanied ?? false,
-        companionName:   accompanied ? (companionName.trim() || null) : null,
-        designPreference: showDesignQuestion
-          ? { type: designMode, value: designMode === 'image' ? designImage : designText.trim() || null }
-          : null,
-      })
-      onDone()
+      await api.patch(`/api/client/appointments/${appointmentId}/details`, payload)
+      onDone(payload)
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'No se pudo guardar la información. Podés continuar igual.')
+      setError(safeErrorMessage(err, (editMode ? 'No se pudo guardar la información.' : 'No se pudo guardar la información. Podés continuar igual.')))
+      if (!editMode) onDone(payload)
     } finally {
       setSaving(false)
     }
@@ -62,7 +105,7 @@ export function PostBookingDetails({ appointmentId, categoryId, onDone }: Props)
   return (
     <div>
       <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-        Antes de terminar...
+        {editMode ? 'Editar información del turno' : 'Antes de terminar...'}
       </h2>
       <p className="text-sm text-gray-500 mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
         Esta información le sirve al profesional para prepararse mejor para tu turno. Es opcional.
@@ -114,6 +157,138 @@ export function PostBookingDetails({ appointmentId, categoryId, onDone }: Props)
             />
           )}
         </div>
+
+        {isNails && (
+          <>
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+                ¿Tenés esmaltado de otro salón que la profesional deba retirar?
+              </p>
+              <div className="flex gap-2">
+                {([{ v: true, l: 'Sí' }, { v: false, l: 'No' }] as const).map(opt => (
+                  <button
+                    key={String(opt.v)}
+                    onClick={() => setHasOtherSalonPolish(opt.v)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{
+                      background: hasOtherSalonPolish === opt.v ? primaryColor : '#f3f4f6',
+                      color: hasOtherSalonPolish === opt.v ? 'white' : '#555',
+                      fontFamily: 'var(--font-lato)',
+                    }}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+                ¿Es reconstrucción de uñas?
+              </p>
+              <div className="flex gap-2 mb-2">
+                {([{ v: true, l: 'Sí' }, { v: false, l: 'No' }] as const).map(opt => (
+                  <button
+                    key={String(opt.v)}
+                    onClick={() => setIsNailReconstruction(opt.v)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{
+                      background: isNailReconstruction === opt.v ? primaryColor : '#f3f4f6',
+                      color: isNailReconstruction === opt.v ? 'white' : '#555',
+                      fontFamily: 'var(--font-lato)',
+                    }}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+              {isNailReconstruction && (
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={nailReconstructionCount}
+                  onChange={e => setNailReconstructionCount(e.target.value)}
+                  placeholder="¿Cuántas uñas?"
+                  className="w-full px-4 py-3 rounded-xl border outline-none"
+                  style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
+                />
+              )}
+            </div>
+          </>
+        )}
+
+        {isHair && (
+          <>
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+                Largo del cabello
+              </p>
+              <div className="flex gap-2">
+                {HAIR_LENGTH_OPTIONS.map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setHairLength(opt)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{
+                      background: hairLength === opt ? primaryColor : '#f3f4f6',
+                      color: hairLength === opt ? 'white' : '#555',
+                      fontFamily: 'var(--font-lato)',
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+                ¿Querés extensiones?
+              </p>
+              <div className="flex gap-2">
+                {([{ v: true, l: 'Sí' }, { v: false, l: 'No' }] as const).map(opt => (
+                  <button
+                    key={String(opt.v)}
+                    onClick={() => setWantsExtensions(opt.v)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{
+                      background: wantsExtensions === opt.v ? primaryColor : '#f3f4f6',
+                      color: wantsExtensions === opt.v ? 'white' : '#555',
+                      fontFamily: 'var(--font-lato)',
+                    }}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {isFace && (
+          <div>
+            <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+              Tipo de piel
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SKIN_TYPE_OPTIONS.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSkinType(opt)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={{
+                    background: skinType === opt ? primaryColor : '#f3f4f6',
+                    color: skinType === opt ? 'white' : '#555',
+                    fontFamily: 'var(--font-lato)',
+                  }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {showDesignQuestion && (
           <div>
@@ -196,16 +371,18 @@ export function PostBookingDetails({ appointmentId, categoryId, onDone }: Props)
             className="w-full py-4 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60"
             style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
           >
-            {saving ? 'Guardando...' : 'Continuar'}
+            {saving ? 'Guardando...' : editMode ? 'Guardar cambios' : 'Continuar'}
           </button>
-          <button
-            onClick={onDone}
-            disabled={saving}
-            className="w-full py-2 text-sm text-center"
-            style={{ color: '#999', fontFamily: 'var(--font-lato)' }}
-          >
-            Omitir por ahora
-          </button>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              disabled={saving}
+              className="w-full py-2 text-sm text-center"
+              style={{ color: '#999', fontFamily: 'var(--font-lato)' }}
+            >
+              {editMode ? 'Cancelar' : 'Omitir por ahora'}
+            </button>
+          )}
         </div>
       </div>
     </div>

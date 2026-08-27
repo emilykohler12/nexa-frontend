@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { Plus, Edit2, Trash2, AlertTriangle } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Plus, Edit2, Trash2, AlertTriangle, Upload } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { STORE_CATEGORIES } from '@/app/data/admin/store/store.data'
 import type { StoreProduct, ProductStatus } from '@/app/data/admin/store/types'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const STATUS_LABEL: Record<ProductStatus, string> = {
   active:       'Activo',
@@ -26,20 +27,36 @@ export function ProductsTab({ products, onProductsChange }: Props) {
   const [editing, setEditing]   = useState<StoreProduct | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [error, setError]       = useState<string | null>(null)
+  const [notice, setNotice]     = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<StoreProduct | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const filtered = products.filter(p =>
     (!search   || p.name.toLowerCase().includes(search.toLowerCase())) &&
     (!category || p.category === category)
   )
 
-  const handleDelete = async (id: string) => {
-    const prev = products
-    onProductsChange(products.filter(p => p.id !== id))
+  const handleDelete = async () => {
+    if (!confirmDelete) return
+    const target = confirmDelete
+    setDeleting(true)
+    setError(null)
+    setNotice(null)
     try {
-      await api.delete(`/api/store/products/${id}`)
-    } catch {
-      onProductsChange(prev)
-      setError('No se pudo eliminar el producto')
+      const res = await api.delete<{ success: boolean; deactivated?: boolean; message?: string }>(`/api/store/products/${target.id}`)
+      if (res.data?.deactivated) {
+        // Tenía compras asociadas — el backend lo desactivó en vez de borrarlo,
+        // así que sigue existiendo (como inactivo), no se saca de la lista.
+        onProductsChange(products.map(p => p.id === target.id ? { ...p, status: 'inactive' } : p))
+        setNotice(res.data.message ?? `"${target.name}" tenía ventas registradas, así que se desactivó en vez de eliminarse.`)
+      } else {
+        onProductsChange(products.filter(p => p.id !== target.id))
+      }
+      setConfirmDelete(null)
+    } catch (err: any) {
+      setError(safeErrorMessage(err, 'No se pudo eliminar el producto'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -81,6 +98,11 @@ export function ProductsTab({ products, onProductsChange }: Props) {
       </div>
 
       {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
+      {notice && (
+        <p style={{ color: '#8a6800', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+          {notice}
+        </p>
+      )}
 
       {showForm && editing && (
         <ProductForm product={editing} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} />
@@ -106,8 +128,10 @@ export function ProductsTab({ products, onProductsChange }: Props) {
                       width: '44px', height: '44px', borderRadius: '10px',
                       background: 'rgba(6,148,148,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '22px', flexShrink: 0,
-                    }}>🛍️</div>
+                      fontSize: '22px', flexShrink: 0, overflow: 'hidden',
+                    }}>
+                      {p.imageUrl ? <img src={p.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🛍️'}
+                    </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 700, color: '#000', fontSize: '16px' }}>{p.name}</p>
                       <p style={{ margin: 0, fontSize: '13px', color: '#000' }}>{p.brand}</p>
@@ -133,7 +157,7 @@ export function ProductsTab({ products, onProductsChange }: Props) {
                 <td style={{ ...tdStyle, textAlign: 'right' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                     <IconBtn onClick={() => { setEditing(p); setShowForm(true) }} aria-label="Editar"><Edit2 size={15} /></IconBtn>
-                    <IconBtn onClick={() => handleDelete(p.id)} aria-label="Eliminar" danger><Trash2 size={15} /></IconBtn>
+                    <IconBtn onClick={() => setConfirmDelete(p)} aria-label="Eliminar" danger><Trash2 size={15} /></IconBtn>
                   </div>
                 </td>
               </tr>
@@ -141,13 +165,51 @@ export function ProductsTab({ products, onProductsChange }: Props) {
           </tbody>
         </table>
       </div>
+
+      {confirmDelete && (
+        <div
+          onClick={() => !deleting && setConfirmDelete(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+          >
+            <p style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#000' }}>¿Eliminar producto?</p>
+            <p style={{ margin: '0 0 20px', fontSize: '15px', color: '#000' }}>
+              Se va a eliminar <strong>{confirmDelete.name}</strong> de la tienda. Esta acción no se puede deshacer.
+            </p>
+            {error && <p style={{ margin: '0 0 14px', fontSize: '14px', color: '#e53935', fontWeight: 600 }}>{error}</p>}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmDelete(null)} disabled={deleting} style={ghostBtnStyle}>Cancelar</button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ ...primaryBtnStyle, background: '#e53935' }}
+              >
+                {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 function ProductForm({ product, onSave, onCancel }: { product: StoreProduct; onSave: (p: StoreProduct) => void; onCancel: () => void }) {
   const [form, setForm] = useState(product)
+  const fileRef = useRef<HTMLInputElement>(null)
   const set = (k: keyof StoreProduct, v: unknown) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => set('imageUrl', reader.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   return (
     <div style={{ background: '#fafafa', border: '1px solid #e0e0e0', borderRadius: '14px', padding: '24px' }}>
@@ -162,7 +224,7 @@ function ProductForm({ product, onSave, onCancel }: { product: StoreProduct; onS
             {STORE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
-        <Field label="Precio ($)"><input type="number" min={0} value={form.price} onChange={e => set('price', Number(e.target.value))} style={inputStyle} /></Field>
+        <Field label="Precio ($)"><input type="number" min={0} value={form.price === 0 ? '' : form.price} onChange={e => set('price', e.target.value === '' ? '' : Number(e.target.value))} style={inputStyle} /></Field>
         <Field label="Stock"><input type="number" min={0} value={form.stock} onChange={e => set('stock', Number(e.target.value))} style={inputStyle} /></Field>
         <Field label="Estado">
           <select value={form.status} onChange={e => set('status', e.target.value as ProductStatus)} style={inputStyle}>
@@ -172,16 +234,62 @@ function ProductForm({ product, onSave, onCancel }: { product: StoreProduct; onS
           </select>
         </Field>
       </div>
+
+      <div style={{ marginTop: '14px' }}>
+        <Field label="Descripción">
+          <textarea
+            value={form.description}
+            onChange={e => set('description', e.target.value)}
+            rows={3}
+            placeholder="Qué es, para qué sirve, cómo se usa..."
+            style={{ ...inputStyle, resize: 'vertical' }}
+          />
+        </Field>
+      </div>
+
+      <div style={{ marginTop: '14px' }}>
+        <Field label="Imagen">
+          <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+            <div
+              onClick={() => fileRef.current?.click()}
+              style={{
+                width: '72px', height: '72px', borderRadius: '10px', flexShrink: 0,
+                border: '2px dashed #ccc', background: '#fff', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+              }}
+            >
+              {form.imageUrl ? (
+                <img src={form.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <Upload size={18} color="#999" />
+              )}
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleImageFile} style={{ display: 'none' }} />
+              <button type="button" onClick={() => fileRef.current?.click()} style={{ ...ghostBtnStyle, padding: '8px 16px', fontSize: '14px', alignSelf: 'flex-start' }}>
+                {form.imageUrl ? 'Cambiar imagen' : 'Subir imagen'}
+              </button>
+              <input
+                value={form.imageUrl ?? ''}
+                onChange={e => set('imageUrl', e.target.value || null)}
+                placeholder="o pegá una URL de imagen (https://...)"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+        </Field>
+      </div>
+
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '18px' }}>
         <button onClick={onCancel} style={ghostBtnStyle}>Cancelar</button>
-        <button onClick={() => onSave(form)} style={primaryBtnStyle}>Guardar</button>
+        <button onClick={() => onSave({ ...form, price: Number(form.price) || 0 })} style={primaryBtnStyle}>Guardar</button>
       </div>
     </div>
   )
 }
 
 const emptyProduct = (): StoreProduct => ({
-  id: '', name: '', brand: '', category: STORE_CATEGORIES[0],
+  id: '', name: '', brand: '', category: STORE_CATEGORIES[0], description: '',
   imageUrl: null, price: 0, stock: 0, minStock: 0, status: 'active',
 })
 

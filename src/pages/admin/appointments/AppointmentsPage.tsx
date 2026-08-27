@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { ProfessionalFilter } from './ProfessionalFilter'
 import { AppointmentModal }   from './AppointmentModal'
+import { CreateAppointmentModal } from './CreateAppointmentModal'
 import { CalendarWeek }       from './CalendarWeek'
 import { CalendarMonth }      from './CalendarMonth'
 import { CalendarDay }        from './CalendarDay'
 import type { Appointment, Professional } from './types'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 type ViewMode = 'month' | 'week' | 'day'
 
@@ -23,7 +25,7 @@ function getWeekStart(date: Date): Date {
   return d
 }
 
-interface ApiProfessional { id: string; name: string }
+interface ApiProfessional { id: string; name: string; status?: string }
 
 export function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -33,13 +35,18 @@ export function AppointmentsPage() {
   const [filterCollapsed, setFilterCollapsed] = useState(false)
   const [view, setView]       = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [showCreate, setShowCreate] = useState(false)
 
   useEffect(() => {
     api.get<{ professionals: ApiProfessional[] }>('/api/professionals')
       .then(res => {
-        const list = (res.data.professionals ?? []).map((p, i) => ({
-          id: p.id, name: p.name, color: PROFESSIONAL_COLORS[i % PROFESSIONAL_COLORS.length],
-        }))
+        // Los profesionales desactivados no toman turnos nuevos — no tiene sentido
+        // que aparezcan como opción en el calendario de Turnos.
+        const list = (res.data.professionals ?? [])
+          .filter(p => !p.status || p.status === 'active')
+          .map((p, i) => ({
+            id: p.id, name: p.name, color: PROFESSIONAL_COLORS[i % PROFESSIONAL_COLORS.length],
+          }))
         setProfessionals(list)
         setSelectedIds(list.map(p => p.id))
       })
@@ -67,7 +74,9 @@ export function AppointmentsPage() {
     if (view === 'week') {
       const ws = getWeekStart(currentDate)
       const we = new Date(ws); we.setDate(ws.getDate() + 6)
-      return `${ws.getDate()} ${MONTH_NAMES[ws.getMonth()].slice(0,3)} — ${we.getDate()} ${MONTH_NAMES[we.getMonth()].slice(0,3)} ${we.getFullYear()}`
+      const sameMonth = ws.getMonth() === we.getMonth()
+      const start = sameMonth ? `${ws.getDate()}` : `${ws.getDate()} ${MONTH_NAMES[ws.getMonth()].slice(0,3)}`
+      return `${start} – ${we.getDate()} ${MONTH_NAMES[we.getMonth()].slice(0,3)} ${we.getFullYear()}`
     }
     return currentDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
@@ -80,7 +89,7 @@ export function AppointmentsPage() {
       setAppointments(p => p.map(a => a.id === id ? (res.data.appointment ?? { ...a, status }) : a))
       return null
     } catch (err: any) {
-      return err?.response?.data?.error ?? 'No se pudo actualizar el turno.'
+      return safeErrorMessage(err, 'No se pudo actualizar el turno.')
     }
   }
 
@@ -98,20 +107,35 @@ export function AppointmentsPage() {
         servicePrice:       upd.servicePrice,
         clientNotes:        upd.clientNotes,
         professionalNotes:  upd.professionalNotes,
+        start:              upd.start,
+        end:                upd.end,
       })
       setAppointments(p => p.map(a => a.id === upd.id ? (res.data.appointment ?? upd) : a))
       return null
     } catch (err: any) {
-      return err?.response?.data?.error ?? 'No se pudo guardar el turno.'
+      return safeErrorMessage(err, 'No se pudo guardar el turno.')
     }
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
 
-      <div>
-        <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Turnos</h1>
-        <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Visualizá y gestioná todos los turnos</p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Turnos</h1>
+          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Visualizá y gestioná todos los turnos</p>
+        </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '7px',
+            padding: '10px 20px', border: 'none', borderRadius: '9px',
+            background: '#069494', color: '#fff', cursor: 'pointer',
+            fontSize: '15px', fontWeight: 700, fontFamily: "'Lato', sans-serif",
+          }}
+        >
+          <Plus size={16} /> Crear turno manual
+        </button>
       </div>
 
       <div style={{ display: 'flex', background: '#fff', border: '1px solid #e8e8e8', borderRadius: '16px', overflow: 'hidden', flex: 1, minHeight: '600px', boxShadow: '0 4px 24px rgba(6,148,148,0.06)' }}>
@@ -134,7 +158,7 @@ export function AppointmentsPage() {
               <ToolbarBtn onClick={() => navigate(1)}><ChevronRight size={16} /></ToolbarBtn>
               <ToolbarBtn onClick={goToday}>Hoy</ToolbarBtn>
             </div>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#000', flex: 1, textAlign: 'center', textTransform: 'capitalize' }}>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#000', flex: 1, textAlign: 'center', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
               {getTitle()}
             </span>
             <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '8px', padding: '3px', gap: '2px' }}>
@@ -163,6 +187,17 @@ export function AppointmentsPage() {
           onCancel={handleCancel}
           onReactivate={handleReactivate}
           onSave={handleSave}
+        />
+      )}
+
+      {showCreate && (
+        <CreateAppointmentModal
+          professionals={professionals}
+          onClose={() => setShowCreate(false)}
+          onCreated={created => {
+            setAppointments(prev => [...prev, created])
+            setShowCreate(false)
+          }}
         />
       )}
     </div>

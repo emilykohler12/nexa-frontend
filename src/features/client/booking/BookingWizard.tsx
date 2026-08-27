@@ -1,25 +1,45 @@
 //src/features/client/booking/BookingWizard.tsx
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { BOOKING_STEPS, EMPTY_BOOKING } from './types'
 import type { BookingSelection } from './types'
 import { ServiceStep } from './steps/ServiceStep'
+import type { Service } from './steps/ServiceStep'
 import { ProviderStep } from './steps/ProviderStep'
 import { DateTimeStep } from './steps/DateTimeStep'
 import { ConfirmationStep } from './steps/ConfirmationStep'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
 import { PaymentStep } from './PaymentStep'
+import { ComboBookingFlow } from './ComboBookingFlow'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+
+function isMultiComponentCombo(service: Service): boolean {
+  return Boolean(service.isCombo && (service.comboServiceIds?.length ?? 0) >= 2)
+}
+
+interface NavState { serviceId?: string; professionalId?: string }
 
 export function BookingWizard() {
   const { business } = useTenant()
   const navigate = useNavigate()
-  const [stepIndex, setStepIndex] = useState(0)
-  const [selection, setSelection] = useState<BookingSelection>(EMPTY_BOOKING)
+  const location = useLocation()
+  const prefill = (location.state as NavState | null) ?? null
+  const [stepIndex, setStepIndex] = useState(() => {
+    // "Reservar de nuevo" desde historial/cancelados manda servicio Y
+    // profesional juntos — en ese caso salteamos directo a fecha/hora.
+    if (prefill?.serviceId && prefill?.professionalId) return BOOKING_STEPS.findIndex(s => s.id === 'datetime')
+    return prefill?.serviceId ? 1 : 0
+  })
+  const [selection, setSelection] = useState<BookingSelection>({
+    ...EMPTY_BOOKING,
+    serviceId: prefill?.serviceId ?? null,
+    professionalId: prefill?.professionalId ?? null,
+  })
   const [paymentSummary, setPaymentSummary] = useState<ConfirmedSummary | null>(null)
+  const [comboService, setComboService] = useState<Service | null>(null)
 
   if (!business) return null
   const { primaryColor } = business
@@ -35,7 +55,15 @@ export function BookingWizard() {
     else setStepIndex(i => i - 1)
   }
 
-  const goNext = () => setStepIndex(i => i + 1)
+  const goNext = () => {
+    // Si ya venís con un profesional pre-elegido (desde la ficha del profesional
+    // en el home), no hace falta pasar por el paso de profesional de nuevo.
+    if (step.id === 'service' && selection.professionalId) {
+      setStepIndex(BOOKING_STEPS.findIndex(s => s.id === 'datetime'))
+      return
+    }
+    setStepIndex(i => i + 1)
+  }
 
   const handleExpire = () => {
     setPaymentSummary(null)
@@ -49,6 +77,18 @@ export function BookingWizard() {
     return (
       <div className="w-full px-8 py-8" style={{ boxSizing: 'border-box' }}>
         <PaymentStep summary={paymentSummary} onExpire={handleExpire} onSuccess={handlePaymentSuccess} />
+      </div>
+    )
+  }
+
+  if (comboService) {
+    return (
+      <div className="w-full px-8 py-8" style={{ boxSizing: 'border-box' }}>
+        <ComboBookingFlow
+          combo={comboService}
+          onBack={() => setComboService(null)}
+          onSuccess={handlePaymentSuccess}
+        />
       </div>
     )
   }
@@ -83,7 +123,16 @@ export function BookingWizard() {
       {step.id === 'service' && (
         <ServiceStep
           selectedServiceId={selection.serviceId}
-          onSelect={id => setSelection(s => ({ ...s, serviceId: id, professionalId: id !== s.serviceId ? null : s.professionalId }))}
+          onSelect={service => {
+            if (isMultiComponentCombo(service)) { setComboService(service); return }
+            // Solo resetea el profesional si ya había un servicio elegido antes y lo
+            // están cambiando por otro — así no se pierde un profesional pre-elegido
+            // (viniendo desde su ficha en el home) en la primera selección.
+            setSelection(s => {
+              const isGenuineChange = s.serviceId !== null && service.id !== s.serviceId
+              return { ...s, serviceId: service.id, professionalId: isGenuineChange ? null : s.professionalId }
+            })
+          }}
         />
       )}
       {step.id === 'professional' && (
@@ -96,6 +145,7 @@ export function BookingWizard() {
       {step.id === 'datetime' && (
         <DateTimeStep
           professionalId={selection.professionalId}
+          serviceId={selection.serviceId}
           selectedDate={selection.date}
           selectedTime={selection.time}
           onSelectDate={date => setSelection(s => ({ ...s, date, time: null }))}

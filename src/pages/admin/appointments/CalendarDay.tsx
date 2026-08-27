@@ -1,4 +1,5 @@
 import type { Appointment, Professional } from './types'
+import { groupByCombo } from '@/shared/utils/comboGroup'
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8)
 
@@ -40,26 +41,36 @@ export function CalendarDay({ appointments, professionals, day, onEventClick }: 
                   {String(hour).padStart(2, '0')}:00
                 </td>
                 <td style={{ borderTop: '1px solid #f0f0f0', padding: '4px', height: '64px', verticalAlign: 'top' }}>
-                  {appts.map(a => (
-                    <button
-                      key={a.id}
-                      onClick={() => onEventClick(a)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        width: '100%', border: 'none', borderRadius: '6px',
-                        padding: '7px 12px', marginBottom: '3px',
-                        background: `${colorFor(a)}22`,
-                        borderLeft: `3px solid ${colorFor(a)}`,
-                        cursor: 'pointer', textAlign: 'left',
-                        fontFamily: "'Lato', sans-serif",
-                      }}
+                  {groupByCombo(appts).map((group, gi) => (
+                    <div
+                      key={group.comboGroupId ?? gi}
+                      style={group.items.length > 1 ? { border: '1px dashed #d4af37', borderRadius: '8px', padding: '3px', marginBottom: '3px' } : undefined}
                     >
-                      <span style={{ fontSize: '15px', fontWeight: 600, color: '#000', flex: 1 }}>
-                        {a.clientName}
-                      </span>
-                      <span style={{ fontSize: '14px', color: '#000', fontWeight: 500 }}>{a.serviceName}</span>
-                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: colorFor(a) }} />
-                    </button>
+                      {group.items.length > 1 && (
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#8a6800', padding: '0 4px 2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Combo</div>
+                      )}
+                      {group.items.map(a => (
+                        <button
+                          key={a.id}
+                          onClick={() => onEventClick(a)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            width: '100%', border: 'none', borderRadius: '6px',
+                            padding: '7px 12px', marginBottom: '3px',
+                            background: `${colorFor(a)}22`,
+                            borderLeft: `3px solid ${colorFor(a)}`,
+                            cursor: 'pointer', textAlign: 'left',
+                            fontFamily: "'Lato', sans-serif",
+                          }}
+                        >
+                          <span style={{ fontSize: '15px', fontWeight: 600, color: '#000', flex: 1 }}>
+                            {a.clientName}
+                          </span>
+                          <span style={{ fontSize: '14px', color: '#000', fontWeight: 500 }}>{a.serviceName}</span>
+                          <span style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: colorFor(a) }} />
+                        </button>
+                      ))}
+                    </div>
                   ))}
                 </td>
               </tr>

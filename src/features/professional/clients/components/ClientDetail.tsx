@@ -1,4 +1,5 @@
-import { ArrowLeft, Phone, Mail, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, Phone, Mail, AlertCircle, ChevronDown, FileText } from 'lucide-react'
 import type { ProfessionalClient } from '@/features/professional/types/client'
 
 interface Props {
@@ -9,7 +10,12 @@ interface Props {
 }
 
 export function ClientDetail({ client, primary, accent, onBack }: Props) {
-  const totalRevenue = client.visits.reduce((s, v) => s + v.price, 0)
+  const [expandedVisit, setExpandedVisit] = useState<string | null>(null)
+
+  // Solo cuenta como "visita" un turno ya finalizado — uno próximo/confirmado
+  // todavía no pasó, no debería sumar a las visitas ni a la facturación.
+  const visits = client.visits.filter(v => !v.status || v.status === 'finished')
+  const totalRevenue = visits.reduce((s, v) => s + v.price, 0)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
@@ -38,7 +44,7 @@ export function ClientDetail({ client, primary, accent, onBack }: Props) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
         {[
-          { label: 'Visitas totales',    value: client.visits.length },
+          { label: 'Visitas totales',    value: visits.length },
           { label: 'Facturación total',  value: `$${totalRevenue.toLocaleString('es-AR')}` },
           { label: 'Cancelaciones',      value: client.cancellations },
         ].map(kpi => (
@@ -60,18 +66,37 @@ export function ClientDetail({ client, primary, accent, onBack }: Props) {
       {/* Historial */}
       <div style={{ background: '#fff', border: '1px solid #eeeeee', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>
-          Historial de visitas ({client.visits.length})
+          Historial de visitas ({visits.length})
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {client.visits.map(v => (
-            <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#f9f9f9', borderRadius: '10px' }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: '15px', color: '#000' }}>{v.serviceName}</p>
-                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#000' }}>{new Date(v.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          {visits.map(v => {
+            const isExpanded = expandedVisit === v.id
+            return (
+              <div key={v.id} style={{ background: '#f9f9f9', borderRadius: '10px', overflow: 'hidden' }}>
+                <div
+                  onClick={() => setExpandedVisit(isExpanded ? null : v.id)}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', cursor: v.internalNotes ? 'pointer' : 'default' }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '15px', color: '#000' }}>{v.serviceName}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#000' }}>{new Date(v.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: accent }}>${v.price.toLocaleString('es-AR')}</span>
+                    {v.internalNotes && (
+                      <ChevronDown size={16} color="#999" style={{ transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+                    )}
+                  </div>
+                </div>
+                {isExpanded && v.internalNotes && (
+                  <div style={{ padding: '0 14px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <FileText size={14} color={primary} style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <p style={{ margin: 0, fontSize: '14px', color: '#333', lineHeight: 1.5 }}>{v.internalNotes}</p>
+                  </div>
+                )}
               </div>
-              <span style={{ fontSize: '18px', fontWeight: 700, color: accent }}>${v.price.toLocaleString('es-AR')}</span>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

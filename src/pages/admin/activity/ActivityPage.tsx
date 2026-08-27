@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { api } from '@/shared/utils/api'
-import { ACTIVITY_MODULE_LABEL, ACTIVITY_LEVEL_CONFIG } from '@/app/data/admin/activity.data'
+import { ACTIVITY_MODULE_LABEL, ACTIVITY_LEVEL_CONFIG, getActivityColor } from '@/app/data/admin/activity.data'
 import type { ActivityLog, ActivityModule, ActivityLevel } from '@/app/data/admin/activity.data'
 import './ActivityPage.css'
 
+// Siempre día/mes/año y hora 24hs (00:00–23:59), sin depender de que el
+// navegador/locale decida mostrar a. m./p. m.
 function formatTimestamp(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export function ActivityPage() {
@@ -26,7 +30,13 @@ export function ActivityPage() {
   }, [])
 
   const filtered = useMemo(() => logs.filter(log => {
-    if (filterUser   && !log.user.toLowerCase().includes(filterUser.toLowerCase())) return false
+    if (filterUser) {
+      const q = filterUser.toLowerCase()
+      const matches = (log.user ?? '').toLowerCase().includes(q)
+        || (log.action ?? '').toLowerCase().includes(q)
+        || (log.detail ?? '').toLowerCase().includes(q)
+      if (!matches) return false
+    }
     if (filterDate   && !log.timestamp.startsWith(filterDate)) return false
     if (filterModule && log.module !== filterModule) return false
     if (filterLevel  && log.level  !== filterLevel)  return false
@@ -46,8 +56,8 @@ export function ActivityPage() {
 
       <div className="activity-filters">
         <div className="activity-filter-field">
-          <span className="activity-filter-label">Usuario</span>
-          <input className="activity-input" placeholder="Buscar por usuario..." value={filterUser} onChange={e => setFilterUser(e.target.value)} />
+          <span className="activity-filter-label">Buscar</span>
+          <input className="activity-input" placeholder="Usuario, acción o detalle..." value={filterUser} onChange={e => setFilterUser(e.target.value)} />
         </div>
         <div className="activity-filter-field">
           <span className="activity-filter-label">Fecha</span>
@@ -89,14 +99,14 @@ export function ActivityPage() {
       ) : (
         <div className="activity-list">
           {filtered.map(log => {
-            const level  = ACTIVITY_LEVEL_CONFIG[log.level]
+            const color  = getActivityColor(log)
             const module = ACTIVITY_MODULE_LABEL[log.module]
             const isOpen = expanded === log.id
             return (
               <div key={log.id} className="activity-row">
                 <div className="activity-row-main" onClick={() => setExpanded(isOpen ? null : log.id)}>
-                  <span className="activity-dot" style={{ background: level.color }} />
-                  <span className="activity-module-pill" style={{ background: `${level.color}15`, color: level.color }}>
+                  <span className="activity-dot" style={{ background: color }} />
+                  <span className="activity-module-pill" style={{ background: `${color}15`, color: color }}>
                     {module}
                   </span>
                   <span className="activity-time">{formatTimestamp(log.timestamp)}</span>

@@ -8,6 +8,8 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { api } from '@/shared/utils/api'
 import { ROUTES } from '@/app/config/routes.config'
 import { FavoriteStarButton } from '@/shared/ui/atoms/FavoriteStarButton'
+import { ProfessionalDetailModal } from './ProfessionalDetailModal'
+import { setPendingBookingPreselect } from '@/shared/utils/pendingBookingPreselect'
 
 interface Professional {
   id:         string
@@ -19,6 +21,9 @@ interface Professional {
   facebook:   string | null
   tiktok:     string | null
   twitter:    string | null
+  services?:  string[]
+  status?:    string
+  certifications?: string | null
 }
 
 const SOCIAL_ICONS = [
@@ -34,10 +39,13 @@ export function ProfessionalsSection() {
   const navigate = useNavigate()
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [loading, setLoading]             = useState(true)
+  const [detailPro, setDetailPro]         = useState<Professional | null>(null)
 
   useEffect(() => {
     api.get<{ professionals: Professional[] }>('/api/professional/public')
-      .then(res => setProfessionals(res.data.professionals))
+      // Defensivo: si el backend todavía no filtra desactivados/vacaciones del
+      // lado del servidor, al menos no se muestran en la página pública.
+      .then(res => setProfessionals((res.data.professionals ?? []).filter(p => !p.status || p.status === 'active')))
       .catch(() => setProfessionals([]))
       .finally(() => setLoading(false))
   }, [])
@@ -46,10 +54,11 @@ export function ProfessionalsSection() {
 
   const { professionalsTitle, professionalsSubtitle, primaryColor, accentColor } = business
 
-  const handleReservar = () => {
+  const handleReservar = (professionalId?: string) => {
     if (isAuthenticated && user?.role === 'client') {
-      navigate(ROUTES.CLIENT_BOOK)
+      navigate(ROUTES.CLIENT_BOOK, { state: professionalId ? { professionalId } : undefined })
     } else {
+      if (professionalId) setPendingBookingPreselect({ professionalId })
       navigate(ROUTES.LOGIN)
     }
   }
@@ -96,13 +105,14 @@ export function ProfessionalsSection() {
               return (
                 <div
                   key={pro.id}
-                  className="relative flex flex-col items-center text-center border rounded-2xl p-6 hover:shadow-xl transition-all duration-300"
+                  onClick={() => setDetailPro(pro)}
+                  className="relative flex flex-col items-center text-center border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
                   style={{ borderColor: '#e5e5e5' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = accentColor)}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e5e5')}
                 >
                   {/* Favorito */}
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-3 right-3" onClick={e => e.stopPropagation()}>
                     <FavoriteStarButton
                       type="professional"
                       id={pro.id}
@@ -163,7 +173,7 @@ export function ProfessionalsSection() {
 
                   {/* Redes sociales */}
                   {socialLinks.length > 0 && (
-                    <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="flex items-center justify-center gap-3 mb-4" onClick={e => e.stopPropagation()}>
                       {socialLinks.map(({ key, Icon }) => (
                         <a
                           key={key}
@@ -182,7 +192,7 @@ export function ProfessionalsSection() {
 
                   {/* Botón */}
                   <button
-                    onClick={handleReservar}
+                    onClick={e => { e.stopPropagation(); handleReservar(pro.id) }}
                     className="w-full py-2 rounded-lg text-white text-sm transition-all duration-300 hover:opacity-90 mt-auto"
                     style={{
                       backgroundColor: primaryColor,
@@ -197,6 +207,16 @@ export function ProfessionalsSection() {
           </div>
         )}
       </div>
+
+      {detailPro && (
+        <ProfessionalDetailModal
+          professional={detailPro}
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          onClose={() => setDetailPro(null)}
+          onReserve={() => { const id = detailPro.id; setDetailPro(null); handleReservar(id) }}
+        />
+      )}
     </section>
   )
 }

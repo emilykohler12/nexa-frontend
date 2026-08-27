@@ -22,6 +22,12 @@ export interface AppointmentDetails {
   accompanied:      boolean;
   companionName:    string | null;
   designPreference: DesignPreference | null;
+  hasOtherSalonPolish?:     boolean | null;
+  isNailReconstruction?:    boolean | null;
+  nailReconstructionCount?: number | null;
+  hairLength?:      string | null;
+  wantsExtensions?: boolean | null;
+  skinType?:        string | null;
 }
 
 export interface CalendarAppointment {
@@ -44,5 +50,6 @@ export interface CalendarAppointment {
   backgroundColor?: string;
   borderColor?: string;
   details?: AppointmentDetails | null;
+  comboGroupId?: string | null;
 }
 

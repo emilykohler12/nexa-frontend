@@ -17,6 +17,7 @@ export function ServicesPage() {
   const [isFormOpen,     setIsFormOpen]     = useState(false)
   const [deletingService, setDeletingService] = useState<AdminService | null>(null)
   const [error,          setError]          = useState<string | null>(null)
+  const [notice,         setNotice]         = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ services: AdminService[] }>('/api/services/all')
@@ -50,9 +51,18 @@ export function ServicesPage() {
 
   const confirmDelete = async () => {
     if (!deletingService) return
+    setError(null)
+    setNotice(null)
     try {
-      await api.delete(`/api/services/${deletingService.id}`)
-      setServices(prev => prev.filter(s => s.id !== deletingService.id))
+      const res = await api.delete<{ success: boolean; deactivated?: boolean; message?: string }>(`/api/services/${deletingService.id}`)
+      if (res.data?.deactivated) {
+        // Tenía turnos asociados — el backend lo desactivó en vez de borrarlo,
+        // así que sigue existiendo (como inactivo), no se saca de la lista.
+        setServices(prev => prev.map(s => s.id === deletingService.id ? { ...s, status: 'inactive' } : s))
+        setNotice(res.data.message ?? `"${deletingService.name}" tenía turnos registrados, así que se desactivó en vez de eliminarse.`)
+      } else {
+        setServices(prev => prev.filter(s => s.id !== deletingService.id))
+      }
     } catch {
       setError('Error al eliminar el servicio')
     } finally {
@@ -84,6 +94,11 @@ export function ServicesPage() {
       </div>
 
       {error && <p className="services-error">{error}</p>}
+      {notice && (
+        <p style={{ color: '#8a6800', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '8px', padding: '10px 14px', fontSize: '15px', fontWeight: 600, margin: 0 }}>
+          {notice}
+        </p>
+      )}
 
       {loading ? (
         <p className="services-loading">Cargando servicios...</p>
@@ -101,6 +116,7 @@ export function ServicesPage() {
         <ServiceFormModal
           service={editingService}
           categories={SERVICE_CATEGORIES}
+          allServices={services}
           onSave={handleSave}
           onClose={() => setIsFormOpen(false)}
         />

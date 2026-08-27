@@ -14,11 +14,13 @@ export interface DayRange {
   end: string
 }
 
-export type WeeklyAvailability = Record<WeekDay, DayRange | null>
+// Varios rangos por día para poder dejar huecos (ej: 08–12 y 14–20 con un
+// bloque sin turnos entre las 12 y las 14). Día libre = array vacío.
+export type WeeklyAvailability = Record<WeekDay, DayRange[]>
 
 export const EMPTY_AVAILABILITY: WeeklyAvailability = {
-  monday: null, tuesday: null, wednesday: null, thursday: null,
-  friday: null, saturday: null, sunday: null,
+  monday: [], tuesday: [], wednesday: [], thursday: [],
+  friday: [], saturday: [], sunday: [],
 }
 
 export const SLOT_DURATION_MINUTES = 120
@@ -44,13 +46,11 @@ export type CommissionType = 'earned' | 'to_owner'
 export type PaymentMethod = 'cash' | 'transfer' | 'card' | 'mp'
 
 export interface PersonalData {
-  firstName:       string
-  lastName:        string
+  name:            string
   birthDate:       string
   gender:          Gender | ''
   phone:           string
   email:           string
-  dni:             string
   photo:           string | null
   bio:             string
   instagram:       string
@@ -92,8 +92,8 @@ export interface OnboardingData {
 }
 
 export const EMPTY_PERSONAL: PersonalData = {
-  firstName: '', lastName: '', birthDate: '', gender: '',
-  phone: '', email: '', dni: '', photo: null, bio: '',
+  name: '', birthDate: '', gender: '',
+  phone: '', email: '', photo: null, bio: '',
   instagram: '', facebook: '', tiktok: '', twitter: '',
 }
 

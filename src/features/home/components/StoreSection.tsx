@@ -1,32 +1,37 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { ShoppingCart } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
-import { useAuth } from '@/features/auth/AuthContext'
 import { api } from '@/shared/utils/api'
-import { ROUTES } from '@/app/config/routes.config'
 import { FavoriteStarButton } from '@/shared/ui/atoms/FavoriteStarButton'
+import { ProductDetailModal } from './ProductDetailModal'
+import { useCart } from '@/features/store/CartContext'
+import { CartDrawer } from '@/features/store/CartDrawer'
 
 interface Product {
-  id:       string
-  name:     string
-  brand:    string
-  category: string
-  imageUrl: string | null
-  price:    number
-  stock:    number
-  status:   'active' | 'inactive' | 'out_of_stock'
+  id:          string
+  name:        string
+  brand:       string
+  category:    string
+  imageUrl:    string | null
+  price:       number
+  stock:       number
+  status:      'active' | 'inactive' | 'out_of_stock'
+  description?: string | null
 }
 
-export function StoreSection() {
+interface Props {
+  autoOpenCart?: boolean
+}
+
+export function StoreSection({ autoOpenCart = false }: Props) {
   const { business } = useTenant()
-  const { isAuthenticated, user } = useAuth()
-  const navigate = useNavigate()
+  const { addItem, count } = useCart()
   const [products, setProducts] = useState<Product[]>([])
   const [loading,  setLoading]  = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const [buyingId, setBuyingId] = useState<string | null>(null)
-  const [boughtId, setBoughtId] = useState<string | null>(null)
-  const [buyError, setBuyError] = useState<string | null>(null)
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null)
+  const [showCart, setShowCart] = useState(autoOpenCart)
+  const [addedId, setAddedId] = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ products: Product[] }>('/api/store/products')
@@ -47,34 +52,18 @@ export function StoreSection() {
     ? products.filter(p => p.category === activeCategory)
     : products
 
-  const handleBuy = async (product: Product) => {
-    if (!isAuthenticated || user?.role !== 'client') {
-      navigate(ROUTES.LOGIN)
-      return
-    }
-    setBuyingId(product.id)
-    setBuyError(null)
-    try {
-      await api.post('/api/client/orders', { productId: product.id, quantity: 1 })
-      setProducts(prev => prev
-        .map(p => p.id === product.id ? { ...p, stock: p.stock - 1 } : p)
-        .filter(p => p.stock > 0)
-      )
-      setBoughtId(product.id)
-      setTimeout(() => setBoughtId(null), 2500)
-    } catch (err: any) {
-      setBuyError(err?.response?.data?.error ?? 'No se pudo completar la compra.')
-    } finally {
-      setBuyingId(null)
-    }
+  const handleAddToCart = (product: Product, quantity = 1) => {
+    addItem({ productId: product.id, name: product.name, price: product.price, image: product.imageUrl }, quantity)
+    setAddedId(product.id)
+    setTimeout(() => setAddedId(null), 1500)
   }
 
   return (
-    <section className="w-full bg-white py-16 px-6">
+    <section className="w-full bg-white py-16 px-6 relative">
       <div className="max-w-[1400px] mx-auto">
 
         {/* Título */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
           <h2
             className="text-4xl md:text-5xl mb-4"
             style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}
@@ -87,6 +76,16 @@ export function StoreSection() {
           >
             {tiendaSubtitle}
           </p>
+
+          {count > 0 && (
+            <button
+              onClick={() => setShowCart(true)}
+              className="absolute right-0 top-0 flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold"
+              style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+            >
+              <ShoppingCart size={16} /> {count}
+            </button>
+          )}
         </div>
 
         {/* Filtro de categorías */}
@@ -120,12 +119,6 @@ export function StoreSection() {
           </div>
         )}
 
-        {buyError && (
-          <p className="text-center text-sm mb-6" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>
-            {buyError}
-          </p>
-        )}
-
         {/* Grilla de productos */}
         {loading ? (
           <div className="text-center py-20 text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
@@ -140,99 +133,103 @@ export function StoreSection() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredProducts.map(product => {
-              return (
-                <div
-                  key={product.id}
-                  className="relative flex flex-col border rounded-2xl p-6 hover:shadow-xl transition-all duration-300"
-                  style={{ borderColor: '#e5e5e5' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = accentColor)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e5e5')}
-                >
-                  {/* Favorito */}
-                  <div className="absolute top-3 right-3 z-10">
-                    <FavoriteStarButton
-                      type="product"
-                      id={product.id}
-                      name={product.name}
-                      detail={`$${product.price.toLocaleString('es-AR')}`}
-                      color={accentColor}
-                    />
-                  </div>
-
-                  {/* Imagen / placeholder */}
-                  <div
-                    className="w-full h-32 rounded-xl flex items-center justify-center mb-4 overflow-hidden"
-                    style={{ backgroundColor: `${primaryColor}10` }}
-                  >
-                    {product.imageUrl ? (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span
-                        className="text-3xl"
-                        style={{ color: `${primaryColor}50` }}
-                      >
-                        🛍️
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Nombre */}
-                  <h3
-                    className="text-lg mb-1"
-                    style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}
-                  >
-                    {product.name}
-                  </h3>
-
-                  {/* Marca */}
-                  {product.brand && (
-                    <p
-                      className="text-sm text-gray-500 mb-3"
-                      style={{ fontFamily: 'var(--font-lato)' }}
-                    >
-                      {product.brand}
-                    </p>
-                  )}
-
-                  {/* Precio + stock */}
-                  <div className="flex items-center justify-between mb-4 mt-auto">
-                    <span
-                      className="text-xl font-bold"
-                      style={{ color: accentColor, fontFamily: 'var(--font-playfair)' }}
-                    >
-                      ${product.price.toLocaleString('es-AR')}
-                    </span>
-                    <span
-                      className="text-xs font-medium"
-                      style={{ color: '#16a34a', fontFamily: 'var(--font-lato)' }}
-                    >
-                      En stock
-                    </span>
-                  </div>
-
-                  {/* Botón */}
-                  <button
-                    onClick={() => handleBuy(product)}
-                    disabled={buyingId === product.id}
-                    className="w-full py-2 rounded-lg text-white text-sm transition-all duration-300 hover:opacity-90 disabled:opacity-60"
-                    style={{
-                      backgroundColor: boughtId === product.id ? '#16a34a' : primaryColor,
-                      fontFamily: 'var(--font-lato)',
-                    }}
-                  >
-                    {buyingId === product.id ? 'Comprando...' : boughtId === product.id ? '✓ Comprado' : 'Comprar'}
-                  </button>
+            {filteredProducts.map(product => (
+              <div
+                key={product.id}
+                onClick={() => setDetailProduct(product)}
+                className="relative flex flex-col border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+                style={{ borderColor: '#e5e5e5' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = accentColor)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e5e5')}
+              >
+                {/* Favorito */}
+                <div className="absolute top-3 right-3 z-10" onClick={e => e.stopPropagation()}>
+                  <FavoriteStarButton
+                    type="product"
+                    id={product.id}
+                    name={product.name}
+                    detail={`$${product.price.toLocaleString('es-AR')}`}
+                    color={accentColor}
+                  />
                 </div>
-              )
-            })}
+
+                {/* Imagen / placeholder */}
+                <div
+                  className="w-full h-32 rounded-xl flex items-center justify-center mb-4 overflow-hidden"
+                  style={{ backgroundColor: `${primaryColor}10` }}
+                >
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="text-3xl"
+                      style={{ color: `${primaryColor}50` }}
+                    >
+                      🛍️
+                    </span>
+                  )}
+                </div>
+
+                {/* Nombre */}
+                <h3
+                  className="text-lg mb-1"
+                  style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}
+                >
+                  {product.name}
+                </h3>
+
+                {/* Marca */}
+                {product.brand && (
+                  <p
+                    className="text-sm text-gray-500 mb-3"
+                    style={{ fontFamily: 'var(--font-lato)' }}
+                  >
+                    {product.brand}
+                  </p>
+                )}
+
+                {/* Precio */}
+                <div className="flex items-center justify-between mb-4 mt-auto">
+                  <span
+                    className="text-xl font-bold"
+                    style={{ color: accentColor, fontFamily: 'var(--font-playfair)' }}
+                  >
+                    ${product.price.toLocaleString('es-AR')}
+                  </span>
+                </div>
+
+                {/* Botón */}
+                <button
+                  onClick={e => { e.stopPropagation(); handleAddToCart(product) }}
+                  className="w-full py-2 rounded-lg text-white text-sm transition-all duration-300 hover:opacity-90"
+                  style={{
+                    backgroundColor: addedId === product.id ? accentColor : primaryColor,
+                    fontFamily: 'var(--font-lato)',
+                  }}
+                >
+                  {addedId === product.id ? '✓ Agregado' : 'Agregar al carrito'}
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          onClose={() => setDetailProduct(null)}
+          onAddToCart={quantity => handleAddToCart(detailProduct, quantity)}
+        />
+      )}
+
+      {showCart && <CartDrawer onClose={() => setShowCart(false)} />}
     </section>
   )
 }

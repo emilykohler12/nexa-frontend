@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { api } from '@/shared/utils/api';
 import { SectionCard, Field } from './SettingsShared';
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function SecuritySection() {
   const [passwords, setPasswords] = useState({ newPass: '', confirm: '' });
@@ -31,7 +32,7 @@ export function SecuritySection() {
       setPasswords({ newPass: '', confirm: '' });
       setTimeout(() => setSavedPw(false), 2000);
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'Error al cambiar la contraseña');
+      setError(safeErrorMessage(err, 'Error al cambiar la contraseña'));
     } finally {
       setSaving(false);
     }

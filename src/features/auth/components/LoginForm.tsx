@@ -7,6 +7,7 @@ import { loginSchema, type LoginInput } from '../model/schemas'
 import { useLogin } from '../hooks/useAuth'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ForgotPasswordModal } from './ForgotPasswordModal'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function LoginForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
@@ -18,7 +19,7 @@ export function LoginForm() {
   const [showForgot, setShowForgot]       = useState(false)
 
   const errorMessage = login.error
-    ? ((login.error as any)?.response?.data?.error ?? 'Error al iniciar sesión. Intentá de nuevo.')
+    ? safeErrorMessage(login.error, 'Error al iniciar sesión. Intentá de nuevo.')
     : null
 
   return (

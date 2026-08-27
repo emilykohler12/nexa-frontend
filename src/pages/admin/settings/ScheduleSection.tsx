@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { api } from '@/shared/utils/api';
 import type { ScheduleDay, Holiday } from '@/app/data/admin/settings/types';
 import { SectionCard, SaveBar } from './SettingsShared';
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const EMPTY_SCHEDULE: ScheduleDay[] = [
   { day: 'monday',    label: 'Lunes',     isOpen: false, open: '09:00', close: '18:00' },
@@ -32,7 +33,7 @@ export function ScheduleSection() {
         setHolidays(res.data.holidays ?? []);
       })
       .catch((err: any) => {
-        setLoadError(err?.response?.data?.error ?? 'No se pudieron cargar los horarios');
+        setLoadError(safeErrorMessage(err, 'No se pudieron cargar los horarios'));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -67,7 +68,7 @@ export function ScheduleSection() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.error ?? 'Error al guardar los horarios');
+      setSaveError(safeErrorMessage(err, 'Error al guardar los horarios'));
     } finally {
       setSaving(false);
     }

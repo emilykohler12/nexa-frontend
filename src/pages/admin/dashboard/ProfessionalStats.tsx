@@ -9,29 +9,41 @@ interface Props {
   data: ProfessionalStat[];
 }
 
+const MAX_LABEL = 14;
+const truncate = (name: string) => name.length > MAX_LABEL ? `${name.slice(0, MAX_LABEL - 1)}…` : name;
+
+function YAxisTick({ x, y, payload }: any) {
+  return (
+    <text x={x} y={y} dy={4} textAnchor="end" fontSize={14} fontWeight={600} fill="#000">
+      {truncate(payload.value)}
+    </text>
+  );
+}
+
 export function ProfessionalStats({ data }: Props) {
   const sorted = [...data].sort((a, b) => b.revenue - a.revenue);
-  const hasActivity = sorted.some(p => p.appointments > 0 || p.revenue > 0);
+  const active = sorted.filter(p => p.appointments > 0 || p.revenue > 0);
 
   return (
     <DashboardCard title="Rendimiento por profesional">
       {sorted.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', padding: '24px 0', margin: 0 }}>
+        <p style={{ textAlign: 'center', color: '#000', fontSize: '15px', padding: '24px 0', margin: 0 }}>
           Todavía no hay profesionales registrados
         </p>
-      ) : !hasActivity ? (
-        <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', padding: '24px 0', margin: 0 }}>
+      ) : active.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#000', fontSize: '15px', padding: '24px 0', margin: 0 }}>
           Todavía no hay turnos registrados en este período
         </p>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={sorted} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={Math.max(120, active.length * 44)}>
+          <BarChart data={active} layout="vertical" margin={{ top: 4, right: 20, left: 0, bottom: 4 }} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" horizontal={false} />
-            <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} tickFormatter={formatCurrencyCompact} tick={{ fontSize: 13, fill: "#333", fontWeight: 600 }} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 14, fill: "#222", fontWeight: 600 }} axisLine={false} tickLine={false} />
+            <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} tickFormatter={formatCurrencyCompact} tick={{ fontSize: 13, fill: "#000", fontWeight: 600 }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="name" width={110} tick={<YAxisTick />} axisLine={false} tickLine={false} />
             <Tooltip
-              content={({ active, payload }) =>
-                active && payload?.length ? (
+              cursor={{ fill: 'rgba(6,148,148,0.05)' }}
+              content={({ active: on, payload }) =>
+                on && payload?.length ? (
                   <TooltipBox>
                     <p style={{ fontSize: "13px", color: "#ccc", margin: "0 0 4px", fontWeight: 600 }}>
                       {payload[0].payload.name}
@@ -46,8 +58,8 @@ export function ProfessionalStats({ data }: Props) {
                 ) : null
               }
             />
-            <Bar dataKey="revenue" radius={[0, 6, 6, 0]} barSize={16}>
-              {sorted.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+            <Bar dataKey="revenue" radius={[0, 6, 6, 0]} barSize={18}>
+              {active.map((entry, i) => <Cell key={i} fill={entry.color} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

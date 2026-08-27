@@ -26,6 +26,7 @@ export interface AdminClient {
   clinical: ClientClinical
   loyalty: ClientLoyalty
   createdAt: string
+  blocked?: boolean
 }
 
 export interface ClientAppointmentHistory {
