@@ -7,10 +7,11 @@
 }
 
 .activity-header h1 {
-  font-size: 29px;
+  font-size: 28px;
   font-weight: 700;
   color: #000;
   margin: 0 0 4px;
+  font-family: 'Playfair Display', serif;
 }
 .activity-header p {
   font-size: 16px;

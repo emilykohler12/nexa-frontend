@@ -56,7 +56,7 @@ export function DashboardPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '30px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Dashboard</h1>
+          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Playfair Display', serif" }}>Dashboard</h1>
           <p style={{ fontSize: '17px', color: '#000', margin: 0 }}>Métricas y rendimiento del negocio</p>
         </div>
         <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: '10px', padding: '3px', gap: '2px' }}>

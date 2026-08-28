@@ -23,43 +23,45 @@ export function ClientReviewsList({ primaryColor }: { primaryColor: string }) {
   }, [])
 
   if (loading) {
-    return <p style={{ textAlign: 'center', padding: '48px', color: '#000', fontSize: '16px' }}>Cargando...</p>
+    return (
+      <div className="appointments-empty">
+        <p>Cargando...</p>
+      </div>
+    )
   }
 
   if (reviews.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '48px', color: '#aaa' }}>
-        <Star size={40} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-        <p style={{ fontSize: '16px' }}>Todavía no dejaste ninguna reseña</p>
+      <div className="appointments-empty">
+        <Star size={48} className="appointments-empty-icon" />
+        <p>Todavía no dejaste ninguna reseña</p>
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div className="appointments-list">
       {reviews.map(r => {
         const status = STATUS_LABEL[r.status]
         return (
-          <div key={r.id} style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '12px', padding: '14px 18px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '6px' }}>
+          <div key={r.id} className="appointment-card">
+            <div className="appointment-card-top">
               <div>
-                {r.serviceName && (
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '15px', color: '#000' }}>{r.serviceName}</p>
-                )}
+                {r.serviceName && <h3 style={{ color: '#1a1a1a' }}>{r.serviceName}</h3>}
                 <div style={{ display: 'flex', gap: '2px' }}>
                   {[1, 2, 3, 4, 5].map(n => (
-                    <Star key={n} size={15} color={primaryColor} fill={n <= r.rating ? primaryColor : 'none'} strokeWidth={1.5} />
+                    <Star key={n} size={16} color={primaryColor} fill={n <= r.rating ? primaryColor : 'none'} strokeWidth={1.5} />
                   ))}
                 </div>
               </div>
-              <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: `${status.color}18`, color: status.color, whiteSpace: 'nowrap' }}>
+              <span className="appointment-status" style={{ backgroundColor: `${status.color}1a`, color: status.color }}>
                 {status.label}
               </span>
             </div>
             {r.message && (
-              <p style={{ margin: '6px 0 0', fontSize: '14px', color: '#333' }}>{r.message}</p>
+              <p style={{ margin: '10px 0 0', fontSize: '14px', color: '#666', fontFamily: "'Lato', sans-serif" }}>{r.message}</p>
             )}
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#aaa' }}>
+            <p style={{ margin: '12px 0 0', fontSize: '13px', color: '#aaa', fontFamily: "'Lato', sans-serif" }}>
               {new Date(r.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>

@@ -33,7 +33,7 @@ export function StorePage() {
 
       {/* Header */}
       <div>
-        <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Playfair Display', serif" }}>
           Tienda
         </h1>
         <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>

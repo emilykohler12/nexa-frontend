@@ -81,7 +81,7 @@ export function PromotionsPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Promociones</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Playfair Display', serif" }}>Promociones</h1>
           <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Ofertas de servicios y productos que aparecen en la página principal</p>
         </div>
         <button onClick={() => { setEditing(emptyPromotion(tab)); setShowForm(true) }} style={primaryBtnStyle}>

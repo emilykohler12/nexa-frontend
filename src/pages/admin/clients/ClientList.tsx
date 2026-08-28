@@ -20,7 +20,7 @@ export function ClientList({ clients, onSelect, onCreate }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Lato', sans-serif" }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Playfair Display', serif" }}>
             Clientes
           </h1>
           <p style={{ fontSize: '16px', color: '#000', margin: 0, fontFamily: "'Lato', sans-serif" }}>

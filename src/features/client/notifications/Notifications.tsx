@@ -5,6 +5,7 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { ClientReviewsList } from '@/features/client/reviews/ClientReviewsList'
 import type { ClientNotification, ClientNotificationType } from './types'
+import '@/pages/client/AppointmentsPage.css'
 
 type Tab = 'avisos' | 'reviews'
 
@@ -59,37 +60,30 @@ export function Notifications() {
   const unread = notifs.filter(n => !n.read).length
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
+    <div className="appointments-page">
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div className="appointments-welcome" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Avisos</h1>
-          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>
-            {tab === 'avisos' ? (unread > 0 ? `${unread} sin leer` : 'Todo al día') : 'Tus reseñas enviadas'}
-          </p>
+          <h1 style={{ color: primary }}>Avisos</h1>
+          <p>{tab === 'avisos' ? (unread > 0 ? `${unread} sin leer` : 'Todo al día') : 'Tus reseñas enviadas'}</p>
         </div>
         {tab === 'avisos' && unread > 0 && (
           <button
             onClick={markAllRead}
-            style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', color: '#000', fontSize: '14px', fontFamily: "'Lato', sans-serif" }}
+            style={{ background: 'none', border: '1px solid #e5e5e5', borderRadius: '10px', padding: '9px 16px', cursor: 'pointer', color: '#555', fontSize: '14px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
             Marcar todo como leído
           </button>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '2px', background: '#f0f0f0', borderRadius: '10px', padding: '3px', width: 'fit-content' }}>
+      <div className="appointments-filters" style={{ maxWidth: '280px' }}>
         {([{ id: 'avisos' as Tab, label: 'Avisos' }, { id: 'reviews' as Tab, label: 'Reseñas' }]).map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            style={{
-              padding: '8px 20px', border: 'none', borderRadius: '8px',
-              fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-              fontFamily: "'Lato', sans-serif",
-              background: tab === t.id ? primary : 'transparent',
-              color: tab === t.id ? '#fff' : '#000',
-            }}
+            className="appointments-filter-btn"
+            style={{ backgroundColor: tab === t.id ? primary : '#f3f4f6', color: tab === t.id ? '#fff' : '#6b7280' }}
           >
             {t.label}
           </button>
@@ -98,47 +92,49 @@ export function Notifications() {
 
       {tab === 'reviews' ? (
         <ClientReviewsList primaryColor={primary} />
+      ) : loading ? (
+        <div className="appointments-empty">
+          <p>Cargando...</p>
+        </div>
+      ) : notifs.length === 0 ? (
+        <div className="appointments-empty">
+          <Bell size={48} className="appointments-empty-icon" />
+          <p>Todavía no tenés avisos</p>
+        </div>
       ) : (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {loading ? (
-          <p style={{ textAlign: 'center', padding: '48px', color: '#000', fontSize: '16px' }}>Cargando...</p>
-        ) : notifs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px', color: '#aaa' }}>
-            <Bell size={40} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-            <p style={{ fontSize: '16px' }}>Todavía no tenés avisos</p>
-          </div>
-        ) : notifs.map(n => {
-          const cfg  = TYPE_CONFIG[n.type]
-          const Icon = cfg.icon
-          return (
-            <div
-              key={n.id}
-              onClick={() => handleClick(n)}
-              style={{
-                background: n.read ? '#fff' : `${primary}06`,
-                border: `1px solid ${n.read ? '#f0f0f0' : `${primary}25`}`,
-                borderRadius: '12px', padding: '14px 18px',
-                display: 'flex', alignItems: 'flex-start', gap: '14px',
-                cursor: n.link ? 'pointer' : 'default', transition: 'all 0.15s',
-              }}
-            >
-              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: `${cfg.color}15`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color }}>
-                <Icon size={18} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <p style={{ margin: 0, fontWeight: n.read ? 400 : 700, fontSize: '16px', color: '#000' }}>{n.title}</p>
-                  <span style={{ fontSize: '12px', color: '#aaa', whiteSpace: 'nowrap', marginLeft: '12px' }}>{timeAgo(n.createdAt)}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {notifs.map(n => {
+            const cfg  = TYPE_CONFIG[n.type]
+            const Icon = cfg.icon
+            return (
+              <div
+                key={n.id}
+                onClick={() => handleClick(n)}
+                className="appointment-card"
+                style={{
+                  background: n.read ? '#fff' : `${primary}06`,
+                  borderColor: n.read ? '#f0f0f0' : `${primary}25`,
+                  display: 'flex', alignItems: 'flex-start', gap: '14px',
+                  cursor: n.link ? 'pointer' : 'default',
+                }}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${cfg.color}15`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color }}>
+                  <Icon size={18} />
                 </div>
-                <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#000' }}>{n.body}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                    <h3 style={{ margin: 0, fontWeight: n.read ? 600 : 700, color: '#1a1a1a' }}>{n.title}</h3>
+                    <span style={{ fontSize: '12px', color: '#aaa', whiteSpace: 'nowrap', fontFamily: "'Lato', sans-serif" }}>{timeAgo(n.createdAt)}</span>
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#666', fontFamily: "'Lato', sans-serif" }}>{n.body}</p>
+                </div>
+                {!n.read && (
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: primary, flexShrink: 0, marginTop: '6px' }} />
+                )}
               </div>
-              {!n.read && (
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: primary, flexShrink: 0, marginTop: '6px' }} />
-              )}
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )
