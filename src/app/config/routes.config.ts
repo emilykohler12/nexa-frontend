@@ -3,11 +3,12 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
 
-  CLIENT:              '/client',
-  CLIENT_APPOINTMENTS: '/client/appointments',
-  CLIENT_BOOK:         '/client/book',
-  CLIENT_PROFILE:      '/client/profile',
-  CLIENT_FAVORITES:    '/client/favorites',
+  CLIENT:               '/client',
+  CLIENT_APPOINTMENTS:  '/client/appointments',
+  CLIENT_BOOK:          '/client/book',
+  CLIENT_PROFILE:       '/client/profile',
+  CLIENT_FAVORITES:     '/client/favorites',
+  CLIENT_NOTIFICATIONS: '/client/notifications',
 
   PROFESSIONAL:               '/professional',
   PROFESSIONAL_PANEL:         '/professional/panel',

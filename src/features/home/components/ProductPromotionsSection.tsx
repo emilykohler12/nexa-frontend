@@ -86,19 +86,13 @@ export function ProductPromotionsSection() {
   }
 
   return (
-    <section className="w-full py-20 px-6 relative overflow-hidden" style={{ background: `linear-gradient(180deg, ${accentColor}07, #ffffff 65%)` }}>
+    <section className="w-full py-10 px-6 relative overflow-hidden" style={{ background: `linear-gradient(180deg, ${accentColor}07, #ffffff 65%)` }}>
       {/* Textura sutil de marca — dos manchas de color muy tenues */}
       <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full" style={{ background: `${primaryColor}08`, filter: 'blur(60px)' }} />
       <div className="pointer-events-none absolute -bottom-24 -right-24 w-96 h-96 rounded-full" style={{ background: `${accentColor}0a`, filter: 'blur(60px)' }} />
 
       <div className="max-w-[1400px] mx-auto relative">
-        <div className="text-center mb-10">
-          <span
-            className="inline-block text-xs font-bold mb-3"
-            style={{ color: accentColor, fontFamily: 'var(--font-lato)', letterSpacing: '0.25em' }}
-          >
-            NUESTRA COLECCIÓN
-          </span>
+        <div className="text-center mb-6">
           <h2 className="text-4xl md:text-5xl mb-3" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
             Promociones de productos
           </h2>
@@ -122,7 +116,7 @@ export function ProductPromotionsSection() {
 
           <div
             ref={trackRef}
-            className="product-promo-track flex gap-6 overflow-x-auto pb-4 px-1"
+            className="product-promo-track flex gap-6 overflow-x-auto pb-2 px-1"
             style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none' }}
           >
             {promotions.map((promo, idx) => {
@@ -139,7 +133,7 @@ export function ProductPromotionsSection() {
                     scrollSnapAlign: 'start',
                     border: '1px solid #ece6da',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
-                    marginTop: raised ? 0 : 28,
+                    marginTop: raised ? 0 : 14,
                   }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 20px 40px -16px ${primaryColor}45` }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.05)' }}

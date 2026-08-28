@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon } from 'lucide-react'
+import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
 import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
 
@@ -89,6 +89,18 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
               {appointment.details.skinType && (
                 <Row><FileText size={14} /><span>Tipo de piel: {appointment.details.skinType}</span></Row>
               )}
+            </Section>
+          )}
+
+          {/* Zonas y paquetes elegidos (servicio especial) */}
+          {((appointment.selectedZones?.length ?? 0) > 0 || (appointment.selectedPackages?.length ?? 0) > 0) && (
+            <Section title="Zonas y paquetes elegidos">
+              {appointment.selectedZones?.map((z, i) => (
+                <Row key={`z-${i}`}><Tag size={14} /><span>{z.name} · {z.duration} min · ${z.price.toLocaleString('es-AR')}</span></Row>
+              ))}
+              {appointment.selectedPackages?.map((p, i) => (
+                <Row key={`p-${i}`}><Tag size={14} /><span>{p.name} (paquete) · {p.duration} min · ${p.price.toLocaleString('es-AR')}</span></Row>
+              ))}
             </Section>
           )}
 

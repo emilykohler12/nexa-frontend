@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Edit2, Trash2, Upload, Check } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { Promotion, PromotionType, PromotionStatus, PromotionKind, PromotionItem } from '@/app/data/admin/promotions/types'
 
 const todayISO = () => new Date().toISOString().split('T')[0]
@@ -56,8 +57,8 @@ export function PromotionsPage() {
       }
       setShowForm(false)
       setEditing(null)
-    } catch {
-      setError('No se pudo guardar la promoción')
+    } catch (err: any) {
+      setError(safeErrorMessage(err, 'No se pudo guardar la promoción'))
     }
   }
 
@@ -142,7 +143,7 @@ export function PromotionsPage() {
                 </p>
                 {vigencyLabel(promo) && (
                   <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: vigencyLabel(promo)!.color }}>
-                    {vigencyLabel(promo)!.label} — no se ve en el home todavía/ya no
+                    {vigencyLabel(promo)!.label} — no se ve en el home
                   </p>
                 )}
                 <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#666', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -197,10 +198,20 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
   const set = (k: keyof Promotion, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
   useEffect(() => {
-    const url = form.type === 'product' ? '/api/store/products' : '/api/services'
-    const dataKey = form.type === 'product' ? 'products' : 'services'
-    api.get<Record<string, PromotionItem[]>>(url)
-      .then(res => setOptions(res.data[dataKey] ?? []))
+    const isProduct = form.type === 'product'
+    const url = isProduct ? '/api/store/products' : '/api/services'
+    const dataKey = isProduct ? 'products' : 'services'
+    api.get<Record<string, any[]>>(url)
+      .then(res => {
+        const raw = res.data[dataKey] ?? []
+        // Un producto inactivo o sin stock (o un servicio inactivo) no se
+        // puede vender/reservar de verdad — no tiene sentido dejar armar una
+        // promo con algo que después el checkout va a rechazar.
+        const available = raw.filter((item: any) =>
+          isProduct ? (item.status === 'active' && item.stock > 0) : item.status === 'active'
+        )
+        setOptions(available.map((item: any) => ({ id: item.id, name: item.name, price: Number(item.price) || 0 })))
+      })
       .catch(() => setOptions([]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.type])
@@ -219,10 +230,13 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
       nextItems = [...form.items, opt]
     }
     const updates: Partial<Promotion> = { items: nextItems }
-    // En combo, sugerimos el precio original como la suma de precios reales —
-    // el admin igual puede pisarlo con el precio combo que quiera cobrar.
+    // En combo, sugerimos el precio original como la suma de precios reales;
+    // en descuento/oferta Nx M, lo autocompletamos con el precio real del
+    // ítem elegido — en los dos casos el admin igual puede pisarlo a mano.
     if (form.kind === 'bundle') {
       updates.originalPrice = nextItems.reduce((sum, i) => sum + i.price, 0)
+    } else if (nextItems.length === 1) {
+      updates.originalPrice = nextItems[0].price
     }
     setForm(f => ({ ...f, ...updates }))
   }
@@ -346,7 +360,7 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
             <Field label={form.kind === 'bundle' ? 'Precio del combo ($)' : 'Precio promocional ($)'}>
               <input type="number" min={0} value={form.price === 0 ? '' : form.price} onChange={e => set('price', e.target.value === '' ? '' : Number(e.target.value))} style={inputStyle} />
             </Field>
-            <Field label={form.kind === 'bundle' ? 'Precio real sumado ($)' : 'Precio original ($) — opcional'}>
+            <Field label={form.kind === 'bundle' ? 'Precio real sumado ($)' : 'Precio original ($)'}>
               <input type="number" min={0} value={form.originalPrice ?? ''} onChange={e => set('originalPrice', e.target.value ? Number(e.target.value) : null)} style={inputStyle} readOnly={form.kind === 'bundle'} />
             </Field>
           </>
@@ -358,10 +372,10 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
             <option value="inactive">Inactiva</option>
           </select>
         </Field>
-        <Field label="Fecha de inicio — opcional">
+        <Field label="Fecha de inicio">
           <input type="date" value={form.startDate ?? ''} onChange={e => set('startDate', e.target.value || null)} style={inputStyle} />
         </Field>
-        <Field label="Fecha de fin — opcional">
+        <Field label="Fecha de fin">
           <input type="date" value={form.endDate ?? ''} onChange={e => set('endDate', e.target.value || null)} style={inputStyle} />
         </Field>
       </div>

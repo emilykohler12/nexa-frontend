@@ -7,6 +7,9 @@ interface Service {
   duration:    number
   price:       number
   image:       string | null
+  isSpecial?:  boolean
+  specialDate?: string | null
+  zones?:      { price: number; active: boolean }[]
 }
 
 interface Props {
@@ -60,11 +63,25 @@ export function ServiceDetailModal({ service, primaryColor, accentColor, onClose
 
           <div className="flex items-center gap-4 mb-4">
             <span className="flex items-center gap-1.5 text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
-              <Clock size={15} /> {service.duration} min
+              <Clock size={15} />
+              {service.isSpecial
+                ? (service.specialDate ? new Date(service.specialDate + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }) : 'Fecha a confirmar')
+                : `${service.duration} min`}
             </span>
-            <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-cormorant)', color: accentColor }}>
-              ${service.price.toLocaleString('es-AR')}
-            </span>
+            {service.isSpecial ? (
+              (() => {
+                const prices = (service.zones ?? []).filter(z => z.active).map(z => z.price)
+                return prices.length > 0 ? (
+                  <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-cormorant)', color: accentColor }}>
+                    Desde ${Math.min(...prices).toLocaleString('es-AR')}
+                  </span>
+                ) : null
+              })()
+            ) : (
+              <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-cormorant)', color: accentColor }}>
+                ${service.price.toLocaleString('es-AR')}
+              </span>
+            )}
           </div>
 
           <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line mb-6" style={{ fontFamily: 'var(--font-lato)' }}>

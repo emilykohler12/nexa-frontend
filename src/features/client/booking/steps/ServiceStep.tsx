@@ -4,6 +4,18 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { api }        from '@/shared/utils/api'
 import { SERVICE_CATEGORIES } from '@/app/data/shared'
 
+export interface ServiceZone {
+  id: string; name: string; duration: number; price: number; active: boolean
+}
+export interface ServicePackage {
+  id: string; name: string; zoneIds: string[]; duration: number; price: number; active: boolean
+}
+export interface SpecialSlot {
+  id?: string; time: string; professionalId: string; professionalName?: string; active: boolean
+  // Solo en la respuesta pública para clientes — nunca expone quién es el cliente.
+  booked?: boolean
+}
+
 export interface Service {
   id:               string
   name:             string
@@ -16,6 +28,11 @@ export interface Service {
   isCombo?:         boolean
   comboServiceIds?: string[]
   simultaneous?:    boolean
+  isSpecial?:       boolean
+  specialDate?:     string | null
+  specialSlots?:    SpecialSlot[]
+  zones?:           ServiceZone[]
+  packages?:        ServicePackage[]
 }
 
 interface Props {
@@ -85,12 +102,25 @@ export function ServiceStep({ selectedServiceId, onSelect }: Props) {
           )}
         </div>
         <p className="text-sm text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
-          {service.duration} min
+          {service.isSpecial
+            ? (service.specialDate ? new Date(service.specialDate + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }) : 'Fecha a confirmar')
+            : `${service.duration} min`}
         </p>
       </div>
-      <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-cormorant)', color: accentColor }}>
-        ${service.price.toLocaleString('es-AR')}
-      </span>
+      {service.isSpecial ? (
+        (() => {
+          const activePrices = (service.zones ?? []).filter(z => z.active).map(z => z.price)
+          return activePrices.length > 0 ? (
+            <span className="text-sm font-bold" style={{ fontFamily: 'var(--font-cormorant)', color: accentColor }}>
+              Desde ${Math.min(...activePrices).toLocaleString('es-AR')}
+            </span>
+          ) : null
+        })()
+      ) : (
+        <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-cormorant)', color: accentColor }}>
+          ${service.price.toLocaleString('es-AR')}
+        </span>
+      )}
     </button>
   )
 

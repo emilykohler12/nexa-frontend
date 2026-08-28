@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   X, Phone, Mail, User, Scissors, Clock,
   DollarSign, FileText, Calendar, MessageSquare, ChevronDown,
-  AlertCircle, Users, Image as ImageIcon,
+  AlertCircle, Users, Image as ImageIcon, Tag,
 } from 'lucide-react';
 import type { Appointment } from './types';
 import type { Professional } from './types';
@@ -335,6 +335,19 @@ export function AppointmentModal({
                   </span>
                 </InfoRow>
               </>
+            )}
+
+            {((appointment.selectedZones?.length ?? 0) > 0 || (appointment.selectedPackages?.length ?? 0) > 0) && (
+              <InfoRow icon={<Tag size={14} />} label="Zonas y paquetes elegidos">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {appointment.selectedZones?.map((z, i) => (
+                    <span key={`z-${i}`}>{z.name} · {z.duration} min · ${z.price.toLocaleString('es-AR')}</span>
+                  ))}
+                  {appointment.selectedPackages?.map((p, i) => (
+                    <span key={`p-${i}`}>{p.name} (paquete) · {p.duration} min · ${p.price.toLocaleString('es-AR')}</span>
+                  ))}
+                </div>
+              </InfoRow>
             )}
           </Section>
 

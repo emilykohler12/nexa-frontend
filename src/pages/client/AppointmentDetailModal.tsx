@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Calendar, Clock, User, DollarSign, Shield, MapPin, Phone, AlertCircle, Users, Image as ImageIcon, FileText, Pencil } from 'lucide-react'
+import { X, Calendar, Clock, User, DollarSign, Shield, MapPin, Phone, AlertCircle, Users, Image as ImageIcon, FileText, Pencil, Tag } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { appointmentStatus } from '@/app/data/shared/status.data'
 import type { AppointmentStatus } from '@/features/client/types'
@@ -19,6 +19,8 @@ interface Appointment {
   status:            AppointmentStatus
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   details?:          AppointmentDetailsValue | null
+  selectedZones?:    { name: string; price: number; duration: number }[]
+  selectedPackages?: { name: string; price: number; duration: number }[]
 }
 
 interface Props {
@@ -99,6 +101,24 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated 
               </div>
             )}
           </div>
+
+          {((appointment.selectedZones?.length ?? 0) > 0 || (appointment.selectedPackages?.length ?? 0) > 0) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'var(--font-lato)', fontSize: '14px', color: '#333' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#333', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                Zonas y paquetes elegidos
+              </p>
+              {appointment.selectedZones?.map((z, i) => (
+                <div key={`z-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={14} color={primaryColor} /> <span>{z.name} · {z.duration} min · ${z.price.toLocaleString('es-AR')}</span>
+                </div>
+              ))}
+              {appointment.selectedPackages?.map((p, i) => (
+                <div key={`p-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={14} color={primaryColor} /> <span>{p.name} (paquete) · {p.duration} min · ${p.price.toLocaleString('es-AR')}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ background: '#f9f9f9', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-lato)', fontSize: '14px', color: '#888' }}>

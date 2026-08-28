@@ -15,11 +15,12 @@ interface Props {
   service: AdminService | null
   categories: CategoryOption[]
   allServices: AdminService[]
+  error?: string | null
   onSave: (values: ServiceFormValues) => void
   onClose: () => void
 }
 
-export function ServiceFormModal({ service, categories, allServices, onSave, onClose }: Props) {
+export function ServiceFormModal({ service, categories, allServices, error, onSave, onClose }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ServiceFormSchema>({
     resolver: zodResolver(serviceFormSchema) as Resolver<ServiceFormSchema>,
@@ -44,7 +45,9 @@ export function ServiceFormModal({ service, categories, allServices, onSave, onC
   const imageValue = watch('image')
   const isCombo = watch('isCombo')
   const comboServiceIds = watch('comboServiceIds') ?? []
-  const componentOptions = allServices.filter(s => s.id !== service?.id && !s.isCombo)
+  // No tiene sentido armar un combo con un servicio inactivo — el cliente
+  // no podría reservarlo igual.
+  const componentOptions = allServices.filter(s => s.id !== service?.id && !s.isCombo && s.status === 'active')
 
   const toggleComboService = (id: string) => {
     const next = comboServiceIds.includes(id)
@@ -73,6 +76,12 @@ export function ServiceFormModal({ service, categories, allServices, onSave, onC
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="service-form">
+          {error && (
+            <p style={{ margin: 0, padding: '10px 14px', background: 'rgba(229,57,53,0.08)', border: '1px solid rgba(229,57,53,0.2)', borderRadius: '8px', color: '#e53935', fontSize: '14px', fontWeight: 600, fontFamily: "'Lato', sans-serif" }}>
+              {error}
+            </p>
+          )}
+
           <label className="service-form-field">
             <span>Nombre</span>
             <input {...register('name')} placeholder="Ej: Corte y peinado" />
@@ -134,7 +143,6 @@ export function ServiceFormModal({ service, categories, allServices, onSave, onC
                 <input {...register('image')} placeholder="o pegá una URL de imagen (https://...)" />
               </div>
             </div>
-            <p className="service-form-hint">Se recorta automáticamente para verse pareja con el resto de los servicios — no importa el tamaño que subas.</p>
           </label>
 
           <div className="service-form-row">

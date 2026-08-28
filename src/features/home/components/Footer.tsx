@@ -100,7 +100,7 @@ export function Footer({ onNavigate }: FooterProps) {
       </div>
 
       <div className="footer-copyright">
-        {business.footer.copyright}
+        © {new Date().getFullYear()} {business.name}
       </div>
     </footer>
   )

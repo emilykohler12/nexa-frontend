@@ -9,8 +9,9 @@ export interface CategoryOption {
 // Cuando el admin pueda gestionarlas desde el panel,
 // reemplazá esto por un fetch a GET /api/categories.
 export const SERVICE_CATEGORIES: CategoryOption[] = [
-  { id: 'rostro',  label: 'Rostro',  icon: '/icons/rostro.svg'  },
   { id: 'unas',    label: 'Uñas',    icon: '/icons/unas.svg'    },
-  { id: 'cabello', label: 'Cabello', icon: '/icons/cabello.svg' },
+  { id: 'rostro',  label: 'Rostro',  icon: '/icons/rostro.svg'  },
   { id: 'cuerpo',  label: 'Cuerpo',  icon: '/icons/cuerpo.svg'  },
+  { id: 'cabello', label: 'Cabello', icon: '/icons/cabello.svg' },
+  { id: 'combo',   label: 'Combo',   icon: '/icons/combos.png'  },
 ]

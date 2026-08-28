@@ -20,6 +20,16 @@ interface CartContextValue {
   clear:       () => void
   total:       number
   count:       number
+  // Estado del panel del carrito (menú lateral) — global, así el botón
+  // flotante y cualquier otra parte de la página lo pueden abrir/cerrar.
+  isOpen:      boolean
+  open:        () => void
+  close:       () => void
+  toggle:      () => void
+  // Se prende solo cuando el carrito pasa de vacío a tener algo — el panel
+  // muestra "¿ir a pagar o seguir viendo?" en vez de la lista normal.
+  showFirstAddPrompt: boolean
+  dismissFirstAddPrompt: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -42,12 +52,15 @@ function loadCart(): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(loadCart)
+  const [isOpen, setIsOpen] = useState(false)
+  const [showFirstAddPrompt, setShowFirstAddPrompt] = useState(false)
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)) } catch { /* almacenamiento no disponible */ }
   }, [items])
 
   const addItem: CartContextValue['addItem'] = (item, quantity = 1) => {
+    const wasEmpty = items.length === 0
     setItems(prev => {
       const key = lineKey(item.productId, item.promotionId)
       const existing = prev.find(i => lineKey(i.productId, i.promotionId) === key)
@@ -56,6 +69,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity }]
     })
+    // Primer producto de un carrito vacío — abrimos el panel y preguntamos
+    // si quiere ir a pagar o seguir viendo, en vez de sumarlo en silencio.
+    if (wasEmpty) {
+      setShowFirstAddPrompt(true)
+      setIsOpen(true)
+    }
   }
 
   const removeItem = (productId: string, promotionId?: string | null) => {
@@ -75,7 +94,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = items.reduce((sum, i) => sum + i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, setQuantity, clear, total, count }}>
+    <CartContext.Provider value={{
+      items, addItem, removeItem, setQuantity, clear, total, count,
+      isOpen, open: () => setIsOpen(true), close: () => setIsOpen(false), toggle: () => setIsOpen(o => !o),
+      showFirstAddPrompt, dismissFirstAddPrompt: () => setShowFirstAddPrompt(false),
+    }}>
       {children}
     </CartContext.Provider>
   )

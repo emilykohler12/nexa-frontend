@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
-import { ShoppingCart } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { FavoriteStarButton } from '@/shared/ui/atoms/FavoriteStarButton'
 import { ProductDetailModal } from './ProductDetailModal'
 import { useCart } from '@/features/store/CartContext'
-import { CartDrawer } from '@/features/store/CartDrawer'
 
 interface Product {
   id:          string
@@ -19,18 +17,13 @@ interface Product {
   description?: string | null
 }
 
-interface Props {
-  autoOpenCart?: boolean
-}
-
-export function StoreSection({ autoOpenCart = false }: Props) {
+export function StoreSection() {
   const { business } = useTenant()
-  const { addItem, count } = useCart()
+  const { addItem } = useCart()
   const [products, setProducts] = useState<Product[]>([])
   const [loading,  setLoading]  = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [detailProduct, setDetailProduct] = useState<Product | null>(null)
-  const [showCart, setShowCart] = useState(autoOpenCart)
   const [addedId, setAddedId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -76,16 +69,6 @@ export function StoreSection({ autoOpenCart = false }: Props) {
           >
             {tiendaSubtitle}
           </p>
-
-          {count > 0 && (
-            <button
-              onClick={() => setShowCart(true)}
-              className="absolute right-0 top-0 flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold"
-              style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
-            >
-              <ShoppingCart size={16} /> {count}
-            </button>
-          )}
         </div>
 
         {/* Filtro de categorías */}
@@ -228,8 +211,6 @@ export function StoreSection({ autoOpenCart = false }: Props) {
           onAddToCart={quantity => handleAddToCart(detailProduct, quantity)}
         />
       )}
-
-      {showCart && <CartDrawer onClose={() => setShowCart(false)} />}
     </section>
   )
 }

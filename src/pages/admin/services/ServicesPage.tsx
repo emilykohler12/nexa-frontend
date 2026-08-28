@@ -1,23 +1,33 @@
 // src/pages/admin/services/ServicesPage.tsx
 import { useState, useEffect } from 'react'
-import { Plus }                from 'lucide-react'
+import { Plus, CalendarClock } from 'lucide-react'
 import { api }                 from '@/shared/utils/api'
 import { SERVICE_CATEGORIES }  from '@/app/data/shared'
 import { ServiceList }         from './ServiceList'
 import { ServiceFormModal }    from './ServiceFormModal'
+import { SpecialServiceFormModal } from './SpecialServiceFormModal'
+import { SpecialServiceZonesModal } from './SpecialServiceZonesModal'
 import { ConfirmDeleteModal }  from './ConfirmDeleteModal'
-import type { AdminService, ServiceFormValues } from './types'
+import type { AdminService, ServiceFormValues, ServiceZone, ServicePackage } from './types'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import '@/shared/ui/admin/admin-controls.css'
 import './services.css'
+
+type FormKind = 'regular' | 'special' | null
 
 export function ServicesPage() {
   const [services,       setServices]       = useState<AdminService[]>([])
   const [loading,        setLoading]        = useState(true)
   const [editingService, setEditingService] = useState<AdminService | null>(null)
-  const [isFormOpen,     setIsFormOpen]     = useState(false)
+  const [formKind,       setFormKind]       = useState<FormKind>(null)
+  const [zonesService,   setZonesService]   = useState<AdminService | null>(null)
   const [deletingService, setDeletingService] = useState<AdminService | null>(null)
   const [error,          setError]          = useState<string | null>(null)
   const [notice,         setNotice]         = useState<string | null>(null)
+  // Separado del error de página — este se muestra arriba del formulario,
+  // que es un overlay y tapa cualquier mensaje que aparezca atrás.
+  const [formError,      setFormError]      = useState<string | null>(null)
+  const [zonesError,     setZonesError]     = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ services: AdminService[] }>('/api/services/all')
@@ -26,10 +36,13 @@ export function ServicesPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const openCreateForm = () => { setEditingService(null); setIsFormOpen(true) }
-  const openEditForm   = (s: AdminService) => { setEditingService(s); setIsFormOpen(true) }
+  const openCreateForm        = () => { setEditingService(null); setFormError(null); setFormKind('regular') }
+  const openCreateSpecialForm = () => { setEditingService(null); setFormError(null); setFormKind('special') }
+  const openEditForm          = (s: AdminService) => { setEditingService(s); setFormError(null); setFormKind(s.isSpecial ? 'special' : 'regular') }
+  const openZones             = (s: AdminService) => { setZonesError(null); setZonesService(s) }
 
   const handleSave = async (values: ServiceFormValues) => {
+    setFormError(null)
     try {
       if (editingService) {
         const res = await api.put<{ service: AdminService }>(`/api/services/${editingService.id}`, values)
@@ -38,9 +51,21 @@ export function ServicesPage() {
         const res = await api.post<{ service: AdminService }>('/api/services', values)
         setServices(prev => [res.data.service, ...prev])
       }
-      setIsFormOpen(false)
-    } catch {
-      setError('Error al guardar el servicio')
+      setFormKind(null)
+    } catch (err: any) {
+      setFormError(safeErrorMessage(err, 'Error al guardar el servicio'))
+    }
+  }
+
+  const handleSaveZones = async (zones: ServiceZone[], packages: ServicePackage[]) => {
+    if (!zonesService) return
+    setZonesError(null)
+    try {
+      const res = await api.put<{ service: AdminService }>(`/api/services/${zonesService.id}`, { ...zonesService, zones, packages })
+      setServices(prev => prev.map(s => s.id === zonesService.id ? res.data.service : s))
+      setZonesService(null)
+    } catch (err: any) {
+      setZonesError(safeErrorMessage(err, 'No se pudieron guardar las zonas y paquetes'))
     }
   }
 
@@ -88,9 +113,14 @@ export function ServicesPage() {
             Lo que cargues acá aparece en la página principal y en la reserva de turnos
           </p>
         </div>
-        <button onClick={openCreateForm} className="admin-button-primary">
-          <Plus size={18} /> Nuevo servicio
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={openCreateSpecialForm} className="admin-button-secondary" style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <CalendarClock size={16} /> Servicio especial
+          </button>
+          <button onClick={openCreateForm} className="admin-button-primary">
+            <Plus size={18} /> Nuevo servicio
+          </button>
+        </div>
       </div>
 
       {error && <p className="services-error">{error}</p>}
@@ -109,16 +139,37 @@ export function ServicesPage() {
           onEdit={openEditForm}
           onDelete={requestDelete}
           onToggleStatus={handleToggleStatus}
+          onOpenZones={openZones}
         />
       )}
 
-      {isFormOpen && (
+      {formKind === 'regular' && (
         <ServiceFormModal
           service={editingService}
           categories={SERVICE_CATEGORIES}
           allServices={services}
+          error={formError}
           onSave={handleSave}
-          onClose={() => setIsFormOpen(false)}
+          onClose={() => setFormKind(null)}
+        />
+      )}
+
+      {formKind === 'special' && (
+        <SpecialServiceFormModal
+          service={editingService}
+          categories={SERVICE_CATEGORIES}
+          error={formError}
+          onSave={handleSave}
+          onClose={() => setFormKind(null)}
+        />
+      )}
+
+      {zonesService && (
+        <SpecialServiceZonesModal
+          service={zonesService}
+          error={zonesError}
+          onSave={handleSaveZones}
+          onClose={() => setZonesService(null)}
         />
       )}
 

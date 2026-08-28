@@ -45,4 +45,7 @@ export interface Appointment {
   isSimultaneous: boolean
   details?:       AppointmentDetails | null
   comboGroupId?:  string | null
+  // Solo para turnos de un servicio especial — qué zonas/paquetes eligió el cliente.
+  selectedZones?:    { name: string; price: number; duration: number }[]
+  selectedPackages?: { name: string; price: number; duration: number }[]
 }

@@ -1,18 +1,28 @@
+import { CalendarClock } from 'lucide-react'
 import type { Appointment } from '@/features/professional/types/appointment'
 import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import { groupByCombo } from '@/shared/utils/comboGroup'
+import type { SpecialAssignment } from './AgendaDay'
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7)
 const DAYS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
+
+const toISODate = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 interface Props {
   appointments: Appointment[]
   weekStart:    Date
   primary:      string
   onEventClick: (a: Appointment) => void
+  getSpecialAssignments?: (date: string) => SpecialAssignment[]
 }
 
-export function AgendaWeek({ appointments, weekStart, primary, onEventClick }: Props) {
+export function AgendaWeek({ appointments, weekStart, primary, onEventClick, getSpecialAssignments }: Props) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d
   })
@@ -25,6 +35,9 @@ export function AgendaWeek({ appointments, weekStart, primary, onEventClick }: P
       const d = new Date(a.date + 'T00:00:00')
       return d.toDateString() === day.toDateString() && parseInt(a.time.split(':')[0]) === hour
     })
+
+  const getSpecial = (day: Date, hour: number) =>
+    (getSpecialAssignments?.(toISODate(day)) ?? []).filter(sa => parseInt(sa.time.split(':')[0]) === hour)
 
   return (
     <div style={{ overflowX: 'auto', fontFamily: "'Lato', sans-serif" }}>
@@ -54,6 +67,7 @@ export function AgendaWeek({ appointments, weekStart, primary, onEventClick }: P
               </td>
               {days.map((day, di) => {
                 const appts = getAppts(day, hour)
+                const special = getSpecial(day, hour)
                 return (
                   <td key={di} style={{ borderTop: '1px solid #f0f0f0', borderLeft: '1px solid #f5f5f5', padding: '3px', verticalAlign: 'top', height: '56px', background: isToday(day) ? 'rgba(6,148,148,0.02)' : '#fff' }}>
                     {groupByCombo(appts).map((group, gi) => (
@@ -84,6 +98,24 @@ export function AgendaWeek({ appointments, weekStart, primary, onEventClick }: P
                             </button>
                           )
                         })}
+                      </div>
+                    ))}
+                    {special.map((sa, si) => (
+                      <div
+                        key={`special-${si}`}
+                        title={`${sa.serviceName} — sin reservar todavía`}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '3px',
+                          borderRadius: '5px', padding: '4px 6px', marginBottom: '2px',
+                          background: 'repeating-linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.1) 5px, rgba(212,175,55,0.16) 5px, rgba(212,175,55,0.16) 10px)',
+                          border: '1px dashed #d4af37',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <CalendarClock size={11} color="#8a6800" style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#8a6800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {sa.time} {sa.serviceName}
+                        </span>
                       </div>
                     ))}
                   </td>

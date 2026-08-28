@@ -15,6 +15,7 @@ import { AppointmentsPage as ClientAppointmentsPage } from '@/pages/client/Appoi
 import { BookPage }      from '@/pages/client/BookPage'
 import { ProfilePage }   from '@/pages/client/ProfilePage'
 import { FavoritesPage } from '@/pages/client/FavoritesPage'
+import { NotificationsPage as ClientNotificationsPage } from '@/pages/client/NotificationsPage'
 
 import { ProfessionalPanelPage }  from '@/pages/professional/ProfessionalPanelPage'
 import { AgendaPage }             from '@/pages/professional/AgendaPage'
@@ -54,6 +55,7 @@ export function AppRouter() {
           <Route path={ROUTES.CLIENT_BOOK}         element={<BookPage />} />
           <Route path={ROUTES.CLIENT_PROFILE}      element={<ProfilePage />} />
           <Route path={ROUTES.CLIENT_FAVORITES}    element={<FavoritesPage />} />
+          <Route path={ROUTES.CLIENT_NOTIFICATIONS} element={<ClientNotificationsPage />} />
         </Route>
 
         {/* Profesional */}

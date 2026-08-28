@@ -54,6 +54,20 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     if (phase === 'details' && !appointmentId) setPhase('success')
   }, [phase, appointmentId])
 
+  // Si reservó con "Cualquiera" y el POST no devolvió quién quedó asignado
+  // (contrato viejo del backend), lo buscamos en la lista de turnos del
+  // cliente — nunca debería quedar mostrando "Cualquier profesional disponible".
+  useEffect(() => {
+    if (phase !== 'success' || summary.professionalId !== ANY_PROFESSIONAL_ID || assignedProfessionalName || !appointmentId) return
+    api.get<{ appointments: { id: string; professionalId?: string; professionalName?: string }[] }>('/api/client/appointments')
+      .then(res => {
+        const appt = res.data.appointments.find(a => a.id === appointmentId)
+        if (appt?.professionalName) setAssignedProfessionalName(appt.professionalName)
+        if (appt?.professionalId)   setAssignedProfessionalId(appt.professionalId)
+      })
+      .catch(() => {})
+  }, [phase, appointmentId])
+
   // Al llegar a éxito, traemos las recomendaciones/cuidados que cargó el
   // profesional para mostrárselas al cliente junto con la confirmación.
   useEffect(() => {

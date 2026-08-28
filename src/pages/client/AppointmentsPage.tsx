@@ -45,6 +45,9 @@ interface Appointment {
   rescheduleNoticePending?: boolean
   previousDate?:            string | null
   previousTime?:            string | null
+  // Solo para turnos de un servicio especial — qué zonas/paquetes eligió.
+  selectedZones?:    { name: string; price: number; duration: number }[]
+  selectedPackages?: { name: string; price: number; duration: number }[]
 }
 
 export function AppointmentsPage() {

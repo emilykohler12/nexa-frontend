@@ -17,6 +17,7 @@ interface Props {
   onEdit: (service: AdminService) => void;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string) => void;
+  onOpenZones: (service: AdminService) => void;
 }
 
 type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc';
@@ -38,7 +39,7 @@ function sortServices(services: AdminService[], sortBy: SortOption): AdminServic
   }
 }
 
-export function ServiceList({ services, categories, onEdit, onDelete, onToggleStatus }: Props) {
+export function ServiceList({ services, categories, onEdit, onDelete, onToggleStatus, onOpenZones }: Props) {
   const [query,  setQuery]  = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
 
@@ -115,18 +116,33 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
             </p>
             <div className="service-cards-grid">
               {group.services.map((service) => (
-                <div key={service.id} className="admin-service-card" style={{ opacity: service.status === 'active' ? 1 : 0.65 }}>
+                <div
+                  key={service.id}
+                  className="admin-service-card"
+                  style={{ opacity: service.status === 'active' ? 1 : 0.65, cursor: service.isSpecial ? 'pointer' : 'default' }}
+                  onClick={() => service.isSpecial && onOpenZones(service)}
+                  title={service.isSpecial ? 'Tocá para configurar zonas y paquetes' : undefined}
+                >
                   <div className="admin-service-card-top">
                     <div className="service-table-thumb">
                       {service.image ? <img src={service.image} alt={service.name} /> : <ImageOff size={18} />}
                     </div>
                     <div className="admin-service-card-info">
-                      <p className="service-table-name">{service.name}</p>
+                      <p className="service-table-name">
+                        {service.name}
+                        {service.isSpecial && (
+                          <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 700, color: '#d4af37', background: 'rgba(212,175,55,0.12)', padding: '2px 8px', borderRadius: '20px', verticalAlign: 'middle' }}>
+                            Especial
+                          </span>
+                        )}
+                      </p>
                       <p className="admin-service-card-meta">
-                        {categoryLabel(service.categoryId)} · {service.duration} min
+                        {service.isSpecial
+                          ? `${categoryLabel(service.categoryId)} · ${service.specialDate ?? 'sin fecha'}`
+                          : `${categoryLabel(service.categoryId)} · ${service.duration} min`}
                       </p>
                     </div>
-                    <div className="admin-service-card-actions">
+                    <div className="admin-service-card-actions" onClick={e => e.stopPropagation()}>
                       <button className="admin-icon-button" onClick={() => onEdit(service)} title="Editar">
                         <Pencil size={16} />
                       </button>
@@ -138,8 +154,12 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
 
                   <p className="service-table-description admin-service-card-desc">{service.description}</p>
 
-                  <div className="admin-service-card-bottom">
-                    <span className="admin-service-card-price">{formatCurrency(service.price)}</span>
+                  <div className="admin-service-card-bottom" onClick={e => service.isSpecial && e.stopPropagation()}>
+                    <span className="admin-service-card-price">
+                      {service.isSpecial
+                        ? (service.zones?.length ? `${service.zones.length} zona${service.zones.length !== 1 ? 's' : ''}` : 'Sin zonas todavía')
+                        : formatCurrency(service.price)}
+                    </span>
                     <button
                       className={`admin-status-badge ${service.status}`}
                       onClick={() => onToggleStatus(service.id)}

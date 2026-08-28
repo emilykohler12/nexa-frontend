@@ -16,6 +16,9 @@ import { ServicesSection }    from '@/features/home/components/ServicesSection';
 import { ProfessionalsSection }from '@/features/home/components/ProfessionalsSection';
 import { StoreSection }       from '@/features/home/components/StoreSection';
 import { AboutSection }       from '@/features/home/components/AboutSection';
+import { CartDrawer }         from '@/features/store/CartDrawer';
+import { CartFloatingButton } from '@/features/store/CartFloatingButton';
+import { useCart }            from '@/features/store/CartContext';
 
 type SectionId = 'servicios' | 'profesionales' | 'tienda' | 'nosotros';
 
@@ -24,11 +27,13 @@ export function HomePage() {
   const openCart = searchParams.get('openCart') === '1';
   const [activeSection, setActiveSection] = useState<SectionId | null>(openCart ? 'tienda' : null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { open: openCartDrawer } = useCart();
 
   useEffect(() => {
     if (!openCart) return;
     setActiveSection('tienda');
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    openCartDrawer();
     setSearchParams({}, { replace: true });
   }, [openCart]);
 
@@ -47,7 +52,7 @@ export function HomePage() {
     switch (activeSection) {
       case 'servicios':     return <ServicesSection />;
       case 'profesionales': return <ProfessionalsSection />;
-      case 'tienda':        return <StoreSection autoOpenCart={openCart} />;
+      case 'tienda':        return <StoreSection />;
       case 'nosotros':      return <AboutSection />;
       default:              return null;
     }
@@ -72,6 +77,8 @@ export function HomePage() {
       <Footer onNavigate={navigateTo} />
       <KologicBar />
       <WhatsAppButton />
+      <CartFloatingButton />
+      <CartDrawer />
     </main>
   );
 }

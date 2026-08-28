@@ -9,6 +9,14 @@ interface Props {
   onBack:  () => void
 }
 
+// Si la fecha viene como "2026-08-26" (sin hora), `new Date(...)` la lee
+// como UTC y en Argentina (UTC-3) se muestra un día antes. Forzamos hora
+// local para que la fecha del turno finalizado sea siempre la correcta.
+function formatVisitDate(date: string): string {
+  const withTime = date.includes('T') ? date : `${date}T00:00:00`
+  return new Date(withTime).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 export function ClientDetail({ client, primary, accent, onBack }: Props) {
   const [expandedVisit, setExpandedVisit] = useState<string | null>(null)
 
@@ -79,7 +87,7 @@ export function ClientDetail({ client, primary, accent, onBack }: Props) {
                 >
                   <div>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: '15px', color: '#000' }}>{v.serviceName}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#000' }}>{new Date(v.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#000' }}>{formatVisitDate(v.date)}</p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '18px', fontWeight: 700, color: accent }}>${v.price.toLocaleString('es-AR')}</span>

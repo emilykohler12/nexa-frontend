@@ -22,6 +22,9 @@ interface Service {
   image:       string | null
   status:      string
   isCombo?:    boolean
+  isSpecial?:  boolean
+  specialDate?: string | null
+  zones?:      { price: number; active: boolean }[]
 }
 
 export function ServicesSection() {
@@ -207,7 +210,7 @@ export function ServicesSection() {
                           type="service"
                           id={service.id}
                           name={service.name}
-                          detail={`${service.duration} min — $${Number(service.price).toLocaleString('es-AR')}`}
+                          detail={service.isSpecial ? (service.specialDate ?? 'Fecha a confirmar') : `${service.duration} min — $${Number(service.price).toLocaleString('es-AR')}`}
                           color={accentColor}
                         />
                       </div>
@@ -216,9 +219,18 @@ export function ServicesSection() {
                       {service.description}
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                      <span style={{ fontSize: '13px', color: '#999' }}>{service.duration} min</span>
+                      <span style={{ fontSize: '13px', color: '#999' }}>
+                        {service.isSpecial
+                          ? (service.specialDate ? new Date(service.specialDate + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }) : 'Fecha a confirmar')
+                          : `${service.duration} min`}
+                      </span>
                       <span style={{ fontFamily: 'var(--font-cormorant)', fontSize: '1.3rem', fontWeight: 700, color: accentColor }}>
-                        ${Number(service.price).toLocaleString('es-AR')}
+                        {service.isSpecial
+                          ? (() => {
+                              const prices = (service.zones ?? []).filter(z => z.active).map(z => z.price)
+                              return prices.length > 0 ? `Desde $${Math.min(...prices).toLocaleString('es-AR')}` : ''
+                            })()
+                          : `$${Number(service.price).toLocaleString('es-AR')}`}
                       </span>
                     </div>
                     <button

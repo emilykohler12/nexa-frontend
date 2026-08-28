@@ -1,9 +1,10 @@
 //src/features/client/booking/BookingWizard.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
+import { api } from '@/shared/utils/api'
 import { BOOKING_STEPS, EMPTY_BOOKING } from './types'
 import type { BookingSelection } from './types'
 import { ServiceStep } from './steps/ServiceStep'
@@ -14,6 +15,7 @@ import { ConfirmationStep } from './steps/ConfirmationStep'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
 import { PaymentStep } from './PaymentStep'
 import { ComboBookingFlow } from './ComboBookingFlow'
+import { SpecialServiceBookingFlow } from './SpecialServiceBookingFlow'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 function isMultiComponentCombo(service: Service): boolean {
@@ -40,6 +42,23 @@ export function BookingWizard() {
   })
   const [paymentSummary, setPaymentSummary] = useState<ConfirmedSummary | null>(null)
   const [comboService, setComboService] = useState<Service | null>(null)
+  const [specialService, setSpecialService] = useState<Service | null>(null)
+
+  // Si se llega con un servicio combo/especial pre-elegido (ej: desde su
+  // ficha en el home), hay que saltar directo a su flujo dedicado — el paso
+  // "servicio" del wizard normal nunca se llega a mostrar en ese caso.
+  useEffect(() => {
+    if (!prefill?.serviceId || prefill?.professionalId) return
+    api.get<{ services: Service[] }>('/api/services')
+      .then(res => {
+        const found = res.data.services.find(s => s.id === prefill.serviceId)
+        if (!found) return
+        if (found.isSpecial) setSpecialService(found)
+        else if (isMultiComponentCombo(found)) setComboService(found)
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!business) return null
   const { primaryColor } = business
@@ -93,6 +112,18 @@ export function BookingWizard() {
     )
   }
 
+  if (specialService) {
+    return (
+      <div className="w-full px-8 py-8" style={{ boxSizing: 'border-box' }}>
+        <SpecialServiceBookingFlow
+          service={specialService}
+          onBack={() => setSpecialService(null)}
+          onSuccess={handlePaymentSuccess}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="w-full px-8 py-8" style={{ boxSizing: 'border-box' }}>
       <h1 className="text-3xl mb-6" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
@@ -124,6 +155,7 @@ export function BookingWizard() {
         <ServiceStep
           selectedServiceId={selection.serviceId}
           onSelect={service => {
+            if (service.isSpecial) { setSpecialService(service); return }
             if (isMultiComponentCombo(service)) { setComboService(service); return }
             // Solo resetea el profesional si ya había un servicio elegido antes y lo
             // están cambiando por otro — así no se pierde un profesional pre-elegido

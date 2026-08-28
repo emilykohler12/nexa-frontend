@@ -1,6 +1,13 @@
+import { CalendarClock } from 'lucide-react'
 import type { Appointment } from '@/features/professional/types/appointment'
 import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import { groupByCombo } from '@/shared/utils/comboGroup'
+
+export interface SpecialAssignment {
+  serviceId:   string
+  serviceName: string
+  time:        string
+}
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7)
 
@@ -9,14 +16,18 @@ interface Props {
   day:          Date
   primary:      string
   onEventClick: (a: Appointment) => void
+  specialAssignments?: SpecialAssignment[]
 }
 
-export function AgendaDay({ appointments, day, primary, onEventClick }: Props) {
+export function AgendaDay({ appointments, day, primary, onEventClick, specialAssignments = [] }: Props) {
   const getAppts = (hour: number) =>
     appointments.filter(a => {
       const d = new Date(a.date + 'T00:00:00')
       return d.toDateString() === day.toDateString() && parseInt(a.time.split(':')[0]) === hour
     })
+
+  const getSpecial = (hour: number) =>
+    specialAssignments.filter(sa => parseInt(sa.time.split(':')[0]) === hour)
 
   return (
     <div style={{ fontFamily: "'Lato', sans-serif" }}>
@@ -24,6 +35,7 @@ export function AgendaDay({ appointments, day, primary, onEventClick }: Props) {
         <tbody>
           {HOURS.map(hour => {
             const appts = getAppts(hour)
+            const special = getSpecial(hour)
             return (
               <tr key={hour}>
                 <td style={{ width: '52px', padding: '0 10px 0 0', textAlign: 'right', verticalAlign: 'top', paddingTop: '8px', fontSize: '12px', color: '#aaa', whiteSpace: 'nowrap' }}>
@@ -60,6 +72,23 @@ export function AgendaDay({ appointments, day, primary, onEventClick }: Props) {
                           </button>
                         )
                       })}
+                    </div>
+                  ))}
+                  {special.map((sa, si) => (
+                    <div
+                      key={`special-${si}`}
+                      title="Horario reservado para este servicio — todavía no lo reservó ningún cliente"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        width: '100%', borderRadius: '8px',
+                        padding: '8px 12px', marginBottom: '3px',
+                        background: 'repeating-linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.08) 6px, rgba(212,175,55,0.14) 6px, rgba(212,175,55,0.14) 12px)',
+                        border: '1px dashed #d4af37',
+                      }}
+                    >
+                      <CalendarClock size={14} color="#8a6800" />
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#8a6800', flex: 1 }}>{sa.serviceName}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#8a6800' }}>{sa.time} · sin reservar</span>
                     </div>
                   ))}
                 </td>
