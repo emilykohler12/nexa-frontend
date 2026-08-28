@@ -1,7 +1,7 @@
 //src/features/client/booking/BookingWizard.tsx
 
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { api } from '@/shared/utils/api'
@@ -28,7 +28,17 @@ export function BookingWizard() {
   const { business } = useTenant()
   const navigate = useNavigate()
   const location = useLocation()
-  const prefill = (location.state as NavState | null) ?? null
+  const [searchParams] = useSearchParams()
+  // location.state cubre la navegación interna (ficha de servicio/profesional,
+  // "reservar de nuevo"); el query param cubre entrar desde un link guardado
+  // (ej: el link de un aviso de "nuevo servicio"), que no puede llevar state.
+  // El state, si viene con algo, siempre gana.
+  const stateNavPrefill = (location.state as NavState | null) ?? null
+  const prefill: NavState | null = stateNavPrefill?.serviceId
+    ? stateNavPrefill
+    : searchParams.get('serviceId')
+      ? { serviceId: searchParams.get('serviceId')!, professionalId: searchParams.get('professionalId') ?? undefined }
+      : null
   const [stepIndex, setStepIndex] = useState(() => {
     // "Reservar de nuevo" desde historial/cancelados manda servicio Y
     // profesional juntos — en ese caso salteamos directo a fecha/hora.

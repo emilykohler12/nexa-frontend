@@ -1,5 +1,5 @@
 export type ActivityLevel   = 'info' | 'warning' | 'error' | 'success'
-export type ActivityModule  = 'appointments' | 'clients' | 'professionals' | 'services' | 'store' | 'payments' | 'config' | 'auth' | 'system' | 'jobs'
+export type ActivityModule  = 'appointments' | 'clients' | 'professionals' | 'services' | 'store' | 'payments' | 'config' | 'auth' | 'system' | 'jobs' | 'reviews'
 
 export interface ActivityLog {
   id:        string
@@ -9,6 +9,10 @@ export interface ActivityLog {
   module:    ActivityModule
   level:     ActivityLevel
   detail?:   string        // info adicional opcional
+  // Solo para module: 'reviews' — permite aceptar/rechazar el comentario
+  // desde acá mismo para que se muestre (o no) en "Opiniones de clientes".
+  reviewId?:     string
+  reviewStatus?: 'pending' | 'approved' | 'rejected'
 }
 
 export const ACTIVITY_MODULE_LABEL: Record<ActivityModule, string> = {
@@ -22,6 +26,7 @@ export const ACTIVITY_MODULE_LABEL: Record<ActivityModule, string> = {
   auth:          'Sesiones',
   system:        'Sistema',
   jobs:          'Postulaciones',
+  reviews:       'Reseñas',
 }
 
 export const ACTIVITY_LEVEL_CONFIG: Record<ActivityLevel, { label: string; color: string }> = {
@@ -42,6 +47,7 @@ const MODULE_COLOR: Partial<Record<ActivityModule, string>> = {
   auth:          '#607d8b', // gris azulado
   system:        '#546e7a', // gris oscuro
   jobs:          '#00897b', // verde azulado
+  reviews:       '#d4af37', // dorado (marca)
 }
 
 export function getActivityColor(log: Pick<ActivityLog, 'module' | 'action' | 'level'>): string {

@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Bell, Sparkles, ShoppingBag, Tag, CalendarClock, Clock } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
+import { ClientReviewsList } from '@/features/client/reviews/ClientReviewsList'
 import type { ClientNotification, ClientNotificationType } from './types'
+
+type Tab = 'avisos' | 'reviews'
 
 const TYPE_CONFIG: Record<ClientNotificationType, { icon: typeof Bell; color: string }> = {
   new_service:          { icon: Sparkles,     color: '#069494' },
@@ -28,6 +31,7 @@ function timeAgo(iso: string): string {
 export function Notifications() {
   const { business } = useTenant()
   const navigate = useNavigate()
+  const [tab, setTab] = useState<Tab>('avisos')
   const [notifs, setNotifs] = useState<ClientNotification[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -60,9 +64,11 @@ export function Notifications() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Avisos</h1>
-          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>{unread > 0 ? `${unread} sin leer` : 'Todo al día'}</p>
+          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>
+            {tab === 'avisos' ? (unread > 0 ? `${unread} sin leer` : 'Todo al día') : 'Tus reseñas enviadas'}
+          </p>
         </div>
-        {unread > 0 && (
+        {tab === 'avisos' && unread > 0 && (
           <button
             onClick={markAllRead}
             style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', color: '#000', fontSize: '14px', fontFamily: "'Lato', sans-serif" }}
@@ -72,6 +78,27 @@ export function Notifications() {
         )}
       </div>
 
+      <div style={{ display: 'flex', gap: '2px', background: '#f0f0f0', borderRadius: '10px', padding: '3px', width: 'fit-content' }}>
+        {([{ id: 'avisos' as Tab, label: 'Avisos' }, { id: 'reviews' as Tab, label: 'Reseñas' }]).map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              padding: '8px 20px', border: 'none', borderRadius: '8px',
+              fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+              fontFamily: "'Lato', sans-serif",
+              background: tab === t.id ? primary : 'transparent',
+              color: tab === t.id ? '#fff' : '#000',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'reviews' ? (
+        <ClientReviewsList primaryColor={primary} />
+      ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
           <p style={{ textAlign: 'center', padding: '48px', color: '#000', fontSize: '16px' }}>Cargando...</p>
@@ -112,6 +139,7 @@ export function Notifications() {
           )
         })}
       </div>
+      )}
     </div>
   )
 }

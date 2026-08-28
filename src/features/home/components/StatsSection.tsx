@@ -1,5 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
+import { Star } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
+import { api } from '@/shared/utils/api'
 
 function OdometerNumber({ target, duration = 2000 }: { target: number; duration?: number }) {
   const [value, setValue] = useState(0)
@@ -34,8 +36,15 @@ function OdometerNumber({ target, duration = 2000 }: { target: number; duration?
 
 export function StatsSection() {
   const { business } = useTenant()
+  const [ratingSummary, setRatingSummary] = useState<{ average: number; count: number } | null>(null)
 
-  if (!business || business.stats.length === 0) return null
+  useEffect(() => {
+    api.get<{ average: number; count: number }>('/api/reviews/public/summary')
+      .then(res => { if (res.data.count > 0) setRatingSummary(res.data) })
+      .catch(() => {})
+  }, [])
+
+  if (!business || (business.stats.length === 0 && !ratingSummary)) return null
 
   return (
     <section
@@ -60,6 +69,23 @@ export function StatsSection() {
             </p>
           </div>
         ))}
+        {ratingSummary && (
+          <div>
+            <h3
+              className="text-2xl md:text-3xl font-medium flex items-center justify-center gap-1.5"
+              style={{ fontFamily: 'var(--font-cormorant)' }}
+            >
+              <Star size={22} fill="#fff" strokeWidth={0} />
+              {ratingSummary.average.toFixed(1)}
+            </h3>
+            <p
+              className="text-sm text-white/80 tracking-wide"
+              style={{ fontFamily: 'var(--font-cormorant)' }}
+            >
+              Calificación de {ratingSummary.count} cliente{ratingSummary.count !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
       </div>
     </section>
   )

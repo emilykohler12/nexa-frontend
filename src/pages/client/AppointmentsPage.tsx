@@ -16,6 +16,7 @@ import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
 import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
 import { InfoModal } from '@/shared/ui/molecules/InfoModal'
+import { ReviewPromptModal } from '@/features/client/reviews/ReviewPromptModal'
 
 type Filter = 'upcoming' | 'history' | 'cancelled'
 
@@ -63,6 +64,7 @@ export function AppointmentsPage() {
   const [detailAppt, setDetailAppt] = useState<Appointment | null>(null)
   const [confirmCancelAppt, setConfirmCancelAppt] = useState<Appointment | null>(null)
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
+  const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
 
   useEffect(() => {
     api.get<{ appointments: Appointment[] }>('/api/client/appointments')
@@ -73,6 +75,12 @@ export function AppointmentsPage() {
       })
       .catch(() => setAppointments([]))
       .finally(() => setLoading(false))
+
+    // Turnos ya finalizados que todavía no tienen reseña — se pregunta una
+    // sola vez, la primera vez que el cliente vuelve a entrar.
+    api.get<{ pending: { appointmentId: string; serviceName: string }[] }>('/api/client/reviews/pending')
+      .then(res => setReviewQueue(res.data.pending ?? []))
+      .catch(() => setReviewQueue([]))
   }, [])
 
   const dismissRescheduleNotice = () => {
@@ -333,6 +341,16 @@ export function AppointmentsPage() {
           }
           accentColor={primaryColor}
           onClose={dismissRescheduleNotice}
+        />
+      )}
+
+      {rescheduleNoticeQueue.length === 0 && reviewQueue.length > 0 && (
+        <ReviewPromptModal
+          appointmentId={reviewQueue[0].appointmentId}
+          serviceName={reviewQueue[0].serviceName}
+          primaryColor={primaryColor}
+          accentColor={accentColor}
+          onDone={() => setReviewQueue(prev => prev.slice(1))}
         />
       )}
     </div>

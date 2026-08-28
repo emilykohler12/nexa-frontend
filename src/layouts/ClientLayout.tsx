@@ -3,15 +3,16 @@ import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTenant }   from '@/features/tenant/TenantContext'
 import { useAuth }     from '@/features/auth/AuthContext'
 import { ROUTES }      from '@/app/config/routes.config'
-import { Calendar, Plus, User, Heart, LogOut, Home, Bell } from 'lucide-react'
+import { Calendar, Plus, User, Heart, LogOut, Home, Bell, ShoppingBag } from 'lucide-react'
 import './ClientLayout.css'
 
 const NAV_ITEMS = [
-  { path: ROUTES.CLIENT_APPOINTMENTS,  label: 'Mis Turnos', icon: Calendar },
-  { path: ROUTES.CLIENT_BOOK,          label: 'Reservar',   icon: Plus     },
-  { path: ROUTES.CLIENT_FAVORITES,     label: 'Favoritos',  icon: Heart    },
-  { path: ROUTES.CLIENT_NOTIFICATIONS, label: 'Avisos',     icon: Bell     },
-  { path: ROUTES.CLIENT_PROFILE,       label: 'Perfil',     icon: User     },
+  { path: ROUTES.CLIENT_APPOINTMENTS,  label: 'Mis Turnos', icon: Calendar    },
+  { path: ROUTES.CLIENT_BOOK,          label: 'Reservar',   icon: Plus        },
+  { path: ROUTES.CLIENT_FAVORITES,     label: 'Favoritos',  icon: Heart       },
+  { path: ROUTES.CLIENT_PRODUCTS,      label: 'Productos',  icon: ShoppingBag },
+  { path: ROUTES.CLIENT_NOTIFICATIONS, label: 'Avisos',     icon: Bell        },
+  { path: ROUTES.CLIENT_PROFILE,       label: 'Perfil',     icon: User        },
 ]
 
 export function ClientLayout() {

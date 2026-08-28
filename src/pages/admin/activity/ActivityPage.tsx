@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Check, X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { ACTIVITY_MODULE_LABEL, ACTIVITY_LEVEL_CONFIG, getActivityColor } from '@/app/data/admin/activity.data'
 import type { ActivityLog, ActivityModule, ActivityLevel } from '@/app/data/admin/activity.data'
@@ -45,6 +45,12 @@ export function ActivityPage() {
 
   const clearFilters = () => { setFilterUser(''); setFilterDate(''); setFilterModule(''); setFilterLevel('') }
   const hasActiveFilters = filterUser || filterDate || filterModule || filterLevel
+
+  const resolveReview = (log: ActivityLog, decision: 'approved' | 'rejected') => {
+    if (!log.reviewId) return
+    setLogs(prev => prev.map(l => l.id === log.id ? { ...l, reviewStatus: decision } : l))
+    api.patch(`/api/admin/reviews/${log.reviewId}/${decision === 'approved' ? 'approve' : 'reject'}`).catch(() => {})
+  }
 
   return (
     <div className="activity-page">
@@ -112,13 +118,35 @@ export function ActivityPage() {
                   <span className="activity-time">{formatTimestamp(log.timestamp)}</span>
                   <span className="activity-action">{log.action}</span>
                   <span className="activity-user">{log.user}</span>
-                  {log.detail && (
+                  {(log.detail || log.reviewId) && (
                     <ChevronDown size={16} className={`activity-chevron ${isOpen ? 'activity-chevron--open' : ''}`} />
                   )}
                 </div>
-                {isOpen && log.detail && (
+                {isOpen && (log.detail || log.reviewId) && (
                   <div className="activity-detail">
-                    <p><strong>Detalle:</strong> {log.detail}</p>
+                    {log.detail && <p><strong>Detalle:</strong> {log.detail}</p>}
+                    {log.reviewId && (
+                      log.reviewStatus === 'pending' ? (
+                        <div style={{ display: 'flex', gap: '8px', marginTop: log.detail ? '10px' : 0 }}>
+                          <button
+                            onClick={e => { e.stopPropagation(); resolveReview(log, 'approved') }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', border: 'none', borderRadius: '8px', background: '#4caf50', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: "'Lato', sans-serif" }}
+                          >
+                            <Check size={14} /> Aceptar y mostrar en el home
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); resolveReview(log, 'rejected') }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fff', color: '#555', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: "'Lato', sans-serif" }}
+                          >
+                            <X size={14} /> Rechazar
+                          </button>
+                        </div>
+                      ) : (
+                        <p style={{ margin: log.detail ? '10px 0 0' : 0, fontSize: '13px', fontWeight: 700, color: log.reviewStatus === 'approved' ? '#4caf50' : '#999' }}>
+                          {log.reviewStatus === 'approved' ? '✓ Se muestra en Opiniones de clientes' : 'No se va a mostrar en el home'}
+                        </p>
+                      )
+                    )}
                   </div>
                 )}
               </div>

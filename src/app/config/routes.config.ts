@@ -9,6 +9,7 @@ export const ROUTES = {
   CLIENT_PROFILE:       '/client/profile',
   CLIENT_FAVORITES:     '/client/favorites',
   CLIENT_NOTIFICATIONS: '/client/notifications',
+  CLIENT_PRODUCTS:      '/client/products',
 
   PROFESSIONAL:               '/professional',
   PROFESSIONAL_PANEL:         '/professional/panel',

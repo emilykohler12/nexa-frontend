@@ -4,16 +4,18 @@ import { InfoTab }    from './tabs/InfoTab'
 import { HistoryTab } from './tabs/HistoryTab'
 import { LoyaltyTab } from './tabs/LoyaltyTab'
 import { GalleryTab } from './tabs/GalleryTab'
+import { ReviewsTab } from './tabs/ReviewsTab'
 import type { AdminClient } from './types'
 import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
 
-type Tab = 'info' | 'history' | 'loyalty' | 'gallery'
+type Tab = 'info' | 'history' | 'loyalty' | 'gallery' | 'reviews'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'info',    label: 'Información'  },
   { id: 'history', label: 'Historial'    },
   { id: 'loyalty', label: 'Fidelización' },
   { id: 'gallery', label: 'Galería'      },
+  { id: 'reviews', label: 'Reseñas'      },
 ]
 
 interface Props {
@@ -116,6 +118,7 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock }: Props) {
       {activeTab === 'history' && <HistoryTab client={client} />}
       {activeTab === 'loyalty' && <LoyaltyTab client={client} />}
       {activeTab === 'gallery' && <GalleryTab client={client} />}
+      {activeTab === 'reviews' && <ReviewsTab client={client} />}
 
       {confirmingBlock && (
         <ConfirmModal
