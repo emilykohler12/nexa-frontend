@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '../model/schemas'
 import { useRegister } from '../hooks/useAuth'
 import { useTenant }   from '@/features/tenant/TenantContext'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { ROUTES } from '@/app/config/routes.config'
 
 export function RegisterForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
@@ -130,6 +132,23 @@ export function RegisterForm() {
           </button>
         </div>
         {errors.password && <p style={{ color: '#c33', fontSize: 12, marginTop: -14, marginBottom: 10 }}>{errors.password.message}</p>}
+
+        {/* Términos y Política de Privacidad — RF-06.01 */}
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6, fontSize: 13, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            disabled={registerUser.isPending}
+            {...register('termsAccepted')}
+            style={{ marginTop: 2 }}
+          />
+          <span>
+            Acepto los Términos de Servicio y la{' '}
+            <Link to={ROUTES.PRIVACY_POLICY} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>
+              Política de Privacidad
+            </Link>.
+          </span>
+        </label>
+        {errors.termsAccepted && <p style={{ color: '#c33', fontSize: 12, marginBottom: 10 }}>{errors.termsAccepted.message}</p>}
 
         {/* Botón registrarse */}
         <button type="submit" className="btn-main btn-gold btn-full" disabled={registerUser.isPending}>

@@ -4,6 +4,7 @@
 // no cobra nada real, solo simula el pago. Sí crea un turno real en la base
 // de datos (POST /api/client/appointments) al completarse el pago simulado.
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { QrCode, Link2, CreditCard, Check, Clock } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
@@ -11,6 +12,7 @@ import type { ConfirmedSummary } from './steps/ConfirmationStep'
 import { PostBookingDetails } from './PostBookingDetails'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { ROUTES } from '@/app/config/routes.config'
 
 const HOLD_MINUTES = 15
 
@@ -29,6 +31,8 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   const [phase,  setPhase]      = useState<Phase>('paying')
   const [secondsLeft, setSecondsLeft] = useState(HOLD_MINUTES * 60)
   const [payError, setPayError] = useState<string | null>(null)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [termsError, setTermsError] = useState(false)
   const [appointmentId, setAppointmentId] = useState<string | null>(null)
   const [assignedProfessionalId, setAssignedProfessionalId]     = useState<string | null>(null)
   const [assignedProfessionalName, setAssignedProfessionalName] = useState<string | null>(null)
@@ -93,6 +97,11 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   const urgent = secondsLeft <= 120
 
   const handlePay = () => {
+    if (!termsAccepted) {
+      setTermsError(true)
+      return
+    }
+    setTermsError(false)
     setPhase('processing')
     setPayError(null)
     setTimeout(async () => {
@@ -102,6 +111,7 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           professionalId: summary.professionalId,
           date:           summary.date,
           time:           summary.time,
+          termsAccepted:  true,
         })
         setAppointmentId(res.data.appointment?.id ?? null)
         // Si se reservó con "Cualquiera", el backend ya asignó un profesional real.
@@ -344,6 +354,28 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
             style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
           />
         </div>
+      )}
+
+      {/* Términos y Política de Privacidad — RF-06.01 */}
+      <label className="flex items-start gap-2 mb-3 text-sm cursor-pointer" style={{ fontFamily: 'var(--font-lato)' }}>
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={e => { setTermsAccepted(e.target.checked); if (e.target.checked) setTermsError(false) }}
+          disabled={phase === 'processing'}
+          className="mt-0.5"
+        />
+        <span style={{ color: '#555' }}>
+          Acepto los Términos de Servicio y la{' '}
+          <Link to={ROUTES.PRIVACY_POLICY} target="_blank" rel="noopener noreferrer" className="underline">
+            Política de Privacidad
+          </Link>.
+        </span>
+      </label>
+      {termsError && (
+        <p className="text-sm mb-3" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>
+          Tenés que aceptar los Términos y la Política de Privacidad para confirmar la reserva.
+        </p>
       )}
 
       <button

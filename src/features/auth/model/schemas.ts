@@ -11,6 +11,9 @@ export const registerSchema = z.object({
   email:    z.string().email('Email inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
   gender:   z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
+  termsAccepted: z.boolean().refine(v => v === true, {
+    message: 'Tenés que aceptar los Términos de Servicio y la Política de Privacidad',
+  }),
 })
 
 export type LoginInput    = z.infer<typeof loginSchema>

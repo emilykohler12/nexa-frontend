@@ -1,5 +1,7 @@
 // src/features/home/components/Footer.tsx
+import { useNavigate } from 'react-router-dom'
 import { useTenant } from '@/features/tenant/TenantContext'
+import { ROUTES } from '@/app/config/routes.config'
 import './Footer.css'
 
 type SectionId = 'servicios' | 'profesionales' | 'tienda' | 'nosotros'
@@ -10,6 +12,7 @@ interface FooterProps {
 
 export function Footer({ onNavigate }: FooterProps) {
   const { business } = useTenant()
+  const navigate = useNavigate()
   if (!business) return null
 
   const mapsUrl = business.contactInfo.address
@@ -93,8 +96,12 @@ export function Footer({ onNavigate }: FooterProps) {
         <div className="footer-col">
           <h4 className="footer-col-title">Legal</h4>
           <ul className="footer-list footer-list--muted">
-            <li>Términos y condiciones</li>
-            <li>Política de privacidad</li>
+            <li onClick={() => navigate(ROUTES.PRIVACY_POLICY)} style={{ cursor: 'pointer' }}>
+              Términos y condiciones
+            </li>
+            <li onClick={() => navigate(ROUTES.PRIVACY_POLICY)} style={{ cursor: 'pointer' }}>
+              Política de privacidad
+            </li>
           </ul>
         </div>
       </div>

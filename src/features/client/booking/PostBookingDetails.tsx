@@ -58,6 +58,8 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
   const [wantsExtensions, setWantsExtensions] = useState<boolean | null>(initial?.wantsExtensions ?? null)
   const [skinType, setSkinType]               = useState<string | null>(initial?.skinType ?? null)
 
+  const [consentAlertas, setConsentAlertas] = useState(false)
+  const [consentError, setConsentError]     = useState(false)
   const [saving, setSaving]               = useState(false)
   const [error, setError]                 = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -74,6 +76,11 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
   }
 
   const handleSubmit = async () => {
+    if (!consentAlertas) {
+      setConsentError(true)
+      return
+    }
+    setConsentError(false)
     setSaving(true)
     setError(null)
     const payload: AppointmentDetailsValue = {
@@ -92,7 +99,7 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
       skinType:        isFace ? skinType : null,
     }
     try {
-      await api.patch(`/api/client/appointments/${appointmentId}/details`, payload)
+      await api.patch(`/api/client/appointments/${appointmentId}/details`, { ...payload, consentAlertas: true })
       onDone(payload)
     } catch (err: any) {
       setError(safeErrorMessage(err, (editMode ? 'No se pudo guardar la información.' : 'No se pudo guardar la información. Podés continuar igual.')))
@@ -124,6 +131,23 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
             className="w-full px-4 py-3 rounded-xl border outline-none resize-none"
             style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
           />
+          {/* RF-06.02 — consentimiento para guardar observaciones operativas */}
+          <label className="flex items-start gap-2 mt-2 text-xs cursor-pointer" style={{ fontFamily: 'var(--font-lato)' }}>
+            <input
+              type="checkbox"
+              checked={consentAlertas}
+              onChange={e => { setConsentAlertas(e.target.checked); if (e.target.checked) setConsentError(false) }}
+              className="mt-0.5"
+            />
+            <span style={{ color: '#777' }}>
+              Autorizo a {business.name} a guardar estas observaciones operativas únicamente para la realización del servicio.
+            </span>
+          </label>
+          {consentError && (
+            <p className="text-xs mt-1" style={{ color: '#e53935' }}>
+              Necesitamos tu autorización para guardar esta información.
+            </p>
+          )}
         </div>
 
         <div>

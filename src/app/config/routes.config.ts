@@ -2,6 +2,7 @@
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  PRIVACY_POLICY: '/politica-privacidad',
 
   CLIENT:               '/client',
   CLIENT_APPOINTMENTS:  '/client/appointments',
