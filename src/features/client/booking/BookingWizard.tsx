@@ -140,7 +140,7 @@ export function BookingWizard() {
         Reservar Turno
       </h1>
 
-      <div className="flex items-center mb-8">
+      <div className="flex items-center mb-6 max-w-2xl mx-auto">
         {BOOKING_STEPS.map((s, i) => (
           <div key={s.id} className="flex items-center flex-1">
             <div className="flex flex-col items-center">
@@ -159,6 +159,25 @@ export function BookingWizard() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Navegación — arriba del contenido del paso */}
+      <div className="flex justify-between items-center mb-8">
+        <button onClick={goBack} className="flex items-center gap-2 text-sm transition-all" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
+          <ChevronLeft size={16} />
+          {stepIndex === 0 ? 'Volver' : 'Anterior'}
+        </button>
+        {step.id !== 'confirmation' && (
+          <button
+            onClick={goNext}
+            disabled={!canAdvance}
+            className="flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white transition-all hover:opacity-90 disabled:opacity-40"
+            style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+          >
+            Siguiente
+            <ChevronRight size={16} />
+          </button>
+        )}
       </div>
 
       {step.id === 'service' && (
@@ -195,33 +214,6 @@ export function BookingWizard() {
         />
       )}
       {step.id === 'confirmation' && <ConfirmationStep selection={selection} onConfirm={setPaymentSummary} />}
-
-      {step.id !== 'confirmation' && (
-        <div className="flex justify-between mt-8">
-          <button onClick={goBack} className="flex items-center gap-2 text-sm transition-all" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
-            <ChevronLeft size={16} />
-            {stepIndex === 0 ? 'Volver' : 'Anterior'}
-          </button>
-          <button
-            onClick={goNext}
-            disabled={!canAdvance}
-            className="flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-xl text-white transition-all hover:opacity-90 disabled:opacity-40"
-            style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
-          >
-            Siguiente
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
-
-      {step.id === 'confirmation' && (
-        <div className="mt-6">
-          <button onClick={goBack} className="flex items-center gap-2 text-sm transition-all" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
-            <ChevronLeft size={16} />
-            Anterior
-          </button>
-        </div>
-      )}
     </div>
   )
 }

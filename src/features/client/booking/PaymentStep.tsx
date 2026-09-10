@@ -352,7 +352,7 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
       <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6" style={{ background: '#f3f4f6' }}>
         <ExternalLink size={18} color="#666" />
         <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
-          Vas a pagar en una pestaña nueva de Mercado Pago — ahí podés elegir QR, tarjeta o dinero en cuenta.
+          Vas a pagar en una pestaña nueva de Mercado Pago.
         </p>
       </div>
 
