@@ -16,7 +16,7 @@ import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ROUTES } from '@/app/config/routes.config'
 
 const HOLD_MINUTES = 15
-const POLL_MS = 3000
+const POLL_MS = 5000
 
 type Phase = 'paying' | 'processing' | 'waitingPayment' | 'details' | 'success' | 'expired' | 'slotTaken'
 
@@ -148,9 +148,10 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     if (!appointmentId) return
     setCheckingPayment(true)
     try {
-      const res = await api.get<{ appointments: { id: string; paymentStatus?: string }[] }>('/api/client/appointments')
-      const appt = res.data.appointments.find(a => a.id === appointmentId)
-      if (appt?.paymentStatus === 'partial') setPhase('details')
+      // Le pregunta al backend que a su vez le pregunta a Mercado Pago — no
+      // depende de que el webhook haya llegado.
+      const res = await api.post<{ paymentStatus: string }>(`/api/client/appointments/${appointmentId}/verify-payment`)
+      if (res.data.paymentStatus === 'partial') setPhase('details')
     } catch {
       // silencioso — es un chequeo de fondo, no queremos tapar la pantalla de espera con un error
     } finally {

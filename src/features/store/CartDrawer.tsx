@@ -9,7 +9,7 @@ import { useCart } from './CartContext'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { PENDING_CART_CHECKOUT_KEY } from '@/shared/utils/pendingCheckout'
 
-const POLL_MS = 3000
+const POLL_MS = 5000
 
 type DeliveryType = 'pickup' | 'delivery'
 type Phase = 'cart' | 'payment' | 'waitingPayment' | 'success'
@@ -78,9 +78,10 @@ export function CartDrawer() {
     if (!orderId) return
     setCheckingPayment(true)
     try {
-      const res = await api.get<{ orders: { id: string; paymentStatus?: string }[] }>('/api/client/orders')
-      const order = res.data.orders.find(o => o.id === orderId)
-      if (order?.paymentStatus === 'paid') {
+      // Le pregunta al backend que a su vez le pregunta a Mercado Pago — no
+      // depende de que el webhook haya llegado.
+      const res = await api.post<{ paymentStatus: string }>(`/api/client/orders/${orderId}/verify-payment`)
+      if (res.data.paymentStatus === 'paid') {
         clear()
         setPhase('success')
       }
