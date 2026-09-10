@@ -133,9 +133,27 @@ export function CartDrawer() {
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: `${primaryColor}12` }}>
                 <ShoppingBag size={28} color={primaryColor} />
               </div>
-              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+              <h3 className="text-lg font-semibold mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
                 ¡Agregado al carrito!
               </h3>
+
+              {/* Qué producto(s) se acaba(n) de agregar */}
+              <div className="w-full flex flex-col gap-2 mb-6">
+                {items.map(item => (
+                  <div key={`${item.productId}::${item.promotionId ?? ''}`} className="flex items-center gap-3 text-left rounded-xl p-2" style={{ background: '#f9fafb' }}>
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: `${primaryColor}10` }}>
+                      {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span>🛍️</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>{item.name}</p>
+                      <p className="text-xs text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
+                        {item.quantity} × ${item.price.toLocaleString('es-AR')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <p className="text-sm text-gray-500 mb-8" style={{ fontFamily: 'var(--font-lato)' }}>
                 ¿Querés ir a pagar ahora o seguir viendo más productos?
               </p>
