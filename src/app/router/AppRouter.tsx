@@ -11,6 +11,7 @@ import { HomePage }    from '@/pages/public/HomePage'
 import { LoginPage }   from '@/pages/public/LoginPage'
 import { ProfessionalRegisterPage } from '@/pages/public/ProfessionalRegisterPage'
 import { PrivacyPolicyPage } from '@/pages/public/PrivacyPolicyPage'
+import { PaymentResultPage } from '@/pages/public/PaymentResultPage'
 
 import { AppointmentsPage as ClientAppointmentsPage } from '@/pages/client/AppointmentsPage'
 import { BookPage }      from '@/pages/client/BookPage'
@@ -50,6 +51,7 @@ export function AppRouter() {
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route path="/registro-profesional" element={<ProfessionalRegisterPage />} />
           <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
+          <Route path={ROUTES.PAYMENT_RESULT} element={<PaymentResultPage />} />
         </Route>
 
         {/* Cliente */}

@@ -1,11 +1,12 @@
 // src/features/client/booking/PaymentStep.tsx
 //
-// NOTA: no existe pasarela de pago real — el botón "pagar" de cada método
-// no cobra nada real, solo simula el pago. Sí crea un turno real en la base
-// de datos (POST /api/client/appointments) al completarse el pago simulado.
+// Pasarela real de Mercado Pago (Checkout Pro), con credenciales de PRUEBA
+// por ahora — ver MERCADOPAGO_ACCESS_TOKEN en el backend. El turno se crea
+// con paymentStatus 'pending' y solo pasa a 'partial' (seña pagada) cuando
+// llega el webhook de Mercado Pago confirmando el pago real — nunca antes.
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { QrCode, Link2, CreditCard, Check, Clock } from 'lucide-react'
+import { ExternalLink, RefreshCw, Check, Clock } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
@@ -15,9 +16,9 @@ import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ROUTES } from '@/app/config/routes.config'
 
 const HOLD_MINUTES = 15
+const POLL_MS = 3000
 
-type Method = 'qr' | 'link' | 'card'
-type Phase  = 'paying' | 'processing' | 'details' | 'success' | 'expired' | 'slotTaken'
+type Phase = 'paying' | 'processing' | 'waitingPayment' | 'details' | 'success' | 'expired' | 'slotTaken'
 
 interface Props {
   summary:   ConfirmedSummary
@@ -27,20 +28,20 @@ interface Props {
 
 export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   const { business } = useTenant()
-  const [method, setMethod]     = useState<Method>('qr')
   const [phase,  setPhase]      = useState<Phase>('paying')
   const [secondsLeft, setSecondsLeft] = useState(HOLD_MINUTES * 60)
   const [payError, setPayError] = useState<string | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [termsError, setTermsError] = useState(false)
   const [appointmentId, setAppointmentId] = useState<string | null>(null)
+  const [checkingPayment, setCheckingPayment] = useState(false)
   const [assignedProfessionalId, setAssignedProfessionalId]     = useState<string | null>(null)
   const [assignedProfessionalName, setAssignedProfessionalName] = useState<string | null>(null)
   const [careInfo, setCareInfo] = useState<{ priorRecommendations: string | null; afterCare: string | null } | null>(null)
   const deadlineRef = useRef(Date.now() + HOLD_MINUTES * 60 * 1000)
 
   useEffect(() => {
-    if (phase !== 'paying') return
+    if (phase !== 'paying' && phase !== 'waitingPayment') return
     const interval = setInterval(() => {
       const remaining = Math.max(0, Math.round((deadlineRef.current - Date.now()) / 1000))
       setSecondsLeft(remaining)
@@ -88,14 +89,15 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
       .catch(() => {})
   }, [phase])
 
-  if (!business) return null
-  const { primaryColor, accentColor } = business
-
   const minutes = Math.floor(secondsLeft / 60)
   const seconds = secondsLeft % 60
   const timeLabel = `${minutes}:${seconds.toString().padStart(2, '0')}`
   const urgent = secondsLeft <= 120
 
+  // Crea el turno (queda 'pending' de pago) y de inmediato le pide a Mercado
+  // Pago el checkout de esa seña. El pago en sí pasa en la pestaña de
+  // Mercado Pago, no acá — por eso después pasamos a 'waitingPayment' en vez
+  // de a 'details' directo.
   const handlePay = () => {
     if (!termsAccepted) {
       setTermsError(true)
@@ -104,7 +106,7 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     setTermsError(false)
     setPhase('processing')
     setPayError(null)
-    setTimeout(async () => {
+    ;(async () => {
       try {
         const res = await api.post<{ appointment: { id: string; professionalId?: string; professionalName?: string } }>('/api/client/appointments', {
           serviceId:      summary.serviceId,
@@ -113,24 +115,59 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           time:           summary.time,
           termsAccepted:  true,
         })
-        setAppointmentId(res.data.appointment?.id ?? null)
+        const newAppointmentId = res.data.appointment?.id ?? null
+        setAppointmentId(newAppointmentId)
         // Si se reservó con "Cualquiera", el backend ya asignó un profesional real.
         if (summary.professionalId === ANY_PROFESSIONAL_ID) {
           if (res.data.appointment?.professionalName) setAssignedProfessionalName(res.data.appointment.professionalName)
           if (res.data.appointment?.professionalId)   setAssignedProfessionalId(res.data.appointment.professionalId)
         }
-        setPhase('details')
+
+        if (!newAppointmentId) { setPhase('details'); return }
+
+        const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/${newAppointmentId}/payment`)
+        window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
+        setPhase('waitingPayment')
       } catch (err: any) {
         const code = err?.response?.data?.code
         if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
         } else {
-          setPayError(safeErrorMessage(err, 'No pudimos confirmar el turno. Intentá de nuevo.'))
+          setPayError(safeErrorMessage(err, 'No pudimos iniciar el pago. Intentá de nuevo.'))
           setPhase('paying')
         }
       }
-    }, 1200)
+    })()
   }
+
+  // El pago real se confirma por webhook en el backend, no en esta pestaña —
+  // así que preguntamos cada unos segundos si ya se acreditó. También hay un
+  // botón manual para el caso de que el usuario vuelva antes de que dispare
+  // el polling.
+  const checkPaymentStatus = async () => {
+    if (!appointmentId) return
+    setCheckingPayment(true)
+    try {
+      const res = await api.get<{ appointments: { id: string; paymentStatus?: string }[] }>('/api/client/appointments')
+      const appt = res.data.appointments.find(a => a.id === appointmentId)
+      if (appt?.paymentStatus === 'partial') setPhase('details')
+    } catch {
+      // silencioso — es un chequeo de fondo, no queremos tapar la pantalla de espera con un error
+    } finally {
+      setCheckingPayment(false)
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== 'waitingPayment') return
+    const interval = setInterval(checkPaymentStatus, POLL_MS)
+    return () => clearInterval(interval)
+  }, [phase, appointmentId])
+
+  // Guard después de todos los hooks — mantiene el orden de hooks estable
+  // aunque el tenant todavía no haya cargado.
+  if (!business) return null
+  const { primaryColor, accentColor } = business
 
   if (phase === 'expired') {
     return (
@@ -173,6 +210,40 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
         >
           Elegir otro horario
+        </button>
+      </div>
+    )
+  }
+
+  if (phase === 'waitingPayment') {
+    return (
+      <div className="text-center py-10">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#f3f4f6' }}>
+          <Clock size={28} color="#666" />
+        </div>
+        <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+          Esperando la confirmación del pago
+        </h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-2" style={{ fontFamily: 'var(--font-lato)' }}>
+          Se abrió una pestaña nueva con el checkout de Mercado Pago. Completá el pago ahí — apenas se confirme, esta pantalla avanza sola.
+        </p>
+        <div
+          className="flex items-center gap-3 rounded-xl px-4 py-3 my-6 max-w-md mx-auto"
+          style={{ background: urgent ? '#fee2e2' : '#f3f4f6' }}
+        >
+          <Clock size={18} color={urgent ? '#e53935' : '#666'} />
+          <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: urgent ? '#c33' : '#555' }}>
+            Tenés <strong>{timeLabel}</strong> para completarlo antes de que se libere el horario.
+          </p>
+        </div>
+        <button
+          onClick={checkPaymentStatus}
+          disabled={checkingPayment}
+          className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-2"
+          style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+        >
+          <RefreshCw size={16} className={checkingPayment ? 'animate-spin' : ''} />
+          {checkingPayment ? 'Verificando...' : 'Ya pagué, verificar'}
         </button>
       </div>
     )
@@ -275,86 +346,14 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         </p>
       )}
 
-      {/* Métodos de pago */}
-      <div className="flex gap-2 mb-5">
-        {([
-          { id: 'qr' as Method,   label: 'QR',      Icon: QrCode     },
-          { id: 'link' as Method, label: 'Link',    Icon: Link2      },
-          { id: 'card' as Method, label: 'Tarjeta',  Icon: CreditCard },
-        ]).map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => setMethod(id)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{
-              background: method === id ? primaryColor : '#f3f4f6',
-              color: method === id ? 'white' : '#555',
-              fontFamily: 'var(--font-lato)',
-            }}
-          >
-            <Icon size={15} /> {label}
-          </button>
-        ))}
+      {/* Al confirmar se abre el checkout de Mercado Pago en una pestaña nueva —
+          ahí la clienta elige si paga con QR, tarjeta o dinero en cuenta. */}
+      <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6" style={{ background: '#f3f4f6' }}>
+        <ExternalLink size={18} color="#666" />
+        <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
+          Vas a pagar en una pestaña nueva de Mercado Pago — ahí podés elegir QR, tarjeta o dinero en cuenta.
+        </p>
       </div>
-
-      {method === 'qr' && (
-        <div className="text-center mb-6">
-          <div
-            className="w-44 h-44 mx-auto rounded-xl flex items-center justify-center mb-3"
-            style={{ background: '#f3f4f6', border: '1px solid #e5e5e5' }}
-          >
-            <QrCode size={100} color="#999" />
-          </div>
-          <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
-            Escaneá el código con tu billetera virtual o app del banco.
-          </p>
-        </div>
-      )}
-
-      {method === 'link' && (
-        <div className="text-center mb-6">
-          <p className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'var(--font-lato)' }}>
-            Te generamos un link de pago único para completar la seña.
-          </p>
-          <div
-            className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl mb-2"
-            style={{ background: '#f3f4f6', fontFamily: 'var(--font-lato)' }}
-          >
-            <span className="text-sm text-gray-500 truncate">pago.{business.name?.toLowerCase().replace(/\s+/g, '-') ?? 'nexa'}.com/sena/...</span>
-          </div>
-        </div>
-      )}
-
-      {method === 'card' && (
-        <div className="flex flex-col gap-3 mb-6">
-          <input
-            type="text"
-            placeholder="Número de tarjeta"
-            className="w-full px-4 py-3 rounded-xl border outline-none"
-            style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-          />
-          <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder="MM/AA"
-              className="flex-1 px-4 py-3 rounded-xl border outline-none"
-              style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-            />
-            <input
-              type="text"
-              placeholder="CVV"
-              className="flex-1 px-4 py-3 rounded-xl border outline-none"
-              style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-            />
-          </div>
-          <input
-            type="text"
-            placeholder="Nombre del titular"
-            className="w-full px-4 py-3 rounded-xl border outline-none"
-            style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-          />
-        </div>
-      )}
 
       {/* Términos y Política de Privacidad — RF-06.01 */}
       <label className="flex items-start gap-2 mb-3 text-sm cursor-pointer" style={{ fontFamily: 'var(--font-lato)' }}>

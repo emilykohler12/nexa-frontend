@@ -215,9 +215,9 @@ export function ServicesSection() {
                         />
                       </div>
                     </div>
-                    <p style={{ flex: 1, fontSize: '14px', color: '#666', margin: '0 0 14px' }}>
-                      {service.description}
-                    </p>
+                    {/* La descripción no se muestra en la tarjeta — solo en el
+                        modal al tocar el servicio (ServiceDetailModal). */}
+                    <div style={{ flex: 1 }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                       <span style={{ fontSize: '13px', color: '#999' }}>
                         {service.isSpecial

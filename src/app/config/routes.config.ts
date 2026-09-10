@@ -3,6 +3,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   PRIVACY_POLICY: '/politica-privacidad',
+  PAYMENT_RESULT: '/pago/resultado',
 
   CLIENT:               '/client',
   CLIENT_APPOINTMENTS:  '/client/appointments',

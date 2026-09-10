@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, Minus, Plus, Trash2, Store, Truck, Check, QrCode, Link2, CreditCard, LogIn, ShoppingBag, ArrowRight } from 'lucide-react'
+import { X, Minus, Plus, Trash2, Store, Truck, Check, ExternalLink, RefreshCw, Clock, LogIn, ShoppingBag, ArrowRight } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { useAuth } from '@/features/auth/AuthContext'
 import { api } from '@/shared/utils/api'
@@ -9,9 +9,10 @@ import { useCart } from './CartContext'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { PENDING_CART_CHECKOUT_KEY } from '@/shared/utils/pendingCheckout'
 
+const POLL_MS = 3000
+
 type DeliveryType = 'pickup' | 'delivery'
-type PaymentMethod = 'qr' | 'link' | 'card'
-type Phase = 'cart' | 'payment' | 'success'
+type Phase = 'cart' | 'payment' | 'waitingPayment' | 'success'
 
 // Panel lateral del carrito — vive montado una sola vez a nivel de página y
 // se abre/cierra según el estado global del carrito (CartContext), no según
@@ -30,12 +31,10 @@ export function CartDrawer() {
   const [address, setAddress] = useState('')
   const [phone, setPhone]     = useState(user?.phone ?? '')
   const [notes, setNotes]     = useState('')
-  const [method, setMethod]   = useState<PaymentMethod>('qr')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]     = useState<string | null>(null)
-
-  if (!business) return null
-  const { primaryColor, accentColor, contactInfo, name: businessName } = business
+  const [orderId, setOrderId] = useState<string | null>(null)
+  const [checkingPayment, setCheckingPayment] = useState(false)
 
   const canContinue = items.length > 0 && (deliveryType === 'pickup' || address.trim().length > 0)
 
@@ -45,11 +44,14 @@ export function CartDrawer() {
     navigate(ROUTES.LOGIN)
   }
 
+  // Crea el pedido (queda paymentStatus 'pending') y abre el checkout real de
+  // Mercado Pago en una pestaña nueva. El pedido se confirma por webhook, no
+  // acá — por eso el carrito no se vacía todavía, recién en 'success'.
   const handleConfirmPayment = async () => {
     setSubmitting(true)
     setError(null)
     try {
-      await api.post('/api/client/orders', {
+      const res = await api.post<{ order: { id: string } }>('/api/client/orders', {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, promotionId: i.promotionId ?? null })),
         delivery: {
           type: deliveryType,
@@ -57,16 +59,48 @@ export function CartDrawer() {
         },
         phone: phone.trim() || null,
         notes: notes.trim() || null,
-        paymentMethod: method,
+        paymentMethod: 'mercadopago',
       })
-      clear()
-      setPhase('success')
+      const newOrderId = res.data.order.id
+      setOrderId(newOrderId)
+
+      const pref = await api.post<{ checkoutUrl: string }>(`/api/client/orders/${newOrderId}/payment`)
+      window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
+      setPhase('waitingPayment')
     } catch (err: any) {
       setError(safeErrorMessage(err, 'No se pudo confirmar el pedido. Intentá de nuevo.'))
     } finally {
       setSubmitting(false)
     }
   }
+
+  const checkPaymentStatus = async () => {
+    if (!orderId) return
+    setCheckingPayment(true)
+    try {
+      const res = await api.get<{ orders: { id: string; paymentStatus?: string }[] }>('/api/client/orders')
+      const order = res.data.orders.find(o => o.id === orderId)
+      if (order?.paymentStatus === 'paid') {
+        clear()
+        setPhase('success')
+      }
+    } catch {
+      // chequeo de fondo — no tapamos la pantalla de espera con un error
+    } finally {
+      setCheckingPayment(false)
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== 'waitingPayment') return
+    const interval = setInterval(checkPaymentStatus, POLL_MS)
+    return () => clearInterval(interval)
+  }, [phase, orderId])
+
+  // Guard después de todos los hooks — si no hay tenant cargado, no se renderiza
+  // nada, pero los hooks ya corrieron en orden estable.
+  if (!business) return null
+  const { primaryColor, accentColor, contactInfo } = business
 
   return (
     <>
@@ -86,7 +120,7 @@ export function CartDrawer() {
       >
         <div className="flex items-center justify-between p-5 border-b flex-shrink-0" style={{ borderColor: '#f0f0f0' }}>
           <h2 className="text-xl" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-            {phase === 'success' ? '¡Pedido confirmado!' : phase === 'payment' ? 'Pagá tu pedido' : 'Tu carrito'}
+            {phase === 'success' ? '¡Pedido confirmado!' : phase === 'waitingPayment' ? 'Esperando el pago' : phase === 'payment' ? 'Pagá tu pedido' : 'Tu carrito'}
           </h2>
           <button onClick={close} aria-label="Cerrar" className="text-gray-400 hover:text-gray-600">
             <X size={20} />
@@ -140,6 +174,24 @@ export function CartDrawer() {
                 Cerrar
               </button>
             </div>
+          ) : phase === 'waitingPayment' ? (
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#f3f4f6' }}>
+                <Clock size={28} color="#666" />
+              </div>
+              <p className="text-gray-500 mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
+                Se abrió una pestaña nueva con el checkout de Mercado Pago. Completá el pago ahí — apenas se confirme, esto avanza solo.
+              </p>
+              <button
+                onClick={checkPaymentStatus}
+                disabled={checkingPayment}
+                className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-2"
+                style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+              >
+                <RefreshCw size={16} className={checkingPayment ? 'animate-spin' : ''} />
+                {checkingPayment ? 'Verificando...' : 'Ya pagué, verificar'}
+              </button>
+            </div>
           ) : items.length === 0 ? (
             <div className="p-10 text-center text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
               Todavía no agregaste productos.
@@ -153,65 +205,12 @@ export function CartDrawer() {
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                {([
-                  { id: 'qr' as PaymentMethod,   label: 'QR',      Icon: QrCode     },
-                  { id: 'link' as PaymentMethod, label: 'Link',    Icon: Link2      },
-                  { id: 'card' as PaymentMethod, label: 'Tarjeta', Icon: CreditCard },
-                ]).map(({ id, label, Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setMethod(id)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                    style={{
-                      background: method === id ? primaryColor : '#f3f4f6',
-                      color: method === id ? 'white' : '#555',
-                      fontFamily: 'var(--font-lato)',
-                    }}
-                  >
-                    <Icon size={15} /> {label}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: '#f3f4f6' }}>
+                <ExternalLink size={18} color="#666" />
+                <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
+                  Vas a pagar en una pestaña nueva de Mercado Pago — ahí podés elegir QR, tarjeta o dinero en cuenta.
+                </p>
               </div>
-
-              {method === 'qr' && (
-                <div className="text-center">
-                  <div
-                    className="w-40 h-40 mx-auto rounded-xl flex items-center justify-center mb-3"
-                    style={{ background: '#f3f4f6', border: '1px solid #e5e5e5' }}
-                  >
-                    <QrCode size={90} color="#999" />
-                  </div>
-                  <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
-                    Escaneá el código con tu billetera virtual o app del banco.
-                  </p>
-                </div>
-              )}
-
-              {method === 'link' && (
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-3" style={{ fontFamily: 'var(--font-lato)' }}>
-                    Te generamos un link de pago único para completar la compra.
-                  </p>
-                  <div
-                    className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl"
-                    style={{ background: '#f3f4f6', fontFamily: 'var(--font-lato)' }}
-                  >
-                    <span className="text-sm text-gray-500 truncate">pago.{businessName?.toLowerCase().replace(/\s+/g, '-') ?? 'nexa'}.com/pedido/...</span>
-                  </div>
-                </div>
-              )}
-
-              {method === 'card' && (
-                <div className="flex flex-col gap-3">
-                  <input type="text" placeholder="Número de tarjeta" className="w-full px-4 py-3 rounded-xl border outline-none" style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }} />
-                  <div className="flex gap-3">
-                    <input type="text" placeholder="MM/AA" className="flex-1 px-4 py-3 rounded-xl border outline-none" style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }} />
-                    <input type="text" placeholder="CVV" className="flex-1 px-4 py-3 rounded-xl border outline-none" style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }} />
-                  </div>
-                  <input type="text" placeholder="Nombre del titular" className="w-full px-4 py-3 rounded-xl border outline-none" style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }} />
-                </div>
-              )}
 
               {error && (
                 <p className="text-sm text-center" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{error}</p>
