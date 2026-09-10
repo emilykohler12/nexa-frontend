@@ -17,15 +17,20 @@ function redirectByRole(role: UserRole): string {
   }
 }
 
-interface AuthDestination {
+export interface AuthDestination {
   pathname: string
   state?:   unknown
 }
 
-// Si el login/registro vino de "confirmar" un carrito o de tocar "Reservar
-// turno" sin estar logueado, lo devolvemos directo ahí en vez de a su panel
-// de siempre.
-function destinationAfterAuth(role: UserRole): AuthDestination {
+// A dónde mandar al usuario apenas queda logueado. Si el login/registro vino de
+// "confirmar" un carrito o de tocar "Reservar turno" sin estar logueado, lo
+// devolvemos directo ahí en vez de a su panel de siempre.
+//
+// OJO: consume (borra) las marcas de sessionStorage, así que tiene que llamarse
+// UNA sola vez por login. El único que navega después de autenticarse es el
+// efecto de LoginPage — por eso useLogin/useRegister ya no navegan acá, para no
+// competir con ese efecto ni consumir la marca dos veces.
+export function destinationAfterAuth(role: UserRole): AuthDestination {
   if (role === 'client') {
     if (consumePendingCartCheckout()) return { pathname: `${ROUTES.HOME}?openCart=1` }
     const preselect = consumePendingBookingPreselect()
@@ -36,7 +41,6 @@ function destinationAfterAuth(role: UserRole): AuthDestination {
 
 export function useLogin() {
   const queryClient = useQueryClient()
-  const navigate    = useNavigate()
   const { login }   = useAuth()
 
   return useMutation({
@@ -45,8 +49,6 @@ export function useLogin() {
       if (data.user) {
         login(data.user)
         queryClient.setQueryData(['auth', 'me'], data)
-        const { pathname, state } = destinationAfterAuth(data.user.role)
-        navigate(pathname, { state })
       }
     },
   })
@@ -54,7 +56,6 @@ export function useLogin() {
 
 export function useRegister() {
   const queryClient = useQueryClient()
-  const navigate    = useNavigate()
   const { login }   = useAuth()
 
   return useMutation({
@@ -63,8 +64,6 @@ export function useRegister() {
       if (data.user) {
         login(data.user)
         queryClient.setQueryData(['auth', 'me'], data)
-        const { pathname, state } = destinationAfterAuth(data.user.role)
-        navigate(pathname, { state })
       }
     },
   })

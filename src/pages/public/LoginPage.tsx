@@ -5,7 +5,8 @@ import { useNavigate }          from 'react-router-dom'
 import { ArrowLeft }            from 'lucide-react'
 import { LoginForm }            from '@/features/auth/components/LoginForm'
 import { RegisterForm }         from '@/features/auth/components/RegisterForm'
-import { useAuth, redirectByRole } from '@/features/auth/AuthContext'
+import { useAuth }             from '@/features/auth/AuthContext'
+import { destinationAfterAuth } from '@/features/auth/hooks/useAuth'
 import { ROUTES }               from '@/app/config/routes.config'
 
 export function LoginPage() {
@@ -13,9 +14,13 @@ export function LoginPage() {
   const { user, isLoading } = useAuth()
   const navigate            = useNavigate()
 
+  // Único lugar que redirige después de autenticarse (tanto un login/registro
+  // recién hecho como un usuario ya logueado que entra a /login a mano). Manda
+  // al carrito o a la reserva si venía de ahí sin sesión (ver destinationAfterAuth).
   useEffect(() => {
     if (!isLoading && user) {
-      navigate(redirectByRole(user.role), { replace: true })
+      const { pathname, state } = destinationAfterAuth(user.role)
+      navigate(pathname, { replace: true, state })
     }
   }, [user, isLoading, navigate])
 
