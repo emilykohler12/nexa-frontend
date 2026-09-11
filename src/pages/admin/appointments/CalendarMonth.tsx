@@ -1,6 +1,9 @@
 import type { Appointment, Professional } from './types'
+import { groupByCombo } from '@/shared/utils/comboGroup'
 
 const DAYS_HEADER = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
+// Color fijo para los combos — no es el de ninguna profesional.
+const COMBO_COLOR = '#8b5cf6'
 
 interface Props {
   appointments:  Appointment[]
@@ -57,21 +60,34 @@ export function CalendarMonth({ appointments, professionals, month, onEventClick
                   <div style={{ width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: isToday(day) ? 700 : 500, color: isToday(day) ? '#fff' : '#000', background: isToday(day) ? '#069494' : 'transparent', marginBottom: '6px' }}>
                     {day}
                   </div>
-                  {getAppts(day).slice(0, 3).map(a => (
-                    <button key={a.id} onClick={() => onEventClick(a)} title={a.comboGroupId ? `Combo — ${a.clientName} — ${a.serviceName}` : `${a.clientName} — ${a.serviceName}`}
-                      style={{ display: 'flex', alignItems: 'center', gap: '5px', width: '100%', border: 'none', borderLeft: a.comboGroupId ? '2px solid #d4af37' : 'none', borderRadius: '4px', padding: '3px 6px', marginBottom: '2px', background: `${colorFor(a)}15`, cursor: 'pointer', textAlign: 'left', fontFamily: "'Lato', sans-serif" }}
-                    >
-                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0, background: colorFor(a) }} />
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                        {a.clientName}
-                      </span>
-                    </button>
-                  ))}
-                  {getAppts(day).length > 3 && (
-                    <div style={{ fontSize: '12px', color: '#069494', fontWeight: 700, padding: '1px 4px' }}>
-                      +{getAppts(day).length - 3} más
-                    </div>
-                  )}
+                  {(() => {
+                    const groups = groupByCombo(getAppts(day))
+                    return (
+                      <>
+                        {groups.slice(0, 3).map((group, gi) => {
+                          const isCombo = group.items.length > 1
+                          const a = group.items[0]
+                          const color = isCombo ? COMBO_COLOR : colorFor(a)
+                          return (
+                            <button key={group.comboGroupId ?? a.id ?? gi} onClick={() => onEventClick(a)}
+                              title={isCombo ? `Combo (${group.items.length} servicios) — ${a.clientName}` : `${a.clientName} — ${a.serviceName}`}
+                              style={{ display: 'flex', alignItems: 'center', gap: '5px', width: '100%', border: 'none', borderRadius: '4px', padding: '3px 6px', marginBottom: '2px', background: `${color}15`, cursor: 'pointer', textAlign: 'left', fontFamily: "'Lato', sans-serif" }}
+                            >
+                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0, background: color }} />
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                {isCombo ? `${a.clientName} · Combo` : a.clientName}
+                              </span>
+                            </button>
+                          )
+                        })}
+                        {groups.length > 3 && (
+                          <div style={{ fontSize: '12px', color: '#069494', fontWeight: 700, padding: '1px 4px' }}>
+                            +{groups.length - 3} más
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </>
               )}
             </div>

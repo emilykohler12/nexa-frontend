@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Upload, Check } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { Promotion, PromotionType, PromotionStatus, PromotionKind, PromotionItem } from '@/app/data/admin/promotions/types'
+import { AutoPromotionsSection } from './AutoPromotionsSection'
 
 const todayISO = () => new Date().toISOString().split('T')[0]
 
@@ -21,15 +22,18 @@ function kindLabel(promo: Promotion): string {
   return 'Descuento'
 }
 
-const TABS: { id: PromotionType; label: string }[] = [
-  { id: 'service', label: 'Servicios' },
-  { id: 'product',  label: 'Productos' },
+type PageTab = PromotionType | 'automatic'
+
+const TABS: { id: PageTab; label: string }[] = [
+  { id: 'service',   label: 'Servicios' },
+  { id: 'product',   label: 'Productos' },
+  { id: 'automatic', label: 'Campañas automáticas' },
 ]
 
 export function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading]       = useState(true)
-  const [tab, setTab]               = useState<PromotionType>('service')
+  const [tab, setTab]               = useState<PageTab>('service')
   const [editing, setEditing]       = useState<Promotion | null>(null)
   const [showForm, setShowForm]     = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<Promotion | null>(null)
@@ -82,11 +86,17 @@ export function PromotionsPage() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Playfair Display', serif" }}>Promociones</h1>
-          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Ofertas de servicios y productos que aparecen en la página principal</p>
+          <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>
+            {tab === 'automatic'
+              ? 'Reglas internas que le mandan un descuento por mail a un cliente — nunca se ven en la página principal'
+              : 'Ofertas de servicios y productos que aparecen en la página principal'}
+          </p>
         </div>
-        <button onClick={() => { setEditing(emptyPromotion(tab)); setShowForm(true) }} style={primaryBtnStyle}>
-          <Plus size={16} /> Nueva promoción
-        </button>
+        {tab !== 'automatic' && (
+          <button onClick={() => { setEditing(emptyPromotion(tab)); setShowForm(true) }} style={primaryBtnStyle}>
+            <Plus size={16} /> Nueva promoción
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '2px', background: '#f0f0f0', borderRadius: '10px', padding: '3px', width: 'fit-content' }}>
@@ -109,6 +119,10 @@ export function PromotionsPage() {
 
       {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
 
+      {tab === 'automatic' ? (
+        <AutoPromotionsSection />
+      ) : (
+        <>
       {showForm && editing && (
         <PromotionForm promotion={editing} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} />
       )}
@@ -180,6 +194,8 @@ export function PromotionsPage() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

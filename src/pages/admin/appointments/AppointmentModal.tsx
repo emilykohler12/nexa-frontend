@@ -165,17 +165,6 @@ export function AppointmentModal({
         {/* Cuerpo */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-          {appointment.isSimultaneous && (
-            <div style={{ background: `${profColor}12`, border: `1px solid ${profColor}44`, borderRadius: '10px', padding: '10px 12px' }}>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: profColor, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Turno simultáneo</p>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#333' }}>
-                {(appointment.simultaneousWith?.length ?? 0) > 0
-                  ? <>Al mismo tiempo: {appointment.simultaneousWith!.map(p => `${p.professionalName} (${p.serviceName})`).join(', ')}</>
-                  : 'Se hace en simultáneo con otras profesionales.'}
-              </p>
-            </div>
-          )}
-
           {/* Fecha y hora */}
           {editing ? (
             <Section>
@@ -279,11 +268,41 @@ export function AppointmentModal({
           <Divider />
 
           {/* Servicio */}
-          <SectionTitle color={profColor}>Servicio</SectionTitle>
+          <SectionTitle color={profColor}>
+            Servicio{appointment.isSimultaneous ? ' — combo en simultáneo' : ''}
+          </SectionTitle>
           <Section>
-            <InfoRow icon={<Scissors size={14} />} label="Servicio">
-              {appointment.serviceName}
-            </InfoRow>
+            {!editing && appointment.isSimultaneous ? (
+              // Combo: se listan TODOS los servicios (este + los simultáneos),
+              // cada uno con su propia duración, precio y profesional.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  { appointmentId: appointment.id, serviceName: appointment.serviceName, professionalId: appointment.professionalId, professionalName: appointment.professionalName, duration: appointment.serviceDuration, price: appointment.servicePrice },
+                  ...(appointment.simultaneousWith ?? []),
+                ].map(leg => {
+                  const legColor = professionals.find(p => p.id === leg.professionalId)?.color ?? profColor;
+                  return (
+                    <div key={leg.appointmentId} style={{ padding: '10px 12px', background: '#f8f8f8', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '14px', color: '#111' }}>
+                        <Scissors size={13} /> {leg.serviceName}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px', color: '#555' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Clock size={12} /> {leg.duration} min</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><DollarSign size={12} /> ${leg.price.toLocaleString('es-AR')}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: legColor, display: 'inline-block' }} />
+                          {leg.professionalName}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <InfoRow icon={<Scissors size={14} />} label="Servicio">
+                {appointment.serviceName}
+              </InfoRow>
+            )}
 
             {editing ? (
               <>
@@ -328,7 +347,8 @@ export function AppointmentModal({
                   </div>
                 </div>
               </>
-            ) : (
+            ) : !appointment.isSimultaneous ? (
+              // Turno normal: la lista de arriba ya cubre el caso del combo.
               <>
                 <InfoRow icon={<Clock size={14} />} label="Duración">
                   {appointment.serviceDuration} min
@@ -346,7 +366,7 @@ export function AppointmentModal({
                   </span>
                 </InfoRow>
               </>
-            )}
+            ) : null}
 
             {((appointment.selectedZones?.length ?? 0) > 0 || (appointment.selectedPackages?.length ?? 0) > 0) && (
               <InfoRow icon={<Tag size={14} />} label="Zonas y paquetes elegidos">

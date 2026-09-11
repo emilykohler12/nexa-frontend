@@ -52,7 +52,7 @@ export interface CalendarAppointment {
   details?: AppointmentDetails | null;
   comboGroupId?: string | null;
   isSimultaneous?: boolean;
-  simultaneousWith?: { serviceName: string; professionalName: string }[];
+  simultaneousWith?: { appointmentId: string; serviceName: string; professionalId: string; professionalName: string; duration: number; price: number }[];
   // Solo para turnos de un servicio especial — qué zonas/paquetes eligió el cliente.
   selectedZones?: { name: string; price: number; duration: number }[];
   selectedPackages?: { name: string; price: number; duration: number }[];

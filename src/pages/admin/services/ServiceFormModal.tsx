@@ -1,5 +1,5 @@
 // src/pages/admin/services/ServiceFormModal.tsx
-import { useRef } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,8 +20,39 @@ interface Props {
   onClose: () => void
 }
 
+const DEFAULT_MODAL_SIZE = { width: 560, height: 640 }
+const MIN_MODAL_SIZE     = { width: 360, height: 320 }
+
 export function ServiceFormModal({ service, categories, allServices, error, onSave, onClose }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Resize a mano desde la esquina inferior derecha — el "resize: both" nativo
+  // del CSS tiene un tirador nativo muy chico y difícil de agarrar, así que
+  // este es propio y bien visible.
+  const [modalSize, setModalSize] = useState(DEFAULT_MODAL_SIZE)
+  const resizingRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null)
+
+  const handleResizeStart = useCallback((e: React.PointerEvent) => {
+    e.preventDefault()
+    resizingRef.current = { startX: e.clientX, startY: e.clientY, startW: modalSize.width, startH: modalSize.height }
+    const onMove = (ev: PointerEvent) => {
+      const r = resizingRef.current
+      if (!r) return
+      const maxW = window.innerWidth * 0.94
+      const maxH = window.innerHeight * 0.94
+      setModalSize({
+        width:  Math.min(maxW, Math.max(MIN_MODAL_SIZE.width,  r.startW + (ev.clientX - r.startX))),
+        height: Math.min(maxH, Math.max(MIN_MODAL_SIZE.height, r.startH + (ev.clientY - r.startY))),
+      })
+    }
+    const onUp = () => {
+      resizingRef.current = null
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }, [modalSize])
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ServiceFormSchema>({
     resolver: zodResolver(serviceFormSchema) as Resolver<ServiceFormSchema>,
     defaultValues: service ?? {
@@ -87,7 +118,10 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
 
   return (
     <div className="service-modal-overlay">
-      <div className="service-modal">
+      <div
+        className="service-modal"
+        style={{ width: modalSize.width, height: modalSize.height, maxWidth: '94vw', maxHeight: '94vh' }}
+      >
         <div className="service-modal-header">
           <h2>{service ? 'Editar servicio' : 'Nuevo servicio'}</h2>
           <button className="admin-icon-button" onClick={onClose}>
@@ -119,7 +153,7 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
           </label>
 
           <label className="service-form-field">
-            <span>Descripción <span style={{ fontWeight: 400, color: '#888' }}>(opcional)</span></span>
+            <span>Descripción</span>
             <textarea {...register('description')} rows={3} placeholder="Qué incluye, para quién es, etc." />
             {errors.description && <p className="service-form-error">{errors.description.message}</p>}
           </label>
@@ -195,15 +229,25 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
                   No hay otros servicios cargados todavía para armarlo.
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '8px', maxHeight: '240px', overflowY: 'auto' }}>
                   {componentOptions.map(s => (
-                    <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 400, cursor: 'pointer' }}>
+                    <label
+                      key={s.id}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '7px 6px', borderRadius: '6px',
+                        fontSize: '15px', fontWeight: 400, lineHeight: 1.35,
+                        cursor: 'pointer',
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={comboServiceIds.includes(s.id)}
                         onChange={() => toggleComboService(s.id)}
+                        style={{ flexShrink: 0, marginTop: '2px' }}
                       />
-                      {s.name}
+                      <span style={{ flex: 1, minWidth: 0 }}>{s.name}</span>
                     </label>
                   ))}
                 </div>
@@ -216,6 +260,22 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
             <button type="submit" className="admin-button-primary">Guardar</button>
           </div>
         </form>
+
+        {/* Tirador para agrandar/achicar el modal — el "resize" nativo del CSS
+            es un triangulito casi invisible; este es grande y fácil de agarrar. */}
+        <div
+          onPointerDown={handleResizeStart}
+          title="Arrastrá para agrandar o achicar"
+          style={{
+            position: 'absolute', right: 0, bottom: 0, width: '22px', height: '22px',
+            cursor: 'nwse-resize', touchAction: 'none',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', padding: '4px',
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" style={{ opacity: 0.5 }}>
+            <path d="M11 1 L1 11 M11 5.5 L5.5 11 M11 10 L10 11" stroke="#666" strokeWidth="1.3" />
+          </svg>
+        </div>
       </div>
     </div>
   )

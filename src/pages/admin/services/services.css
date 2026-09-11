@@ -258,19 +258,27 @@
 }
 
 .service-modal {
+  position: relative;
   background: #fff;
   border-radius: 16px;
   padding: 28px;
-  width: 520px;
-  max-width: 92vw;
-  height: auto;
-  max-height: 90vh;
+  /* El tamaño real lo maneja el estado modalSize (ver ServiceFormModal.tsx) —
+     estos son solo el piso mínimo. El modal en sí no scrollea: scrollea el
+     form de adentro, así el tirador de resize queda siempre fijo en la
+     esquina en vez de irse con el scroll. */
   min-width: 320px;
   min-height: 280px;
-  overflow: auto;
-  /* El usuario puede agrandar/achicar la ventana desde la esquina inferior derecha */
-  resize: both;
+  overflow: hidden;
   font-family: 'Lato', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-modal .service-form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .service-modal-header {

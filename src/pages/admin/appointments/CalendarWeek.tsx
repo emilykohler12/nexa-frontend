@@ -2,6 +2,8 @@ import type { Appointment, Professional } from './types'
 import { groupByCombo } from '@/shared/utils/comboGroup'
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8)
+// Color fijo para los combos — no es el de ninguna profesional.
+const COMBO_COLOR = '#8b5cf6'
 const DAYS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
 
 interface Props {
@@ -57,25 +59,21 @@ export function CalendarWeek({ appointments, professionals, weekStart, onEventCl
                 const appts = getAppts(day, hour)
                 return (
                   <td key={di} style={{ borderTop: '1px solid #f0f0f0', borderLeft: '1px solid #f5f5f5', padding: '3px', verticalAlign: 'top', height: '56px', background: isToday(day) ? 'rgba(6,148,148,0.02)' : '#fff' }}>
-                    {groupByCombo(appts).map((group, gi) => (
-                      <div
-                        key={group.comboGroupId ?? gi}
-                        style={group.items.length > 1 ? { border: '1px dashed #d4af37', borderRadius: '6px', padding: '2px', marginBottom: '2px' } : undefined}
-                      >
-                        {group.items.length > 1 && (
-                          <div style={{ fontSize: '9px', fontWeight: 700, color: '#8a6800', padding: '0 2px 1px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Combo</div>
-                        )}
-                        {group.items.map(a => (
-                          <button key={a.id} onClick={() => onEventClick(a)} title={`${a.clientName} — ${a.serviceName}`}
-                            style={{ display: 'block', width: '100%', background: colorFor(a), color: '#fff', border: 'none', borderRadius: '5px', padding: '4px 7px', fontSize: '13px', fontWeight: 700, fontFamily: "'Lato', sans-serif", textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px', transition: 'opacity 0.15s' }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                          >
-                            {a.clientName}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
+                    {groupByCombo(appts).map((group, gi) => {
+                      const isCombo = group.items.length > 1
+                      const a = group.items[0]
+                      const color = isCombo ? COMBO_COLOR : colorFor(a)
+                      return (
+                        <button key={group.comboGroupId ?? gi} onClick={() => onEventClick(a)}
+                          title={isCombo ? `${a.clientName} — Combo (${group.items.length} servicios)` : `${a.clientName} — ${a.serviceName}`}
+                          style={{ display: 'block', width: '100%', background: color, color: '#fff', border: 'none', borderRadius: '5px', padding: '4px 7px', fontSize: '13px', fontWeight: 700, fontFamily: "'Lato', sans-serif", textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px', transition: 'opacity 0.15s' }}
+                          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+                          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                        >
+                          {isCombo ? `${a.clientName} · Combo` : a.clientName}
+                        </button>
+                      )
+                    })}
                   </td>
                 )
               })}
