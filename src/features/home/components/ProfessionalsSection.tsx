@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaInstagram, FaFacebookF, FaTiktok, FaTwitter } from 'react-icons/fa'
+import { Star } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { useAuth } from '@/features/auth/AuthContext'
 import { api } from '@/shared/utils/api'
@@ -24,6 +25,8 @@ interface Professional {
   services?:  string[]
   status?:    string
   certifications?: string | null
+  rating?:      number
+  reviewCount?: number
 }
 
 const SOCIAL_ICONS = [
@@ -154,11 +157,20 @@ export function ProfessionalsSection() {
                   {/* Especialidad */}
                   {pro.specialty && (
                     <span
-                      className="text-xs px-3 py-1 rounded-full text-white mb-3"
+                      className="text-xs px-3 py-1 rounded-full text-white mb-2"
                       style={{ backgroundColor: accentColor, fontFamily: 'var(--font-lato)' }}
                     >
                       {pro.specialty}
                     </span>
+                  )}
+
+                  {/* Reseñas */}
+                  {!!pro.reviewCount && (
+                    <div className="flex items-center gap-1 mb-3 text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#888' }}>
+                      <Star size={13} fill="#f0b429" color="#f0b429" />
+                      <span style={{ color: '#333', fontWeight: 700 }}>{pro.rating}</span>
+                      <span>({pro.reviewCount})</span>
+                    </div>
                   )}
 
                   {/* Biografía */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, ChevronLeft, Award } from 'lucide-react'
+import { X, ChevronLeft, Award, Star } from 'lucide-react'
 import { FaInstagram, FaFacebookF, FaTiktok, FaXTwitter } from 'react-icons/fa6'
 import { api } from '@/shared/utils/api'
 
@@ -15,6 +15,8 @@ interface Professional {
   twitter:    string | null
   services?:  string[]
   certifications?: string | null
+  rating?:      number
+  reviewCount?: number
 }
 
 interface ServiceOption { id: string; name: string }
@@ -96,11 +98,19 @@ export function ProfessionalDetailModal({ professional, primaryColor, accentColo
 
           {professional.specialty && (
             <span
-              className="text-xs px-3 py-1 rounded-full text-white mb-4"
+              className="text-xs px-3 py-1 rounded-full text-white mb-2"
               style={{ backgroundColor: accentColor, fontFamily: 'var(--font-lato)' }}
             >
               {professional.specialty}
             </span>
+          )}
+
+          {!!professional.reviewCount && (
+            <div className="flex items-center gap-1 mb-4 text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#888' }}>
+              <Star size={14} fill="#f0b429" color="#f0b429" />
+              <span style={{ color: '#333', fontWeight: 700 }}>{professional.rating}</span>
+              <span>({professional.reviewCount} reseña{professional.reviewCount !== 1 ? 's' : ''})</span>
+            </div>
           )}
 
           {socialLinks.length > 0 && (

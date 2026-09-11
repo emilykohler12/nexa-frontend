@@ -6,7 +6,7 @@
 // llega el webhook de Mercado Pago confirmando el pago real — nunca antes.
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ExternalLink, RefreshCw, Check, Clock } from 'lucide-react'
+import { ExternalLink, RefreshCw, Check, Clock, MapPin, Info, Shield } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
@@ -38,6 +38,10 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   const [assignedProfessionalId, setAssignedProfessionalId]     = useState<string | null>(null)
   const [assignedProfessionalName, setAssignedProfessionalName] = useState<string | null>(null)
   const [careInfo, setCareInfo] = useState<{ priorRecommendations: string | null; afterCare: string | null } | null>(null)
+  const [proPolicies, setProPolicies] = useState<{
+    toleranceMinutes: number | null; latePenalty: string | null
+    cancellationPolicy: string | null; reschedulePolicy: string | null; depositPolicy: string | null
+  } | null>(null)
   const deadlineRef = useRef(Date.now() + HOLD_MINUTES * 60 * 1000)
 
   useEffect(() => {
@@ -73,17 +77,33 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
       .catch(() => {})
   }, [phase, appointmentId])
 
-  // Al llegar a éxito, traemos las recomendaciones/cuidados que cargó el
-  // profesional para mostrárselas al cliente junto con la confirmación.
+  // Al llegar a éxito, traemos las recomendaciones/cuidados y las políticas
+  // que cargó el profesional, para mostrárselas al cliente junto con la
+  // confirmación (ubicación, qué incluye el servicio, políticas del profesional).
   useEffect(() => {
     if (phase !== 'success') return
     const proId = assignedProfessionalId ?? summary.professionalId
     if (!proId || proId === ANY_PROFESSIONAL_ID) return
-    api.get<{ professionals: { id: string; priorRecommendations?: string | null; afterCare?: string | null }[] }>('/api/professional/public')
+    api.get<{ professionals: {
+      id: string
+      priorRecommendations?: string | null; afterCare?: string | null
+      toleranceMinutes?: number | null; latePenalty?: string | null
+      cancellationPolicy?: string | null; reschedulePolicy?: string | null; depositPolicy?: string | null
+    }[] }>('/api/professional/public')
       .then(res => {
         const pro = res.data.professionals.find(p => p.id === proId)
-        if (pro && (pro.priorRecommendations || pro.afterCare)) {
+        if (!pro) return
+        if (pro.priorRecommendations || pro.afterCare) {
           setCareInfo({ priorRecommendations: pro.priorRecommendations ?? null, afterCare: pro.afterCare ?? null })
+        }
+        if (pro.latePenalty || pro.cancellationPolicy || pro.reschedulePolicy || pro.depositPolicy || pro.toleranceMinutes) {
+          setProPolicies({
+            toleranceMinutes:   pro.toleranceMinutes   ?? null,
+            latePenalty:        pro.latePenalty        ?? null,
+            cancellationPolicy: pro.cancellationPolicy ?? null,
+            reschedulePolicy:   pro.reschedulePolicy   ?? null,
+            depositPolicy:      pro.depositPolicy      ?? null,
+          })
         }
       })
       .catch(() => {})
@@ -168,7 +188,7 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   // Guard después de todos los hooks — mantiene el orden de hooks estable
   // aunque el tenant todavía no haya cargado.
   if (!business) return null
-  const { primaryColor, accentColor } = business
+  const { primaryColor, accentColor, contactInfo, ubicacion } = business
 
   if (phase === 'expired') {
     return (
@@ -274,6 +294,43 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           Te esperamos el {summary.dateLabel} a las {summary.time} para tu turno de {summary.serviceName} con {assignedProfessionalName ?? summary.professionalName}.
         </p>
 
+        <div className="text-left max-w-md mx-auto mb-6 flex flex-col gap-4">
+          {/* Ubicación */}
+          {(contactInfo.address || ubicacion) && (
+            <div className="rounded-xl p-4" style={{ background: '#f3f4f6' }}>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+                <MapPin size={13} /> Dónde es
+              </p>
+              {contactInfo.address && (
+                <p className="text-sm mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333', lineHeight: 1.5 }}>
+                  {contactInfo.address}
+                </p>
+              )}
+              {ubicacion && (
+                <a
+                  href={ubicacion} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold hover:opacity-80"
+                  style={{ fontFamily: 'var(--font-lato)', color: primaryColor }}
+                >
+                  Ver en Google Maps <ExternalLink size={13} />
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Qué incluye el servicio — lo que cargó el admin */}
+          {summary.serviceDescription && (
+            <div className="rounded-xl p-4" style={{ background: '#f3f4f6' }}>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+                <Info size={13} /> Sobre el servicio
+              </p>
+              <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#333', lineHeight: 1.5 }}>
+                {summary.serviceDescription}
+              </p>
+            </div>
+          )}
+        </div>
+
         {careInfo && (careInfo.priorRecommendations || careInfo.afterCare) && (
           <div className="text-left max-w-md mx-auto mb-6 flex flex-col gap-4">
             {careInfo.priorRecommendations && (
@@ -296,6 +353,34 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Políticas del profesional — cancelación, reprogramación, seña, tolerancia */}
+        {proPolicies && (proPolicies.cancellationPolicy || proPolicies.reschedulePolicy || proPolicies.depositPolicy || proPolicies.latePenalty || proPolicies.toleranceMinutes) && (
+          <div className="text-left max-w-md mx-auto mb-6">
+            <p className="text-xs font-bold uppercase tracking-wide mb-2 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+              <Shield size={13} /> Políticas de {assignedProfessionalName ?? summary.professionalName}
+            </p>
+            <ul className="flex flex-col gap-2" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+              {proPolicies.toleranceMinutes != null && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>
+                  · Tolerancia de {proPolicies.toleranceMinutes} minutos
+                </li>
+              )}
+              {proPolicies.latePenalty && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {proPolicies.latePenalty}</li>
+              )}
+              {proPolicies.cancellationPolicy && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {proPolicies.cancellationPolicy}</li>
+              )}
+              {proPolicies.reschedulePolicy && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {proPolicies.reschedulePolicy}</li>
+              )}
+              {proPolicies.depositPolicy && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {proPolicies.depositPolicy}</li>
+              )}
+            </ul>
           </div>
         )}
 

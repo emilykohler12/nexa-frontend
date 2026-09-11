@@ -5,10 +5,11 @@ import type { BookingSelection } from '../types'
 import { ANY_PROFESSIONAL_ID } from './ProviderStep'
 
 interface Service {
-  id:         string
-  name:       string
-  price:      number
-  categoryId: string
+  id:          string
+  name:        string
+  price:       number
+  categoryId:  string
+  description: string
 }
 
 interface Professional {
@@ -27,6 +28,7 @@ export interface ConfirmedSummary {
   professionalId:   string
   date:             string
   serviceName:      string
+  serviceDescription: string
   professionalName: string
   dateLabel:        string
   time:             string
@@ -94,6 +96,7 @@ export function ConfirmationStep({ selection, onConfirm }: Props) {
       professionalId:   professional.id,
       date:             selection.date,
       serviceName:      service.name,
+      serviceDescription: service.description ?? '',
       professionalName: professional.name,
       dateLabel,
       time:              selection.time,
