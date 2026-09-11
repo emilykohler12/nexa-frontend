@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, Check, Clock, Users2, CalendarClock, Shuffle } from 'lucide-react'
+import { ChevronLeft, Check, Clock, Users2, Shuffle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { generateSlots } from '@/features/professional/onboarding/types'
@@ -41,7 +41,7 @@ interface AvailabilityRow { dayOfWeek: number; startTime: string; endTime: strin
 interface AvailabilityResponse { availability: AvailabilityRow[]; bookedTimes?: string[] }
 interface PaymentSettings { depositAmount: number; depositPercent: boolean }
 
-type Phase = 'mode' | 'assign' | 'datetime' | 'confirm' | 'details' | 'success'
+type Phase = 'assign' | 'datetime' | 'confirm' | 'details' | 'success'
 
 interface DetailsQueueItem { appointmentId: string; categoryId: string }
 
@@ -52,8 +52,9 @@ interface Props {
 }
 
 function computeDeposit(price: number, settings: PaymentSettings): number {
-  if (settings.depositPercent) return Math.round((price * settings.depositAmount) / 100)
-  return settings.depositAmount
+  const amount = Number(settings.depositAmount) || 0
+  if (settings.depositPercent) return Math.round((price * amount) / 100)
+  return Math.min(amount, price)
 }
 
 function filterPastToday(slots: string[], date: string): string[] {
@@ -88,9 +89,10 @@ async function fetchAnySlotsFor(serviceId: string, date: string): Promise<string
 
 export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const { business } = useTenant()
-  const canBeSimultaneous = Boolean(combo.simultaneous)
-  const [phase, setPhase] = useState<Phase>(canBeSimultaneous ? 'mode' : 'assign')
-  const [simultaneous, setSimultaneous] = useState(canBeSimultaneous)
+  // Un combo AHORA siempre es en simultáneo: todos los servicios el mismo día
+  // y hora, cada uno con una profesional distinta.
+  const simultaneous = true
+  const [phase, setPhase] = useState<Phase>('assign')
   const [components, setComponents] = useState<ComponentAssignment[]>([])
   const [loadingComponents, setLoadingComponents] = useState(true)
 
@@ -115,8 +117,10 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
             serviceId: id,
             serviceName: s?.name ?? 'Servicio',
             categoryId: s?.categoryId ?? '',
-            price: s?.price ?? 0,
-            duration: s?.duration ?? 0,
+            // La API serializa price como string (Decimal de Prisma) — hay que
+            // convertirlo o las sumas terminan concatenando ("$010000200002...").
+            price: Number(s?.price ?? 0),
+            duration: Number(s?.duration ?? 0),
             professionals: [],
             loadingProfessionals: true,
             professionalId: null,
@@ -155,11 +159,23 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
 
   const allAssigned = components.length > 0 && components.every(c => c.professionalId)
   const assignedProfessionalIds = Array.from(new Set(components.map(c => c.professionalId).filter(Boolean))) as string[]
-  const allDatesSet = components.every(c => c.date && c.time)
 
+  // En simultáneo cada profesional puede hacer un solo servicio a la vez, así
+  // que una vez elegida para un servicio no se puede elegir para otro ("Cualquiera"
+  // sí se puede repetir — el backend resuelve profesionales distintos).
   const setProfessional = (idx: number, professionalId: string) => {
-    setComponents(prev => prev.map((c, i) => i === idx ? { ...c, professionalId } : c))
+    setComponents(prev => prev.map((c, i) => {
+      if (i === idx) return { ...c, professionalId }
+      // Si ese profesional ya estaba elegido en otro servicio, se lo saca de ahí.
+      if (professionalId !== ANY_PROFESSIONAL_ID && c.professionalId === professionalId) {
+        return { ...c, professionalId: null }
+      }
+      return c
+    }))
   }
+
+  const professionalTakenElsewhere = (idx: number, proId: string) =>
+    proId !== ANY_PROFESSIONAL_ID && components.some((c, i) => i !== idx && c.professionalId === proId)
 
   const totalPrice = components.reduce((sum, c) => sum + c.price, 0)
   const totalDuration = components.reduce((max, c) => Math.max(max, c.duration), 0)
@@ -188,28 +204,18 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     }
   }
 
-  const handleComponentDateChange = async (idx: number, d: string) => {
-    setComponents(prev => prev.map((c, i) => i === idx ? { ...c, date: d, time: null, availableTimes: [], loadingTimes: true } : c))
-    const c = components[idx]
-    if (!c.professionalId) return
-    const times = c.professionalId === ANY_PROFESSIONAL_ID
-      ? await fetchAnySlotsFor(c.serviceId, d).catch(() => [])
-      : await fetchSlotsFor(c.professionalId, d).catch(() => [])
-    setComponents(prev => prev.map((x, i) => i === idx ? { ...x, availableTimes: times, loadingTimes: false } : x))
-  }
-
   const handleSubmit = async () => {
     setSubmitting(true)
     setError(null)
     try {
       const res = await api.post<{ appointments?: { id: string; serviceId: string }[] }>('/api/client/appointments/combo', {
         comboServiceId: combo.id,
-        simultaneous,
+        simultaneous: true,
         components: components.map(c => ({
           serviceId: c.serviceId,
           professionalId: c.professionalId,
-          date: simultaneous ? sharedDate : c.date,
-          time: simultaneous ? sharedTime : c.time,
+          date: sharedDate,
+          time: sharedTime,
         })),
       })
 
@@ -230,16 +236,14 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       const code = err?.response?.data?.code
       if (err?.response?.status === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
         setError('No hay ningún profesional disponible para uno de los servicios de "cualquiera" en el horario elegido. Probá con otro horario o elegí un profesional específico.')
+      } else if (err?.response?.status === 409 && code === 'SAME_PROFESSIONAL_SIMULTANEOUS') {
+        setError('No se puede hacer dos servicios en simultáneo con la misma profesional. Elegí una profesional distinta para cada uno.')
+        setPhase('assign')
       } else if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
         setError('Uno de los horarios elegidos ya se ocupó. Elegí otro horario e intentá de nuevo.')
         setPhase('datetime')
-        if (simultaneous) {
-          setSharedTime(null)
-          if (sharedDate) handleSharedDateChange(sharedDate)
-        } else {
-          setComponents(prev => prev.map(c => ({ ...c, time: null })))
-          components.forEach((c, idx) => { if (c.date) handleComponentDateChange(idx, c.date) })
-        }
+        setSharedTime(null)
+        if (sharedDate) handleSharedDateChange(sharedDate)
       } else {
         setError(safeErrorMessage(err, 'No pudimos confirmar el combo. Intentá de nuevo.'))
       }
@@ -257,45 +261,24 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     </div>
   )
 
-  if (phase === 'mode') {
-    return (
-      <div>
-        <Header title={combo.name} onBackClick={onBack} />
-        <p className="text-sm text-gray-500 mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
-          Este combo incluye {combo.comboServiceIds?.length ?? 0} servicios, cada uno con un profesional distinto. ¿Cómo preferís reservarlo?
-        </p>
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => { setSimultaneous(true); setPhase('assign') }}
-            className="flex items-center gap-4 p-5 rounded-xl border text-left transition-all"
-            style={{ borderColor: primaryColor, background: `${primaryColor}08` }}
-          >
-            <Users2 size={22} color={primaryColor} />
-            <div>
-              <p className="font-semibold" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>Todos al mismo tiempo</p>
-              <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>Elegís un profesional para cada servicio y un único horario para todos</p>
-            </div>
-          </button>
-          <button
-            onClick={() => { setSimultaneous(false); setPhase('assign') }}
-            className="flex items-center gap-4 p-5 rounded-xl border text-left transition-all"
-            style={{ borderColor: '#e5e5e5' }}
-          >
-            <CalendarClock size={22} color="#999" />
-            <div>
-              <p className="font-semibold" style={{ fontFamily: 'var(--font-playfair)', color: '#333' }}>Cada uno en un horario distinto</p>
-              <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>Elegís fecha y hora por separado para cada servicio del combo</p>
-            </div>
-          </button>
-        </div>
-      </div>
-    )
-  }
+  // Cuadro fijo arriba a la derecha aclarando que el combo es en simultáneo.
+  const SimultaneousNote = () => (
+    <div
+      className="absolute top-0 right-0 flex items-start gap-2 rounded-xl px-3 py-2 max-w-[240px]"
+      style={{ background: `${primaryColor}0d`, border: `1px solid ${primaryColor}33` }}
+    >
+      <Users2 size={16} color={primaryColor} style={{ marginTop: 2, flexShrink: 0 }} />
+      <p className="text-xs" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
+        Estos {components.length || (combo.comboServiceIds?.length ?? 0)} servicios se hacen <strong>en simultáneo</strong>: el mismo día y hora, cada uno con una profesional distinta.
+      </p>
+    </div>
+  )
 
   if (phase === 'assign') {
     return (
-      <div>
-        <Header title="¿Quién hace cada servicio?" onBackClick={() => canBeSimultaneous ? setPhase('mode') : onBack()} />
+      <div className="relative pt-2">
+        <SimultaneousNote />
+        <Header title="¿Quién hace cada servicio?" onBackClick={onBack} />
         {loadingComponents ? (
           <p className="text-gray-400 text-center py-10" style={{ fontFamily: 'var(--font-lato)' }}>Cargando...</p>
         ) : (
@@ -323,23 +306,28 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
                         Cualquiera
                       </button>
                     )}
-                    {c.professionals.map(pro => (
-                      <button
-                        key={pro.id}
-                        onClick={() => setProfessional(idx, pro.id)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all"
-                        style={{
-                          borderColor: c.professionalId === pro.id ? primaryColor : '#e5e5e5',
-                          backgroundColor: c.professionalId === pro.id ? `${primaryColor}10` : 'white',
-                          fontFamily: 'var(--font-lato)',
-                        }}
-                      >
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0" style={{ backgroundColor: primaryColor }}>
-                          {pro.photo ? <img src={pro.photo} alt={pro.name} className="w-full h-full object-cover" /> : pro.name.charAt(0).toUpperCase()}
-                        </div>
-                        {pro.name}
-                      </button>
-                    ))}
+                    {c.professionals.map(pro => {
+                      const taken = professionalTakenElsewhere(idx, pro.id)
+                      return (
+                        <button
+                          key={pro.id}
+                          onClick={() => !taken && setProfessional(idx, pro.id)}
+                          disabled={taken}
+                          title={taken ? 'Ya la elegiste para otro servicio del combo' : undefined}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          style={{
+                            borderColor: c.professionalId === pro.id ? primaryColor : '#e5e5e5',
+                            backgroundColor: c.professionalId === pro.id ? `${primaryColor}10` : 'white',
+                            fontFamily: 'var(--font-lato)',
+                          }}
+                        >
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0" style={{ backgroundColor: primaryColor }}>
+                            {pro.photo ? <img src={pro.photo} alt={pro.name} className="w-full h-full object-cover" /> : pro.name.charAt(0).toUpperCase()}
+                          </div>
+                          {pro.name}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -358,9 +346,10 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     )
   }
 
-  if (phase === 'datetime' && simultaneous) {
+  if (phase === 'datetime') {
     return (
-      <div>
+      <div className="relative pt-2">
+        <SimultaneousNote />
         <Header title="¿Cuándo?" onBackClick={() => setPhase('assign')} />
         {error && (
           <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{error}</p>
@@ -401,62 +390,6 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         <button
           onClick={() => setPhase('confirm')}
           disabled={!sharedDate || !sharedTime}
-          className="w-full mt-8 py-4 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-          style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
-        >
-          Siguiente
-        </button>
-      </div>
-    )
-  }
-
-  if (phase === 'datetime') {
-    return (
-      <div>
-        <Header title="¿Cuándo hacés cada servicio?" onBackClick={() => setPhase('assign')} />
-        {error && (
-          <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{error}</p>
-        )}
-        <div className="flex flex-col gap-6">
-          {components.map((c, idx) => (
-            <div key={c.serviceId}>
-              <p className="font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
-                {c.serviceName} · {c.professionalId === ANY_PROFESSIONAL_ID ? 'Cualquiera' : c.professionals.find(p => p.id === c.professionalId)?.name}
-              </p>
-              <input
-                type="date"
-                value={c.date ?? ''}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={e => handleComponentDateChange(idx, e.target.value)}
-                className="w-full border rounded-xl p-3 mb-3 outline-none"
-                style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)', color: primaryColor }}
-              />
-              {c.date && (
-                c.loadingTimes ? (
-                  <p className="text-gray-400 text-sm" style={{ fontFamily: 'var(--font-lato)' }}>Cargando horarios...</p>
-                ) : c.availableTimes.length === 0 ? (
-                  <p className="text-gray-400 text-sm" style={{ fontFamily: 'var(--font-lato)' }}>No hay horarios disponibles este día.</p>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {c.availableTimes.map(t => (
-                      <button
-                        key={t}
-                        onClick={() => setComponents(prev => prev.map((x, i) => i === idx ? { ...x, time: t } : x))}
-                        className="py-2 rounded-lg text-sm font-medium transition-all"
-                        style={{ backgroundColor: c.time === t ? primaryColor : '#f3f4f6', color: c.time === t ? 'white' : '#555', fontFamily: 'var(--font-lato)' }}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                )
-              )}
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={() => setPhase('confirm')}
-          disabled={!allDatesSet}
           className="w-full mt-8 py-4 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-40"
           style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
         >

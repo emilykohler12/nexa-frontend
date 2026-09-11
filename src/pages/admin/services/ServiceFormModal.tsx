@@ -56,6 +56,19 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
     setValue('comboServiceIds', next, { shouldDirty: true })
   }
 
+  // "Servicios simultáneos" reemplaza al viejo "Es un combo": un combo ahora
+  // SIEMPRE es en simultáneo. Al activarlo se fuerza la categoría "Combo" y el
+  // flag simultaneous; al desactivarlo se limpia todo lo del combo.
+  const handleSimultaneousToggle = (checked: boolean) => {
+    setValue('isCombo', checked, { shouldDirty: true })
+    setValue('simultaneous', checked, { shouldDirty: true })
+    if (checked) {
+      setValue('categoryId', 'combo', { shouldDirty: true })
+    } else {
+      setValue('comboServiceIds', [], { shouldDirty: true })
+    }
+  }
+
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -66,8 +79,8 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
   }
 
   return (
-    <div className="service-modal-overlay" onClick={onClose}>
-      <div className="service-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="service-modal-overlay">
+      <div className="service-modal">
         <div className="service-modal-header">
           <h2>{service ? 'Editar servicio' : 'Nuevo servicio'}</h2>
           <button className="admin-icon-button" onClick={onClose}>
@@ -99,7 +112,7 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
           </label>
 
           <label className="service-form-field">
-            <span>Descripción</span>
+            <span>Descripción <span style={{ fontWeight: 400, color: '#888' }}>(opcional)</span></span>
             <textarea {...register('description')} rows={3} placeholder="Qué incluye, para quién es, etc." />
             {errors.description && <p className="service-form-error">{errors.description.message}</p>}
           </label>
@@ -155,17 +168,24 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
             </label>
 
             <label className="service-form-checkbox-field">
-              <input type="checkbox" {...register('isCombo')} />
-              <span>Es un combo</span>
+              <input
+                type="checkbox"
+                checked={isCombo}
+                onChange={(e) => handleSimultaneousToggle(e.target.checked)}
+              />
+              <span>Servicios simultáneos</span>
             </label>
           </div>
 
           {isCombo && (
             <div className="service-form-field" style={{ background: '#fafafa', border: '1px solid #e5e5e5', borderRadius: '10px', padding: '14px' }}>
-              <span>Servicios que incluye el combo</span>
+              <span>Servicios que se hacen en simultáneo</span>
+              <p className="service-form-hint" style={{ margin: '4px 0 0' }}>
+                El cliente reserva todos estos servicios juntos, en un mismo día y hora, cada uno con una profesional distinta. Elegí al menos 2.
+              </p>
               {componentOptions.length === 0 ? (
-                <p className="service-form-hint" style={{ margin: '6px 0 0' }}>
-                  No hay otros servicios cargados todavía para armar el combo.
+                <p className="service-form-hint" style={{ margin: '8px 0 0' }}>
+                  No hay otros servicios cargados todavía para armarlo.
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', maxHeight: '180px', overflowY: 'auto' }}>
@@ -181,15 +201,6 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
                   ))}
                 </div>
               )}
-
-              <label className="service-form-checkbox-field" style={{ marginTop: '12px' }}>
-                <input type="checkbox" {...register('simultaneous')} disabled={comboServiceIds.length < 2} />
-                <span>Se pueden hacer en simultáneo (con profesionales distintos)</span>
-              </label>
-              <p className="service-form-hint">
-                Si lo marcás, el cliente va a poder elegir hacer todos los servicios del combo al mismo tiempo, cada uno con un profesional distinto (ej: cejas y pestañas + uñas de manos + uñas de pies a la vez).
-                {comboServiceIds.length < 2 && ' Elegí al menos 2 servicios para poder activarlo.'}
-              </p>
             </div>
           )}
 

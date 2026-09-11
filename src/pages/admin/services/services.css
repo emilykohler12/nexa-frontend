@@ -261,10 +261,15 @@
   background: #fff;
   border-radius: 16px;
   padding: 28px;
-  width: 100%;
-  max-width: 480px;
+  width: 520px;
+  max-width: 92vw;
+  height: auto;
   max-height: 90vh;
-  overflow-y: auto;
+  min-width: 320px;
+  min-height: 280px;
+  overflow: auto;
+  /* El usuario puede agrandar/achicar la ventana desde la esquina inferior derecha */
+  resize: both;
   font-family: 'Lato', sans-serif;
 }
 
@@ -312,7 +317,8 @@
 
 .service-form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Si los dos campos no entran al lado sin cortarse, pasan uno abajo del otro */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
@@ -329,6 +335,8 @@
 .service-form-field input,
 .service-form-field select,
 .service-form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
   padding: 10px 12px;
   border: 1px solid #cccccc;
   border-radius: 8px;
