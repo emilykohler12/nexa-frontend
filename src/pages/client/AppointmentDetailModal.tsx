@@ -23,13 +23,26 @@ interface Appointment {
   selectedPackages?: { name: string; price: number; duration: number }[]
 }
 
+export interface ComboLeg {
+  id:               string
+  serviceName:      string
+  professionalName: string
+  status:           AppointmentStatus
+  price:            number
+}
+
 interface Props {
   appointment: Appointment
   onClose: () => void
   onDetailsUpdated: (value: AppointmentDetailsValue) => void
+  // Cuando el turno es parte de un combo simultáneo: todas sus patas y el
+  // callback para bajar una sola.
+  comboLegs?: ComboLeg[]
+  onCancelLeg?: (legId: string) => void
+  cancellingLegId?: string | null
 }
 
-export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated }: Props) {
+export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated, comboLegs, onCancelLeg, cancellingLegId }: Props) {
   const { business } = useTenant()
   const [editingDetails, setEditingDetails] = useState(false)
   if (!business) return null
@@ -140,6 +153,45 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated 
               </span>
             </div>
           </div>
+
+          {comboLegs && comboLegs.length > 1 && (
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#333', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px', fontFamily: 'var(--font-lato)' }}>
+                Servicios del combo (en simultáneo)
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {comboLegs.map(leg => {
+                  const legStatus = appointmentStatus[leg.status]
+                  const legActive = leg.status === 'confirmed' || leg.status === 'pending'
+                  return (
+                    <div key={leg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', background: '#f9f9f9', borderRadius: '10px', fontFamily: 'var(--font-lato)' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#333' }}>{leg.serviceName}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#888' }}>{leg.professionalName}</p>
+                      </div>
+                      {legActive && onCancelLeg ? (
+                        <button
+                          onClick={() => onCancelLeg(leg.id)}
+                          disabled={cancellingLegId === leg.id}
+                          className="appointment-cancel-btn"
+                          style={{ flexShrink: 0 }}
+                        >
+                          <X size={13} /> {cancellingLegId === leg.id ? 'Cancelando...' : 'Cancelar'}
+                        </button>
+                      ) : (
+                        <span className="appointment-status" style={{ backgroundColor: `${legStatus.color}1a`, color: legStatus.color, flexShrink: 0 }}>
+                          {legStatus.label}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <p style={{ fontSize: '12px', color: '#999', margin: '8px 0 0', fontFamily: 'var(--font-lato)' }}>
+                Si cancelás un servicio, los demás siguen en pie. La seña no se reembolsa salvo que canceles todos.
+              </p>
+            </div>
+          )}
 
           {(appointment.status === 'confirmed' || appointment.status === 'pending') && (
             <div>

@@ -66,6 +66,11 @@ export function AppointmentsPage() {
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
   const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
 
+  const refetchAppointments = () =>
+    api.get<{ appointments: Appointment[] }>('/api/client/appointments')
+      .then(res => setAppointments(res.data.appointments ?? []))
+      .catch(() => {})
+
   useEffect(() => {
     api.get<{ appointments: Appointment[] }>('/api/client/appointments')
       .then(res => {
@@ -135,6 +140,29 @@ export function AppointmentsPage() {
     }
     return out
   })()
+
+  // Baja UN servicio de un combo — los demás quedan en pie.
+  const cancelOneComboLeg = async (legId: string) => {
+    setCancellingId(legId)
+    try {
+      const res = await api.patch<{ refunded: boolean; partialCombo?: boolean }>(`/api/client/appointments/${legId}/cancel`)
+      await refetchAppointments()
+      // Si el turno del modal abierto era esa pata, refrescamos su estado.
+      setDetailAppt(prev => prev && prev.id === legId ? { ...prev, status: 'cancelled' } : prev)
+      setToast({
+        type: 'info',
+        text: res.data.partialCombo === false
+          ? (res.data.refunded
+              ? 'Cancelaste el último servicio del combo. La seña se reembolsa según la política del negocio.'
+              : 'Cancelaste el último servicio del combo. La seña no se reembolsa por cancelarse fuera del plazo.')
+          : 'Servicio cancelado. Los demás servicios del combo siguen en pie.',
+      })
+    } catch (err: any) {
+      setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el servicio.') })
+    } finally {
+      setCancellingId(null)
+    }
+  }
 
   // Cancela un combo entero — pata por pata (el backend reembolsa recién en la última).
   const cancelComboGroup = async (legs: Appointment[]) => {
@@ -404,6 +432,15 @@ export function AppointmentsPage() {
             setAppointments(prev => prev.map(a => a.id === detailAppt.id ? { ...a, details: value } : a))
             setDetailAppt(prev => prev ? { ...prev, details: value } : prev)
           }}
+          comboLegs={
+            detailAppt.comboGroupId
+              ? appointments
+                  .filter(a => a.comboGroupId === detailAppt.comboGroupId)
+                  .map(a => ({ id: a.id, serviceName: a.serviceName, professionalName: a.professionalName, status: a.status, price: a.price }))
+              : undefined
+          }
+          onCancelLeg={cancelOneComboLeg}
+          cancellingLegId={cancellingId}
         />
       )}
 
