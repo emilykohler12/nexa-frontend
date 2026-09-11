@@ -362,7 +362,10 @@
   font-family: 'Lato', sans-serif;
 }
 
-.service-form-field input,
+/* :not([type=checkbox]):not([type=radio]) — si no, esta regla también le
+   pega a los checkboxes de "Servicios simultáneos" (los estira a todo el
+   ancho de la fila, dejando el texto del lado sin lugar). */
+.service-form-field input:not([type="checkbox"]):not([type="radio"]),
 .service-form-field select,
 .service-form-field textarea {
   width: 100%;
