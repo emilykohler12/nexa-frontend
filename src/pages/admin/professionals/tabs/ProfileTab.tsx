@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Upload } from 'lucide-react';
 import { ROUTES } from '@/app/config/routes.config';
 import { api } from '@/shared/utils/api';
 import { validateAllSocials } from '@/shared/utils/social';
 import { SERVICE_CATEGORIES } from '@/app/data/shared';
-import type { AdminProfessional, CommissionType } from '../types';
+import type { AdminProfessional } from '../types';
 import '../professionals.css';
 import '@/shared/ui/admin/admin-controls.css';
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -38,6 +39,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const photoFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.get<{ services: CatalogService[] }>('/api/services')
@@ -59,6 +61,15 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
       ? form.services.filter((s) => s !== id)
       : [...form.services, id];
     set('services', next);
+  };
+
+  const handlePhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => set('photo', reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const toggleDay = (day: DayKey) => {
@@ -116,7 +127,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
         <p className="prof-section-title">Datos personales</p>
         <div className="prof-field-grid">
           <label className="prof-field">
-            <span>Nombre completo</span>
+            <span>Nombre</span>
             <input value={form.name} onChange={(e) => set('name', e.target.value)} />
           </label>
           <label className="prof-field">
@@ -137,49 +148,38 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
               {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
-          <label className="prof-field">
-            <span>URL de foto de perfil</span>
-            <input value={form.photo ?? ''} onChange={(e) => set('photo', e.target.value || null)} placeholder="https://..." />
-          </label>
-        </div>
-      </div>
-
-      {/* Comisión */}
-      <div className="prof-section">
-        <p className="prof-section-title">Modelo de comisión</p>
-        <div className="commission-type-row" style={{ marginBottom: '14px' }}>
-          {(['earned', 'to_owner'] as CommissionType[]).map((type) => (
-            <div
-              key={type}
-              className={`commission-type-opt ${form.commissionType === type ? 'selected' : ''}`}
-              onClick={() => set('commissionType', type)}
-            >
-              <input type="radio" readOnly checked={form.commissionType === type} style={{ accentColor: '#069494' }} />
-              <div>
-                <span>{type === 'earned' ? 'El profesional se queda X%' : 'El profesional le da X% al negocio'}</span>
-                <p style={{ fontSize: '13px', color: '#000', margin: '2px 0 0', fontWeight: 400 }}>
-                  {type === 'earned' ? 'Comisión tradicional' : 'Porcentaje a pagar'}
-                </p>
+          <label className="prof-field" style={{ gridColumn: '1 / -1' }}>
+            <span>Foto de perfil</span>
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+              <div
+                onClick={() => photoFileRef.current?.click()}
+                style={{
+                  width: '64px', height: '64px', borderRadius: '10px', flexShrink: 0,
+                  border: '2px dashed #ccc', background: '#fafafa', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                }}
+              >
+                {form.photo ? (
+                  <img src={form.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <Upload size={16} color="#999" />
+                )}
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '200px' }}>
+                <input ref={photoFileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhotoFile} style={{ display: 'none' }} />
+                <button type="button" onClick={() => photoFileRef.current?.click()} className="admin-button-secondary" style={{ alignSelf: 'flex-start' }}>
+                  {form.photo ? 'Cambiar imagen' : 'Subir imagen'}
+                </button>
+                <input value={form.photo ?? ''} onChange={(e) => set('photo', e.target.value || null)} placeholder="o pegá una URL de imagen (https://...)" />
               </div>
             </div>
-          ))}
+          </label>
         </div>
-        <label className="prof-field" style={{ maxWidth: '200px' }}>
-          <span>Porcentaje (%)</span>
-          <input
-            type="number" min={0} max={100}
-            value={form.commissionPct}
-            onChange={(e) => set('commissionPct', Number(e.target.value))}
-          />
-        </label>
       </div>
 
       {/* Redes sociales */}
       <div className="prof-section">
         <p className="prof-section-title">Redes sociales</p>
-        <p style={{ fontSize: '14px', color: '#000', marginBottom: '14px' }}>
-          Solo se muestran en la página principal si están cargadas
-        </p>
         <div className="prof-field-grid">
           {[
             { key: 'instagram', placeholder: 'https://instagram.com/usuario' },
@@ -204,22 +204,12 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
       {/* Servicios activos */}
       <div className="prof-section">
         <p className="prof-section-title">Servicios que realiza</p>
-        <p style={{ fontSize: '14px', color: '#000', marginBottom: '10px' }}>
-          Solo aparecen los servicios activos. Activá un servicio desde el panel de Servicios para que aparezca acá.
-        </p>
         {activeServices.length === 0 ? (
           <p style={{ color: '#000', fontSize: '15px' }}>No hay servicios activos cargados todavía.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {[
-              ...SERVICE_CATEGORIES,
-              { id: '__otros__', label: 'Otros' },
-            ].map((cat) => {
-              const inCat = activeServices.filter(s =>
-                cat.id === '__otros__'
-                  ? !SERVICE_CATEGORIES.some(c => c.id === s.categoryId)
-                  : s.categoryId === cat.id
-              )
+            {SERVICE_CATEGORIES.map((cat) => {
+              const inCat = activeServices.filter(s => s.categoryId === cat.id)
               if (inCat.length === 0) return null
               return (
                 <div key={cat.id}>

@@ -71,6 +71,14 @@ export function ClientDetail({ client, primary, accent, onBack }: Props) {
         </div>
       )}
 
+      {/* Observaciones */}
+      {client.observations && (
+        <div style={{ background: '#fff', border: '1px solid #eeeeee', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px' }}>Observaciones</p>
+          <p style={{ fontSize: '15px', color: '#000', margin: 0 }}>{client.observations}</p>
+        </div>
+      )}
+
       {/* Historial */}
       <div style={{ background: '#fff', border: '1px solid #eeeeee', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>

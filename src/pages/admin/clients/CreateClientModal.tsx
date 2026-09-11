@@ -64,7 +64,7 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
         </div>
 
         <div style={grid}>
-          <Field label="Nombre completo *">
+          <Field label="Nombre *">
             <input value={form.name} onChange={e => set('name', e.target.value)} style={inp} />
           </Field>
           <Field label="Email *">

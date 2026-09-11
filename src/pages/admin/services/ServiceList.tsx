@@ -109,8 +109,9 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
       {groups.length === 0 ? (
         <p className="service-table-empty">No se encontraron servicios para "{query}"</p>
       ) : (
-        groups.map((group) => (
-          <div key={group.key} className="service-group">
+        <div className="service-columns">
+        {groups.map((group) => (
+          <div key={group.key} className="service-column">
             <p className="service-group-label">
               {group.label} ({group.services.length})
             </p>
@@ -172,7 +173,8 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
               ))}
             </div>
           </div>
-        ))
+        ))}
+        </div>
       )}
     </div>
   );

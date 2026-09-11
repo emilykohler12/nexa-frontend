@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   X, Phone, Mail, User, Scissors, Clock,
-  DollarSign, FileText, Calendar, MessageSquare, ChevronDown,
+  DollarSign, FileText, Calendar, ChevronDown,
   AlertCircle, Users, Image as ImageIcon, Tag,
 } from 'lucide-react';
 import type { Appointment } from './types';
@@ -383,27 +383,6 @@ export function AppointmentModal({
           </Section>
 
           <Divider />
-
-          {/* Observaciones del cliente */}
-          <SectionTitle color={profColor}>
-            <MessageSquare size={13} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'middle' }} />
-            Observaciones del cliente
-          </SectionTitle>
-          <textarea
-            readOnly={!editing}
-            value={form.clientNotes ?? ''}
-            onChange={e => update({ clientNotes: e.target.value })}
-            rows={3}
-            placeholder="Alergias, preferencias, si concurre con niños, etc."
-            style={{
-              width: '100%', background: editing ? '#f8f8f8' : '#fafafa',
-              border: '1px solid #eeeeee', borderRadius: '8px',
-              padding: '10px 12px', fontSize: '14px', color: '#000',
-              fontFamily: "'Lato', sans-serif",
-              resize: 'vertical', outline: 'none',
-              cursor: editing ? 'text' : 'default',
-            }}
-          />
 
           {/* Observaciones del profesional */}
           <SectionTitle color={profColor}>

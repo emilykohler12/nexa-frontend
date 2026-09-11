@@ -88,7 +88,7 @@ export function CreateAppointmentModal({ professionals, onClose, onCreated }: Pr
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: "'Lato', sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: "'Lato', sans-serif" }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '16px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px 14px', borderBottom: '1px solid #f0f0f0' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', margin: 0 }}>Crear turno manual</h2>

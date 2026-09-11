@@ -55,7 +55,10 @@ export function ServicesSection() {
   if (!business) return null
 
   const { primaryColor, accentColor } = business
-  const categories = SERVICE_CATEGORIES
+  // "Combo" ya tiene su propia categoría en SERVICE_CATEGORIES (para que el
+  // admin la elija al cargar el servicio) pero acá abajo hay un tile de
+  // "Combos" aparte — si no se excluye acá, aparece duplicado.
+  const categories = SERVICE_CATEGORIES.filter(c => c.id !== 'combo')
   const hasCombos = services.some(s => s.isCombo)
 
   const filteredServices = activeCategoryId === COMBOS_ID

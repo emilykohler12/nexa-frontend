@@ -126,6 +126,21 @@
 
 .service-sort-select:focus { border-color: #069494; }
 
+/* Una columna por categoría — el título arriba, los servicios de esa
+   categoría apilados debajo, cada columna crece independiente del resto. */
+.service-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.service-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .service-group-label {
   font-size: 13px;
   font-weight: 700;
@@ -137,8 +152,8 @@
 }
 
 .service-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
@@ -184,9 +199,16 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* Reserva el alto de 2 líneas siempre, para que el precio/estado de abajo
+     no salte de lugar entre una tarjeta con descripción corta y una larga. */
+  min-height: calc(1.4em * 2);
+  line-height: 1.4em;
 }
 
 .admin-service-card-bottom {
+  /* Pegado siempre al fondo de la tarjeta, sin importar cuánto ocupe el
+     nombre/descripción arriba. */
+  margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;

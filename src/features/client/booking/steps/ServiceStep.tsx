@@ -150,7 +150,7 @@ export function ServiceStep({ selectedServiceId, onSelect }: Props) {
           No se encontraron servicios para "{query}"
         </p>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
           {SERVICE_CATEGORIES.map(cat => {
             const catServices = filteredServices.filter(s => s.categoryId === cat.id)
             if (catServices.length === 0) return null

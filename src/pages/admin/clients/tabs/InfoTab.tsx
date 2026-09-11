@@ -25,9 +25,6 @@ export function InfoTab({ client, onSave }: Props) {
   const set = (key: keyof AdminClient, value: unknown) =>
     setForm(f => ({ ...f, [key]: value }))
 
-  const setClinical = (key: keyof AdminClient['clinical'], value: unknown) =>
-    setForm(f => ({ ...f, clinical: { ...f.clinical, [key]: value } }))
-
   const handleSave = async () => {
     setSaving(true)
     setError(null)
@@ -47,7 +44,7 @@ export function InfoTab({ client, onSave }: Props) {
 
       <Section title="Datos personales">
         <Grid>
-          <Field label="Nombre completo">
+          <Field label="Nombre">
             <input value={form.name} onChange={e => set('name', e.target.value)} style={inp} />
           </Field>
           <Field label="Teléfono">
@@ -64,20 +61,6 @@ export function InfoTab({ client, onSave }: Props) {
               <option value="">Sin especificar</option>
               {Object.entries(GENDER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-          </Field>
-        </Grid>
-      </Section>
-
-      <Section title="Información clínica">
-        <Grid>
-          <Field label="Alergias">
-            <textarea value={form.clinical.allergies} onChange={e => setClinical('allergies', e.target.value)} style={{ ...inp, resize: 'vertical' }} rows={2} />
-          </Field>
-          <Field label="Preferencias">
-            <textarea value={form.clinical.preferences} onChange={e => setClinical('preferences', e.target.value)} style={{ ...inp, resize: 'vertical' }} rows={2} />
-          </Field>
-          <Field label="Observaciones">
-            <textarea value={form.clinical.observations} onChange={e => setClinical('observations', e.target.value)} style={{ ...inp, resize: 'vertical' }} rows={2} />
           </Field>
         </Grid>
       </Section>

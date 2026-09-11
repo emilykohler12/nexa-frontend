@@ -1,9 +1,26 @@
+import { useState, useEffect } from 'react'
+import { Gift, Cake } from 'lucide-react'
+import { api } from '@/shared/utils/api'
 import type { AdminClient } from '../types'
+import type { AutoPromotion } from '@/app/data/admin/promotions/autoPromotionTypes'
 
 const EMPTY_LOYALTY = { totalVisits: 0, totalSpent: 0, lastVisit: null, points: 0, availablePromos: [] as string[] }
 
+function discountText(p: AutoPromotion): string {
+  return p.discountType === 'percent' ? `${p.discountValue}% de descuento` : `$${p.discountValue.toLocaleString('es-AR')} de descuento`
+}
+
 export function LoyaltyTab({ client }: { client: AdminClient }) {
   const loyalty = client.loyalty ?? EMPTY_LOYALTY
+  const [promos, setPromos] = useState<AutoPromotion[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get<{ autoPromotions: AutoPromotion[] }>(`/api/admin/clients/${client.id}/auto-promotions`)
+      .then(res => setPromos(res.data.autoPromotions ?? []))
+      .catch(() => setPromos([]))
+      .finally(() => setLoading(false))
+  }, [client.id])
 
   const stats = [
     { label: 'Total de visitas',   value: loyalty.totalVisits },
@@ -14,7 +31,6 @@ export function LoyaltyTab({ client }: { client: AdminClient }) {
         ? new Date(loyalty.lastVisit + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
         : '—',
     },
-    { label: 'Puntos acumulados', value: loyalty.points },
   ]
 
   return (
@@ -33,22 +49,22 @@ export function LoyaltyTab({ client }: { client: AdminClient }) {
 
       <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '12px', padding: '20px' }}>
         <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '16px', color: '#000' }}>
-          Promociones disponibles
+          Campañas activas para este cliente
         </p>
-        {loyalty.availablePromos.length === 0 ? (
-          <p style={{ color: '#000', fontSize: '15px', margin: 0 }}>Sin promociones activas</p>
+        {loading ? (
+          <p style={{ color: '#000', fontSize: '15px', margin: 0 }}>Cargando...</p>
+        ) : promos.length === 0 ? (
+          <p style={{ color: '#000', fontSize: '15px', margin: 0 }}>No tiene ninguna campaña automática activa por ahora.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {loyalty.availablePromos.map((promo, i) => (
-              <div key={i} style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', color: '#8a6800', fontSize: '15px', fontWeight: 700 }}>
-                🎁 {promo}
+            {promos.map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', color: '#8a6800', fontSize: '15px', fontWeight: 700 }}>
+                {p.trigger === 'birthday' ? <Cake size={15} /> : <Gift size={15} />}
+                {p.name} — {discountText(p)}
               </div>
             ))}
           </div>
         )}
-        <p style={{ margin: '16px 0 0', fontSize: '13px', color: '#777' }}>
-          Programa de puntos — cada visita suma 10 puntos. 100 puntos = $500 de descuento.
-        </p>
       </div>
     </div>
   )

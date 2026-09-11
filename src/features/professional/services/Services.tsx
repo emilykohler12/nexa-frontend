@@ -4,6 +4,7 @@ import { Plus, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { AddServiceModal } from './AddServiceModal'
+import { SERVICE_CATEGORIES } from '@/app/data/shared'
 import type { CatalogService, AssignedService } from './types'
 import './Services.css'
 
@@ -61,8 +62,11 @@ export function Services() {
     .map(a => ({ ...a, service: catalog.find(c => c.id === a.serviceId) }))
     .filter((a): a is AssignedService & { service: CatalogService } => !!a.service)
 
-  const active   = myServices.filter(s => s.status === 'active')
-  const inactive = myServices.filter(s => s.status === 'inactive')
+  // Una columna por categoría, en vez de separar activos/inactivos — cada
+  // tarjeta ya tiene su propio toggle para eso.
+  const columns = SERVICE_CATEGORIES
+    .map(cat => ({ ...cat, services: myServices.filter(s => s.service.categoryId === cat.id) }))
+    .filter(col => col.services.length > 0)
 
   const ServiceCard = ({ item }: { item: AssignedService & { service: CatalogService } }) => (
     <div className="service-card" style={{ opacity: item.status === 'active' ? 1 : 0.6 }}>
@@ -124,25 +128,16 @@ export function Services() {
           Todavía no elegiste ningún servicio. Tocá "Agregar servicio" para empezar.
         </div>
       ) : (
-        <>
-          {active.length > 0 && (
-            <div>
-              <p className="services-section-label">Activos ({active.length})</p>
+        <div className="services-columns">
+          {columns.map(col => (
+            <div key={col.id} className="services-column">
+              <p className="services-section-label">{col.label} ({col.services.length})</p>
               <div className="services-grid">
-                {active.map(s => <ServiceCard key={s.serviceId} item={s} />)}
+                {col.services.map(s => <ServiceCard key={s.serviceId} item={s} />)}
               </div>
             </div>
-          )}
-
-          {inactive.length > 0 && (
-            <div>
-              <p className="services-section-label">Inactivos ({inactive.length})</p>
-              <div className="services-grid">
-                {inactive.map(s => <ServiceCard key={s.serviceId} item={s} />)}
-              </div>
-            </div>
-          )}
-        </>
+          ))}
+        </div>
       )}
 
       {showModal && (

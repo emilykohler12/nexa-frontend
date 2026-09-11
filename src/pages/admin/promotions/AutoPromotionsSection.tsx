@@ -109,10 +109,7 @@ export function AutoPromotionsSection() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-        <p style={{ margin: 0, color: '#555', fontSize: '14px', maxWidth: '520px' }}>
-          Reglas internas — nunca se muestran en la página principal. Cuando se cumplen, se le manda un mail con el descuento al cliente que corresponde.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
         <button onClick={() => setEditing(emptyForm())} style={primaryBtnStyle}>
           <Plus size={16} /> Nueva campaña
         </button>

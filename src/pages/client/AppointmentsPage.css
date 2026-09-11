@@ -84,6 +84,8 @@
   border: 1px solid #f0f0f0;
   box-shadow: 0 2px 12px rgba(0,0,0,0.04);
   transition: box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
 }
 .appointment-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
 
@@ -132,6 +134,10 @@
 }
 
 .appointment-footer {
+  /* Pegado al fondo de la tarjeta siempre, sin importar cuánto ocupe el
+     encabezado/meta arriba (título de 1 o 2 líneas, combo o no, etc). */
+  margin-top: auto;
+  padding-top: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;

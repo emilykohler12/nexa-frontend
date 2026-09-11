@@ -93,7 +93,7 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
   }
 
   return (
-    <div className="invite-overlay" onClick={onClose}>
+    <div className="invite-overlay">
       <div className="invite-modal" onClick={e => e.stopPropagation()}>
 
         <div className="invite-modal-header">

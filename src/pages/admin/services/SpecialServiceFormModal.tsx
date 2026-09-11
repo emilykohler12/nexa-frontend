@@ -89,7 +89,7 @@ export function SpecialServiceFormModal({ service, categories, error, onSave, on
   }
 
   return (
-    <div className="service-modal-overlay" onClick={onClose}>
+    <div className="service-modal-overlay">
       <div className="service-modal" onClick={e => e.stopPropagation()}>
         <div className="service-modal-header">
           <h2>{service ? 'Editar servicio especial' : 'Nuevo servicio especial'}</h2>

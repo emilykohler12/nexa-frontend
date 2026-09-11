@@ -16,6 +16,7 @@ export interface ProfessionalClient {
   photo:         string | null
   allergies:     string
   preferences:   string
+  observations:  string
   visits:        ClientVisit[]
   nextAppointment: string | null
   cancellations: number
