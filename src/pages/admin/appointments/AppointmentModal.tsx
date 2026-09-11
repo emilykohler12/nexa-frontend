@@ -165,6 +165,17 @@ export function AppointmentModal({
         {/* Cuerpo */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
+          {appointment.isSimultaneous && (
+            <div style={{ background: `${profColor}12`, border: `1px solid ${profColor}44`, borderRadius: '10px', padding: '10px 12px' }}>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: profColor, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Turno simultáneo</p>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#333' }}>
+                {(appointment.simultaneousWith?.length ?? 0) > 0
+                  ? <>Al mismo tiempo: {appointment.simultaneousWith!.map(p => `${p.professionalName} (${p.serviceName})`).join(', ')}</>
+                  : 'Se hace en simultáneo con otras profesionales.'}
+              </p>
+            </div>
+          )}
+
           {/* Fecha y hora */}
           {editing ? (
             <Section>

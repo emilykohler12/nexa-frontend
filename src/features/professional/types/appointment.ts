@@ -43,6 +43,8 @@ export interface Appointment {
   paymentStatus:  PaymentStatus
   internalNotes:  string
   isSimultaneous: boolean
+  // Las otras profesionales del combo simultáneo (servicio + nombre).
+  simultaneousWith?: { serviceName: string; professionalName: string }[]
   details?:       AppointmentDetails | null
   comboGroupId?:  string | null
   // Solo para turnos de un servicio especial — qué zonas/paquetes eligió el cliente.

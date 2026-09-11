@@ -6,7 +6,7 @@ import { useAuth, isFirstVisit } from '@/features/auth/AuthContext'
 import { api }            from '@/shared/utils/api'
 import { ROUTES }         from '@/app/config/routes.config'
 import { appointmentStatus } from '@/app/data/shared/status.data'
-import { Calendar, Clock, User, ChevronRight, X, CalendarClock } from 'lucide-react'
+import { Calendar, Clock, User, Users, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
 import type { AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
@@ -117,27 +117,61 @@ export function AppointmentsPage() {
     return true
   })
 
+  // Un combo (varias patas con el mismo comboGroupId) se muestra como UNA sola
+  // fila: un turno con todos los servicios y todas las profesionales.
+  type Row =
+    | { kind: 'single'; appt: Appointment }
+    | { kind: 'combo'; groupId: string; legs: Appointment[] }
+
+  const rows: Row[] = (() => {
+    const out: Row[] = []
+    const seenGroups = new Set<string>()
+    for (const a of filtered) {
+      if (!a.comboGroupId) { out.push({ kind: 'single', appt: a }); continue }
+      if (seenGroups.has(a.comboGroupId)) continue
+      seenGroups.add(a.comboGroupId)
+      const legs = filtered.filter(x => x.comboGroupId === a.comboGroupId)
+      out.push(legs.length > 1 ? { kind: 'combo', groupId: a.comboGroupId, legs } : { kind: 'single', appt: a })
+    }
+    return out
+  })()
+
+  // Cancela un combo entero — pata por pata (el backend reembolsa recién en la última).
+  const cancelComboGroup = async (legs: Appointment[]) => {
+    const active = legs.filter(l => l.status === 'confirmed' || l.status === 'pending')
+    let refunded = false
+    for (const leg of active) {
+      try {
+        const res = await api.patch<{ appointment: Appointment; refunded: boolean }>(`/api/client/appointments/${leg.id}/cancel`)
+        refunded = refunded || res.data.refunded
+        setAppointments(prev => prev.map(a => a.id === leg.id ? res.data.appointment : a))
+      } catch { /* seguimos con las demás */ }
+    }
+    return refunded
+  }
+
   const confirmCancel = async () => {
     const appt = confirmCancelAppt
     if (!appt) return
     setCancellingId(appt.id)
     try {
-      const res = await api.patch<{ appointment: Appointment; refunded: boolean; appointments?: Appointment[] }>(
-        `/api/client/appointments/${appt.id}/cancel`
-      )
-      // Si el turno es parte de un combo, el backend cancela todas las patas
-      // juntas y las devuelve en `appointments` — hay que actualizar todas,
-      // no solo la que se pidió cancelar.
-      if (res.data.appointments?.length) {
-        const updatedById = new Map(res.data.appointments.map(a => [a.id, a]))
-        setAppointments(prev => prev.map(a => updatedById.get(a.id) ?? a))
+      // Combo: se cancelan todas las patas (desde acá se cancela el combo
+      // entero; para bajar solo un servicio, se hace desde el detalle del turno).
+      const comboLegs = appt.comboGroupId
+        ? appointments.filter(a => a.comboGroupId === appt.comboGroupId)
+        : []
+      if (comboLegs.length > 1) {
+        const refunded = await cancelComboGroup(comboLegs)
         setToast({
-          type: res.data.refunded ? 'success' : 'info',
-          text: res.data.refunded
-            ? 'Se canceló el combo completo. Las señas se reembolsan según la política del negocio.'
-            : 'Se canceló el combo completo. Las señas no se reembolsan por cancelarse fuera del plazo permitido.',
+          type: refunded ? 'success' : 'info',
+          text: refunded
+            ? 'Se canceló el combo completo. La seña se reembolsa según la política del negocio.'
+            : 'Se canceló el combo completo. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
         })
       } else {
+        const res = await api.patch<{ appointment: Appointment; refunded: boolean }>(
+          `/api/client/appointments/${appt.id}/cancel`
+        )
         setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
         setToast({
           type: res.data.refunded ? 'success' : 'info',
@@ -214,7 +248,68 @@ export function AppointmentsPage() {
         </div>
       ) : (
         <div className="appointments-list">
-          {filtered.map(appt => {
+          {rows.map(row => {
+            if (row.kind === 'combo') {
+              const legs = row.legs
+              const head = legs[0]
+              const activeLegs = legs.filter(l => l.status === 'confirmed' || l.status === 'pending')
+              // Estado de la fila: si queda alguna pata activa, ese; si no, la primera.
+              const rowAppt = activeLegs[0] ?? head
+              const status = appointmentStatus[rowAppt.status]
+              const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
+              const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
+              const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
+              return (
+                <div
+                  key={row.groupId}
+                  className="appointment-card"
+                  onClick={() => setDetailAppt(rowAppt)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="appointment-card-top">
+                    <div>
+                      <h3 style={{ color: primaryColor }}>
+                        Combo · {legs.map(l => l.serviceName).join(' + ')}
+                      </h3>
+                      <div className="appointment-professional">
+                        <User size={14} />
+                        <span>{Array.from(new Set(legs.map(l => l.professionalName))).join(', ')}</span>
+                      </div>
+                    </div>
+                    <span className="appointment-status" style={{ backgroundColor: `${status.color}1a`, color: status.color }}>
+                      {status.label}
+                    </span>
+                  </div>
+
+                  <div className="appointment-meta">
+                    <span><Calendar size={14} />{new Date(head.date + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                    <span><Clock size={14} />{head.time}</span>
+                    <span><Clock size={14} />{maxDuration} min</span>
+                    <span><Users size={14} />En simultáneo</span>
+                  </div>
+
+                  <div className="appointment-footer">
+                    <span className="appointment-price" style={{ color: accentColor }}>
+                      ${totalPrice.toLocaleString('es-AR')}
+                    </span>
+                    {canCancel && (
+                      <div className="appointment-actions">
+                        <button
+                          className="appointment-cancel-btn"
+                          onClick={e => { e.stopPropagation(); setConfirmCancelAppt(rowAppt) }}
+                          disabled={cancellingId === rowAppt.id}
+                        >
+                          <X size={14} /> {cancellingId === rowAppt.id ? 'Cancelando...' : 'Cancelar combo'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            }
+
+            const appt = row.appt
             const status = appointmentStatus[appt.status]
             return (
               <div

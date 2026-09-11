@@ -51,6 +51,8 @@ export interface CalendarAppointment {
   borderColor?: string;
   details?: AppointmentDetails | null;
   comboGroupId?: string | null;
+  isSimultaneous?: boolean;
+  simultaneousWith?: { serviceName: string; professionalName: string }[];
   // Solo para turnos de un servicio especial — qué zonas/paquetes eligió el cliente.
   selectedZones?: { name: string; price: number; duration: number }[];
   selectedPackages?: { name: string; price: number; duration: number }[];

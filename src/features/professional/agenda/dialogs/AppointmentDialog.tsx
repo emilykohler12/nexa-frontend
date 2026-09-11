@@ -35,6 +35,17 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
 
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', fontFamily: "'Lato', sans-serif" }}>
 
+          {appointment.isSimultaneous && (
+            <div style={{ background: `${primary}0d`, border: `1px solid ${primary}33`, borderRadius: '12px', padding: '12px 14px' }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: primary }}>Turno simultáneo</p>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#444' }}>
+                {(appointment.simultaneousWith?.length ?? 0) > 0
+                  ? <>Al mismo tiempo con: {appointment.simultaneousWith!.map(p => `${p.professionalName} (${p.serviceName})`).join(', ')}</>
+                  : 'Este turno se hace en simultáneo con otras profesionales.'}
+              </p>
+            </div>
+          )}
+
           {/* Cliente */}
           <Section title="Datos del cliente">
             <Row><Phone size={14} /><span>{appointment.client.phone}</span></Row>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, Check, Clock, Users2, Shuffle } from 'lucide-react'
+import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { generateSlots } from '@/features/professional/onboarding/types'
@@ -41,7 +41,9 @@ interface AvailabilityRow { dayOfWeek: number; startTime: string; endTime: strin
 interface AvailabilityResponse { availability: AvailabilityRow[]; bookedTimes?: string[] }
 interface PaymentSettings { depositAmount: number; depositPercent: boolean }
 
-type Phase = 'assign' | 'datetime' | 'confirm' | 'details' | 'success'
+type Phase = 'assign' | 'datetime' | 'confirm' | 'waitingPayment' | 'details' | 'success'
+
+const POLL_MS = 5000
 
 interface DetailsQueueItem { appointmentId: string; categoryId: string }
 
@@ -106,6 +108,8 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [detailsQueue, setDetailsQueue] = useState<DetailsQueueItem[]>([])
+  const [comboGroupId, setComboGroupId] = useState<string | null>(null)
+  const [checkingPayment, setCheckingPayment] = useState(false)
 
   useEffect(() => {
     api.get<{ services: Service[] }>('/api/services')
@@ -177,7 +181,9 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const professionalTakenElsewhere = (idx: number, proId: string) =>
     proId !== ANY_PROFESSIONAL_ID && components.some((c, i) => i !== idx && c.professionalId === proId)
 
-  const totalPrice = components.reduce((sum, c) => sum + c.price, 0)
+  // El precio del combo es el que cargó el admin en el servicio combo (no la
+  // suma de los componentes), y la seña se calcula sobre ese precio.
+  const totalPrice = Number(combo.price) || 0
   const totalDuration = components.reduce((max, c) => Math.max(max, c.duration), 0)
   const deposit = paymentSettings ? computeDeposit(totalPrice, paymentSettings) : 0
 
@@ -204,11 +210,35 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     }
   }
 
+  // Trae el estado de la seña del combo directo de Mercado Pago (no depende del
+  // webhook). Cuando queda paga, sigue a las preguntas post-reserva.
+  const checkComboPayment = async () => {
+    if (!comboGroupId) return
+    setCheckingPayment(true)
+    try {
+      const res = await api.post<{ paymentStatus: string }>(`/api/client/appointments/combo/${comboGroupId}/verify-payment`)
+      if (res.data.paymentStatus === 'partial') {
+        setPhase(detailsQueue.length > 0 ? 'details' : 'success')
+      }
+    } catch {
+      /* chequeo de fondo */
+    } finally {
+      setCheckingPayment(false)
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== 'waitingPayment') return
+    const interval = setInterval(checkComboPayment, POLL_MS)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, comboGroupId, detailsQueue.length])
+
   const handleSubmit = async () => {
     setSubmitting(true)
     setError(null)
     try {
-      const res = await api.post<{ appointments?: { id: string; serviceId: string }[] }>('/api/client/appointments/combo', {
+      const res = await api.post<{ comboGroupId: string; appointments?: { id: string; serviceId: string }[] }>('/api/client/appointments/combo', {
         comboServiceId: combo.id,
         simultaneous: true,
         components: components.map(c => ({
@@ -219,9 +249,12 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         })),
       })
 
+      const newGroupId = res.data.comboGroupId
+      setComboGroupId(newGroupId)
+
       // Para cada turno del combo que quedó en una categoría con preguntas
       // post-reserva (uñas/cabello/rostro), las encolamos para preguntarlas
-      // una por una antes de mostrar el éxito final.
+      // una por una — después del pago.
       const createdAppointments = res.data.appointments ?? []
       const queue = createdAppointments
         .map(a => {
@@ -229,9 +262,19 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
           return comp && DETAILS_CATEGORIES.includes(comp.categoryId) ? { appointmentId: a.id, categoryId: comp.categoryId } : null
         })
         .filter((x): x is DetailsQueueItem => x !== null)
-
       setDetailsQueue(queue)
-      setPhase(queue.length > 0 ? 'details' : 'success')
+
+      // Si no hay seña que cobrar (combo sin precio / seña 0), no se abre
+      // Mercado Pago — se pasa directo a las preguntas.
+      if (deposit <= 0) {
+        setPhase(queue.length > 0 ? 'details' : 'success')
+        return
+      }
+
+      // Una sola seña para todo el combo — se abre el checkout de Mercado Pago.
+      const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/combo/${newGroupId}/payment`)
+      window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
+      setPhase('waitingPayment')
     } catch (err: any) {
       const code = err?.response?.data?.code
       if (err?.response?.status === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
@@ -268,7 +311,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       style={{ background: `${primaryColor}0d`, border: `1px solid ${primaryColor}33` }}
     >
       <Users2 size={16} color={primaryColor} style={{ marginTop: 2, flexShrink: 0 }} />
-      <p className="text-xs" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
+      <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
         Estos {components.length || (combo.comboServiceIds?.length ?? 0)} servicios se hacen <strong>en simultáneo</strong>: el mismo día y hora, cada uno con una profesional distinta.
       </p>
     </div>
@@ -438,13 +481,45 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
           <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{error}</p>
         )}
 
+        <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-4" style={{ background: '#f3f4f6' }}>
+          <ExternalLink size={18} color="#666" />
+          <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
+            Vas a pagar en una pestaña nueva de Mercado Pago. Es una sola seña para todo el combo.
+          </p>
+        </div>
+
         <button
           onClick={handleSubmit}
           disabled={submitting}
           className="w-full py-4 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
         >
-          {submitting ? 'Confirmando...' : `Pagar seña · $${deposit.toLocaleString('es-AR')}`}
+          {submitting ? 'Procesando...' : `Pagar seña · $${deposit.toLocaleString('es-AR')}`}
+        </button>
+      </div>
+    )
+  }
+
+  if (phase === 'waitingPayment') {
+    return (
+      <div className="text-center py-10">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#f3f4f6' }}>
+          <Clock size={28} color="#666" />
+        </div>
+        <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+          Esperando la confirmación del pago
+        </h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
+          Se abrió una pestaña nueva con el checkout de Mercado Pago. Completá el pago ahí — apenas se confirme, esta pantalla avanza sola.
+        </p>
+        <button
+          onClick={checkComboPayment}
+          disabled={checkingPayment}
+          className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-2"
+          style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+        >
+          <RefreshCw size={16} className={checkingPayment ? 'animate-spin' : ''} />
+          {checkingPayment ? 'Verificando...' : 'Ya pagué, verificar'}
         </button>
       </div>
     )

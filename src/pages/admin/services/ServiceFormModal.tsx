@@ -54,6 +54,13 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
       ? comboServiceIds.filter(x => x !== id)
       : [...comboServiceIds, id]
     setValue('comboServiceIds', next, { shouldDirty: true })
+    // Autocompleta el precio del combo con la suma de los servicios elegidos.
+    // El admin puede cambiarlo después (más barato o más caro).
+    const sum = next.reduce((acc, sid) => {
+      const s = allServices.find(x => x.id === sid)
+      return acc + Number(s?.price ?? 0)
+    }, 0)
+    setValue('price', sum, { shouldDirty: true })
   }
 
   // "Servicios simultáneos" reemplaza al viejo "Es un combo": un combo ahora

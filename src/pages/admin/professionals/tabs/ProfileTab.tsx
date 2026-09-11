@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/app/config/routes.config';
 import { api } from '@/shared/utils/api';
 import { validateAllSocials } from '@/shared/utils/social';
+import { SERVICE_CATEGORIES } from '@/app/data/shared';
 import type { AdminProfessional, CommissionType } from '../types';
 import '../professionals.css';
 import '@/shared/ui/admin/admin-controls.css';
@@ -15,7 +16,7 @@ const DAY_LABELS: Record<string, string> = {
 const DAY_KEYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
 type DayKey = typeof DAY_KEYS[number];
 
-interface CatalogService { id: string; name: string; status: string }
+interface CatalogService { id: string; name: string; status: string; categoryId: string }
 
 const STATUS_OPTIONS = [
   { value: 'active',   label: 'Activo'     },
@@ -209,17 +210,37 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
         {activeServices.length === 0 ? (
           <p style={{ color: '#000', fontSize: '15px' }}>No hay servicios activos cargados todavía.</p>
         ) : (
-          <div className="service-chips">
-            {activeServices.map((service) => (
-              <button
-                key={service.id}
-                type="button"
-                className={`service-chip ${form.services.includes(service.id) ? 'selected' : ''}`}
-                onClick={() => toggleService(service.id)}
-              >
-                {service.name}
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {[
+              ...SERVICE_CATEGORIES,
+              { id: '__otros__', label: 'Otros' },
+            ].map((cat) => {
+              const inCat = activeServices.filter(s =>
+                cat.id === '__otros__'
+                  ? !SERVICE_CATEGORIES.some(c => c.id === s.categoryId)
+                  : s.categoryId === cat.id
+              )
+              if (inCat.length === 0) return null
+              return (
+                <div key={cat.id}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }}>
+                    {cat.label}
+                  </p>
+                  <div className="service-chips">
+                    {inCat.map((service) => (
+                      <button
+                        key={service.id}
+                        type="button"
+                        className={`service-chip ${form.services.includes(service.id) ? 'selected' : ''}`}
+                        onClick={() => toggleService(service.id)}
+                      >
+                        {service.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
