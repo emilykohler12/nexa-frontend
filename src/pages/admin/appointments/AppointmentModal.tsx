@@ -280,7 +280,7 @@ export function AppointmentModal({
 
           {/* Servicio */}
           <SectionTitle color={profColor}>
-            Servicio{appointment.isSimultaneous ? ' — combo en simultáneo' : ''}
+            Servicio{appointment.isSimultaneous ? ' — servicios simultáneos' : ''}
           </SectionTitle>
           <Section>
             {!editing && appointment.isSimultaneous ? (

@@ -57,7 +57,7 @@ export function AgendaMonth({ appointments, month, primary, onEventClick }: Prop
                   {getAppts(day).slice(0, 3).map(a => {
                     const cfg = getAppointmentStatusConfig(a.status, a.cancelReason)
                     return (
-                      <button key={a.id} onClick={() => onEventClick(a)} title={a.comboGroupId ? `Combo — ${a.client.name} — ${a.serviceName}` : `${a.client.name} — ${a.serviceName}`}
+                      <button key={a.id} onClick={() => onEventClick(a)} title={a.comboGroupId ? `Simultáneo — ${a.client.name} — ${a.serviceName}` : `${a.client.name} — ${a.serviceName}`}
                         style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', border: 'none', borderLeft: a.comboGroupId ? '2px solid #d4af37' : 'none', borderRadius: '4px', padding: '3px 6px', marginBottom: '2px', background: cfg.bg, cursor: 'pointer', textAlign: 'left', fontFamily: "'Lato', sans-serif" }}>
                         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
                         <span style={{ fontSize: '12px', fontWeight: 600, color: cfg.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>

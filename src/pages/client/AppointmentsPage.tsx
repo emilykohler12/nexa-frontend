@@ -299,7 +299,7 @@ export function AppointmentsPage() {
                   <div className="appointment-card-top">
                     <div>
                       <h3 style={{ color: primaryColor }}>
-                        Combo · {legs.map(l => l.serviceName).join(' + ')}
+                        Simultáneo · {legs.map(l => l.serviceName).join(' + ')}
                       </h3>
                       <div className="appointment-professional">
                         <User size={14} />

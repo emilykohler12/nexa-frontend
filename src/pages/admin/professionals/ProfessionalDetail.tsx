@@ -54,9 +54,6 @@ export function ProfessionalDetail({ professional, onBack, onSave }: Props) {
                 Twitter
               </a>
             )}
-            <span className="prof-detail-info-item">
-              Comisión: {professional.commissionPct}% ({professional.commissionType === 'earned' ? 'se queda el profesional' : 'al negocio'})
-            </span>
           </div>
         </div>
       </div>

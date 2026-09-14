@@ -1,13 +1,16 @@
 // src/pages/admin/services/ServiceFormModal.tsx
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X, Upload } from 'lucide-react'
+import { api } from '@/shared/utils/api'
 import { serviceFormSchema } from './schemas'
 import type { ServiceFormSchema } from './schemas'
 import type { AdminService, ServiceFormValues } from './types'
 import './services.css'
+
+interface ProfessionalOption { id: string; name: string }
 
 interface CategoryOption { id: string; label: string }
 
@@ -66,8 +69,16 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
       isCombo: false,
       comboServiceIds: [],
       simultaneous: false,
+      comboProfessionals: {},
     },
   })
+
+  const [professionals, setProfessionals] = useState<ProfessionalOption[]>([])
+  useEffect(() => {
+    api.get<{ professionals: ProfessionalOption[] }>('/api/professional/public')
+      .then(res => setProfessionals(res.data.professionals ?? []))
+      .catch(() => setProfessionals([]))
+  }, [])
 
   const onSubmit = (values: ServiceFormSchema) => {
     onSave({ ...values, image: values.image || null })
@@ -76,6 +87,7 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
   const imageValue = watch('image')
   const isCombo = watch('isCombo')
   const comboServiceIds = watch('comboServiceIds') ?? []
+  const comboProfessionals = watch('comboProfessionals') ?? {}
   // No tiene sentido armar un combo con un servicio inactivo — el cliente
   // no podría reservarlo igual.
   const componentOptions = allServices.filter(s => s.id !== service?.id && !s.isCombo && s.status === 'active')
@@ -92,6 +104,14 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
       return acc + Number(s?.price ?? 0)
     }, 0)
     setValue('price', sum, { shouldDirty: true })
+  }
+
+  const toggleComboProfessional = (serviceId: string, professionalId: string) => {
+    const current = comboProfessionals[serviceId] ?? []
+    const next = current.includes(professionalId)
+      ? current.filter(x => x !== professionalId)
+      : [...current, professionalId]
+    setValue('comboProfessionals', { ...comboProfessionals, [serviceId]: next }, { shouldDirty: true })
   }
 
   // "Servicios simultáneos" reemplaza al viejo "Es un combo": un combo ahora
@@ -252,6 +272,51 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {isCombo && comboServiceIds.length > 0 && (
+            <div className="service-form-field" style={{ background: '#fafafa', border: '1px solid #e5e5e5', borderRadius: '10px', padding: '14px' }}>
+              <span>Quién puede hacer cada servicio</span>
+              <p className="service-form-hint" style={{ margin: '4px 0 0' }}>
+                Elegí qué profesionales puede elegir el cliente para cada servicio de este simultáneo. Si no marcás ninguna, puede elegir cualquiera que haga ese servicio.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+                {comboServiceIds.map(sid => {
+                  const s = allServices.find(x => x.id === sid)
+                  const selected = comboProfessionals[sid] ?? []
+                  return (
+                    <div key={sid}>
+                      <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 700, color: '#111' }}>{s?.name ?? 'Servicio'}</p>
+                      {professionals.length === 0 ? (
+                        <p className="service-form-hint" style={{ margin: 0 }}>Cargando profesionales...</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {professionals.map(p => {
+                            const checked = selected.includes(p.id)
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => toggleComboProfessional(sid, p.id)}
+                                style={{
+                                  padding: '6px 12px', borderRadius: '20px', cursor: 'pointer',
+                                  border: `1.5px solid ${checked ? '#069494' : '#ddd'}`,
+                                  background: checked ? 'rgba(6,148,148,0.08)' : '#fff',
+                                  color: checked ? '#069494' : '#444',
+                                  fontFamily: "'Lato', sans-serif", fontSize: '13px', fontWeight: 700,
+                                }}
+                              >
+                                {p.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 

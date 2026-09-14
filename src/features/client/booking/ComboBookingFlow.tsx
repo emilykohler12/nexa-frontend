@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw } from 'lucide-react'
+import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { generateSlots } from '@/features/professional/onboarding/types'
@@ -25,6 +25,7 @@ interface ComponentAssignment {
   serviceId: string
   serviceName: string
   categoryId: string
+  description: string
   price: number
   duration: number
   professionals: Professional[]
@@ -110,6 +111,11 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const [detailsQueue, setDetailsQueue] = useState<DetailsQueueItem[]>([])
   const [comboGroupId, setComboGroupId] = useState<string | null>(null)
   const [checkingPayment, setCheckingPayment] = useState(false)
+  const [proPoliciesById, setProPoliciesById] = useState<Record<string, {
+    name: string
+    toleranceMinutes: number | null; latePenalty: string | null
+    cancellationPolicy: string | null; reschedulePolicy: string | null; depositPolicy: string | null
+  }>>({})
 
   useEffect(() => {
     api.get<{ services: Service[] }>('/api/services')
@@ -121,6 +127,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
             serviceId: id,
             serviceName: s?.name ?? 'Servicio',
             categoryId: s?.categoryId ?? '',
+            description: s?.description ?? '',
             // La API serializa price como string (Decimal de Prisma) — hay que
             // convertirlo o las sumas terminan concatenando ("$010000200002...").
             price: Number(s?.price ?? 0),
@@ -149,7 +156,15 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       if (!c.loadingProfessionals || c.professionals.length > 0) return
       api.get<{ professionals: Professional[] }>(`/api/professional/public?serviceId=${encodeURIComponent(c.serviceId)}`)
         .then(res => {
-          setComponents(prev => prev.map((p, i) => i === idx ? { ...p, professionals: res.data.professionals, loadingProfessionals: false } : p))
+          // El admin puede haber restringido, para ESTE simultáneo, qué
+          // profesionales hacen este servicio en particular — si eligió
+          // alguna, se filtra a esas; si no, queda el comportamiento de
+          // siempre (cualquiera que haga el servicio en general).
+          const allowedIds = combo.comboProfessionals?.[c.serviceId]
+          const list = allowedIds && allowedIds.length > 0
+            ? res.data.professionals.filter(p => allowedIds.includes(p.id))
+            : res.data.professionals
+          setComponents(prev => prev.map((p, i) => i === idx ? { ...p, professionals: list, loadingProfessionals: false } : p))
         })
         .catch(() => {
           setComponents(prev => prev.map((p, i) => i === idx ? { ...p, professionals: [], loadingProfessionals: false } : p))
@@ -159,7 +174,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   }, [components.length])
 
   if (!business) return null
-  const { primaryColor, accentColor } = business
+  const { primaryColor, accentColor, contactInfo, ubicacion } = business
 
   const allAssigned = components.length > 0 && components.every(c => c.professionalId)
   const assignedProfessionalIds = Array.from(new Set(components.map(c => c.professionalId).filter(Boolean))) as string[]
@@ -234,6 +249,38 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, comboGroupId, detailsQueue.length])
 
+  // Al llegar a éxito, traemos las políticas de CADA profesional asignada (una
+  // por servicio) para mostrarlas junto con ubicación y qué incluye cada
+  // servicio — mismo contenido que ve un cliente que reserva un solo servicio.
+  useEffect(() => {
+    if (phase !== 'success' || assignedProfessionalIds.length === 0) return
+    api.get<{ professionals: {
+      id: string; name: string
+      toleranceMinutes?: number | null; latePenalty?: string | null
+      cancellationPolicy?: string | null; reschedulePolicy?: string | null; depositPolicy?: string | null
+    }[] }>('/api/professional/public')
+      .then(res => {
+        const map: typeof proPoliciesById = {}
+        for (const proId of assignedProfessionalIds) {
+          const pro = res.data.professionals.find(p => p.id === proId)
+          if (!pro) continue
+          if (pro.latePenalty || pro.cancellationPolicy || pro.reschedulePolicy || pro.depositPolicy || pro.toleranceMinutes) {
+            map[proId] = {
+              name: pro.name,
+              toleranceMinutes:   pro.toleranceMinutes   ?? null,
+              latePenalty:        pro.latePenalty        ?? null,
+              cancellationPolicy: pro.cancellationPolicy ?? null,
+              reschedulePolicy:   pro.reschedulePolicy   ?? null,
+              depositPolicy:      pro.depositPolicy      ?? null,
+            }
+          }
+        }
+        setProPoliciesById(map)
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
   const handleSubmit = async () => {
     setSubmitting(true)
     setError(null)
@@ -279,6 +326,9 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       const code = err?.response?.data?.code
       if (err?.response?.status === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
         setError('No hay ningún profesional disponible para uno de los servicios de "cualquiera" en el horario elegido. Probá con otro horario o elegí un profesional específico.')
+      } else if (err?.response?.status === 400 && code === 'PROFESSIONAL_NOT_ALLOWED') {
+        setError('Esa profesional ya no está habilitada para ese servicio. Elegí otra.')
+        setPhase('assign')
       } else if (err?.response?.status === 409 && code === 'SAME_PROFESSIONAL_SIMULTANEOUS') {
         setError('No se puede hacer dos servicios en simultáneo con la misma profesional. Elegí una profesional distinta para cada uno.')
         setPhase('assign')
@@ -550,12 +600,82 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#dcfce7' }}>
         <Check size={28} color="#16a34a" />
       </div>
-      <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>¡Combo reservado!</h2>
+      <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>¡Turno simultáneo reservado!</h2>
       <p className="text-gray-500 max-w-md mx-auto mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
         {simultaneous
           ? `Te esperamos el ${sharedDate && new Date(sharedDate + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })} a las ${sharedTime} para tus ${components.length} servicios en simultáneo.`
           : `Reservamos tus ${components.length} servicios del combo, cada uno en su horario.`}
       </p>
+
+      <div className="text-left max-w-md mx-auto mb-6 flex flex-col gap-4">
+        {/* Ubicación */}
+        {(contactInfo.address || ubicacion) && (
+          <div className="rounded-xl p-4" style={{ background: '#f3f4f6' }}>
+            <p className="text-xs font-bold uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+              <MapPin size={13} /> Dónde es
+            </p>
+            {contactInfo.address && (
+              <p className="text-sm mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333', lineHeight: 1.5 }}>
+                {contactInfo.address}
+              </p>
+            )}
+            {ubicacion && (
+              <a
+                href={ubicacion} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold hover:opacity-80"
+                style={{ fontFamily: 'var(--font-lato)', color: primaryColor }}
+              >
+                Ver en Google Maps <ExternalLink size={13} />
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Qué incluye cada servicio — lo que cargó el admin */}
+        {components.some(c => c.description) && (
+          <div className="rounded-xl p-4" style={{ background: '#f3f4f6' }}>
+            <p className="text-xs font-bold uppercase tracking-wide mb-2 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+              <Info size={13} /> Sobre tus servicios
+            </p>
+            <div className="flex flex-col gap-2">
+              {components.filter(c => c.description).map(c => (
+                <p key={c.serviceId} className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#333', lineHeight: 1.5 }}>
+                  <strong>{c.serviceName}:</strong> {c.description}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Políticas de cada profesional — una por servicio */}
+        {Object.entries(proPoliciesById).map(([proId, pol]) => (
+          <div key={proId}>
+            <p className="text-xs font-bold uppercase tracking-wide mb-2 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
+              <Shield size={13} /> Políticas de {pol.name}
+            </p>
+            <ul className="flex flex-col gap-2" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+              {pol.toleranceMinutes != null && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>
+                  · Tolerancia de {pol.toleranceMinutes} minutos
+                </li>
+              )}
+              {pol.latePenalty && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.latePenalty}</li>
+              )}
+              {pol.cancellationPolicy && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.cancellationPolicy}</li>
+              )}
+              {pol.reschedulePolicy && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.reschedulePolicy}</li>
+              )}
+              {pol.depositPolicy && (
+                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.depositPolicy}</li>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+
       <button
         onClick={onSuccess}
         className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90"

@@ -70,12 +70,12 @@ export function CalendarMonth({ appointments, professionals, month, onEventClick
                           const color = isCombo ? COMBO_COLOR : colorFor(a)
                           return (
                             <button key={group.comboGroupId ?? a.id ?? gi} onClick={() => onEventClick(a)}
-                              title={isCombo ? `Combo (${group.items.length} servicios) — ${a.clientName}` : `${a.clientName} — ${a.serviceName}`}
+                              title={isCombo ? `Servicios simultáneos (${group.items.length}) — ${a.clientName}` : `${a.clientName} — ${a.serviceName}`}
                               style={{ display: 'flex', alignItems: 'center', gap: '5px', width: '100%', border: 'none', borderRadius: '4px', padding: '3px 6px', marginBottom: '2px', background: `${color}15`, cursor: 'pointer', textAlign: 'left', fontFamily: "'Lato', sans-serif" }}
                             >
                               <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0, background: color }} />
                               <span style={{ fontSize: '13px', fontWeight: 600, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                                {isCombo ? `${a.clientName} · Combo` : a.clientName}
+                                {isCombo ? `${a.clientName} · Simultáneo` : a.clientName}
                               </span>
                             </button>
                           )

@@ -68,7 +68,7 @@ export function CalendarDay({ appointments, professionals, day, onEventClick }: 
                           {a.clientName}
                         </span>
                         <span style={{ fontSize: '14px', color: '#000', fontWeight: 500 }}>
-                          {isCombo ? `Combo · ${group.items.length} servicios` : a.serviceName}
+                          {isCombo ? `Simultáneo · ${group.items.length} servicios` : a.serviceName}
                         </span>
                         <span style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: color }} />
                       </button>

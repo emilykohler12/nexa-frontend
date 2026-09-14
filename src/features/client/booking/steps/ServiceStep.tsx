@@ -28,6 +28,9 @@ export interface Service {
   isCombo?:         boolean
   comboServiceIds?: string[]
   simultaneous?:    boolean
+  // Profesionales habilitadas por componente (elegidas por el admin) —
+  // { [serviceId]: professionalId[] }. Sin entrada = cualquiera.
+  comboProfessionals?: Record<string, string[]>
   isSpecial?:       boolean
   specialDate?:     string | null
   specialSlots?:    SpecialSlot[]

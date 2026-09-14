@@ -68,7 +68,7 @@ export function ServicesSection() {
     : services
 
   const activeLabel = activeCategoryId === COMBOS_ID
-    ? 'Combos'
+    ? 'Servicios simultáneos'
     : categories.find(c => c.id === activeCategoryId)?.label
 
   return (
@@ -134,7 +134,7 @@ export function ServicesSection() {
                 >
                   <img
                     src="/icons/combos.png"
-                    alt="Combos"
+                    alt="Servicios simultáneos"
                     style={{
                       width: '130px', height: '90px', objectFit: 'contain',
                       opacity: activeCategoryId === COMBOS_ID ? 1 : 0.8,
@@ -149,7 +149,7 @@ export function ServicesSection() {
                     fontWeight: activeCategoryId === COMBOS_ID ? 700 : 400,
                     transition: 'all 0.2s',
                   }}>
-                    Combos
+                    Servicios simultáneos
                   </span>
                 </div>
               )}

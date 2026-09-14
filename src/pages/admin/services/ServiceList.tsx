@@ -1,7 +1,7 @@
 //src/pages/admin/services/ServiceList.tsx
 
 import { useState, useMemo } from 'react';
-import { Pencil, Trash2, ImageOff, Search } from 'lucide-react';
+import { Pencil, Trash2, ImageOff, Search, Clock, CalendarClock, Sparkles, Archive } from 'lucide-react';
 import { formatCurrency } from '@/shared/utils/format';
 import type { AdminService } from './types';
 import './services.css';
@@ -9,6 +9,7 @@ import './services.css';
 interface CategoryOption {
   id: string;
   label: string;
+  icon?: string;
 }
 
 interface Props {
@@ -52,20 +53,20 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
       ? services.filter((s) => s.name.toLowerCase().includes(normalizedQuery))
       : services;
 
-    const result: { key: string; label: string; services: AdminService[] }[] = [];
+    const result: { key: string; label: string; icon?: string; services: AdminService[] }[] = [];
 
     categories.forEach((cat) => {
       const inCategory = matches.filter(
         (s) => s.categoryId === cat.id && s.status === 'active' && !s.isCombo
       );
       if (inCategory.length > 0) {
-        result.push({ key: cat.id, label: cat.label, services: sortServices(inCategory, sortBy) });
+        result.push({ key: cat.id, label: cat.label, icon: cat.icon, services: sortServices(inCategory, sortBy) });
       }
     });
 
     const combos = matches.filter((s) => s.isCombo && s.status === 'active');
     if (combos.length > 0) {
-      result.push({ key: 'combos', label: 'Combos', services: sortServices(combos, sortBy) });
+      result.push({ key: 'combos', label: 'Servicios simultáneos', services: sortServices(combos, sortBy) });
     }
 
     const inactive = matches.filter((s) => s.status === 'inactive');
@@ -111,9 +112,17 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
       ) : (
         <div className="service-columns">
         {groups.map((group) => (
-          <div key={group.key} className="service-column">
+          <div key={group.key} className={`service-column${group.key === 'inactive' ? ' is-inactive' : ''}`}>
             <p className="service-group-label">
-              {group.label} ({group.services.length})
+              {group.icon ? (
+                <img src={group.icon} alt="" className="service-group-icon" />
+              ) : group.key === 'combos' ? (
+                <Sparkles size={16} />
+              ) : group.key === 'inactive' ? (
+                <Archive size={16} />
+              ) : null}
+              {group.label}
+              <span className="service-group-count">{group.services.length}</span>
             </p>
             <div className="service-cards-grid">
               {group.services.map((service) => (
@@ -138,6 +147,7 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
                         )}
                       </p>
                       <p className="admin-service-card-meta">
+                        {service.isSpecial ? <CalendarClock size={13} /> : <Clock size={13} />}
                         {service.isSpecial
                           ? `${categoryLabel(service.categoryId)} · ${service.specialDate ?? 'sin fecha'}`
                           : `${categoryLabel(service.categoryId)} · ${service.duration} min`}

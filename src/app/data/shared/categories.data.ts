@@ -13,5 +13,5 @@ export const SERVICE_CATEGORIES: CategoryOption[] = [
   { id: 'rostro',  label: 'Rostro',  icon: '/icons/rostro.svg'  },
   { id: 'cuerpo',  label: 'Cuerpo',  icon: '/icons/cuerpo.svg'  },
   { id: 'cabello', label: 'Cabello', icon: '/icons/cabello.svg' },
-  { id: 'combo',   label: 'Combo',   icon: '/icons/combos.png'  },
+  { id: 'combo',   label: 'Servicios simultáneos',   icon: '/icons/combos.png'  },
 ]

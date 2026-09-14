@@ -46,6 +46,9 @@ export interface AdminService {
   // realizar en simultáneo con profesionales distintos (ej: cejas + uñas).
   comboServiceIds?: string[];
   simultaneous?: boolean;
+  // Profesionales habilitadas por componente — { [serviceId]: professionalId[] }.
+  // Sin entrada para un componente (o vacío) = cualquiera que haga ese servicio.
+  comboProfessionals?: Record<string, string[]>;
   // Servicio especial: un solo día fijo, con horarios puntuales asignados
   // cada uno a un profesional, y precio/duración armados por zonas/paquetes
   // que elige el cliente al reservar (en vez de un precio/duración fijos).

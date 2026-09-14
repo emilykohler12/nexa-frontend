@@ -13,6 +13,7 @@ export const serviceFormSchema = z.object({
   isCombo: z.coerce.boolean().default(false),
   comboServiceIds: z.array(z.string()).optional().default([]),
   simultaneous: z.coerce.boolean().default(false),
+  comboProfessionals: z.record(z.string(), z.array(z.string())).optional().default({}),
 });
 
 export type ServiceFormSchema = z.infer<typeof serviceFormSchema>;

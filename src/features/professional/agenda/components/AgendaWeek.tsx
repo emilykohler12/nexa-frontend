@@ -76,7 +76,7 @@ export function AgendaWeek({ appointments, weekStart, primary, onEventClick, get
                         style={group.items.length > 1 ? { border: '1px dashed #d4af37', borderRadius: '6px', padding: '2px', marginBottom: '2px' } : undefined}
                       >
                         {group.items.length > 1 && (
-                          <div style={{ fontSize: '9px', fontWeight: 700, color: '#8a6800', padding: '0 2px 1px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Combo</div>
+                          <div style={{ fontSize: '9px', fontWeight: 700, color: '#8a6800', padding: '0 2px 1px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Simultáneo</div>
                         )}
                         {group.items.map(a => {
                           const cfg = getAppointmentStatusConfig(a.status, a.cancelReason)

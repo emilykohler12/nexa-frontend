@@ -65,12 +65,12 @@ export function CalendarWeek({ appointments, professionals, weekStart, onEventCl
                       const color = isCombo ? COMBO_COLOR : colorFor(a)
                       return (
                         <button key={group.comboGroupId ?? gi} onClick={() => onEventClick(a)}
-                          title={isCombo ? `${a.clientName} — Combo (${group.items.length} servicios)` : `${a.clientName} — ${a.serviceName}`}
+                          title={isCombo ? `${a.clientName} — Servicios simultáneos (${group.items.length})` : `${a.clientName} — ${a.serviceName}`}
                           style={{ display: 'block', width: '100%', background: color, color: '#fff', border: 'none', borderRadius: '5px', padding: '4px 7px', fontSize: '13px', fontWeight: 700, fontFamily: "'Lato', sans-serif", textAlign: 'left', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px', transition: 'opacity 0.15s' }}
                           onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
                           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                         >
-                          {isCombo ? `${a.clientName} · Combo` : a.clientName}
+                          {isCombo ? `${a.clientName} · Simultáneo` : a.clientName}
                         </button>
                       )
                     })}
