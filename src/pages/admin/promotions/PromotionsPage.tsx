@@ -5,6 +5,7 @@ import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { Promotion, PromotionType, PromotionStatus, PromotionKind, PromotionItem } from '@/app/data/admin/promotions/types'
 import { AutoPromotionsSection } from './AutoPromotionsSection'
 import { SpecialEventsSection } from './SpecialEventsSection'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
 const todayISO = () => new Date().toISOString().split('T')[0]
 
@@ -33,6 +34,7 @@ const TABS: { id: PageTab; label: string }[] = [
 ]
 
 export function PromotionsPage() {
+  const { showToast } = useToast()
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading]       = useState(true)
   const [tab, setTab]               = useState<PageTab>('service')
@@ -40,19 +42,27 @@ export function PromotionsPage() {
   const [showForm, setShowForm]     = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<Promotion | null>(null)
   const [deleting, setDeleting]     = useState(false)
-  const [error, setError]           = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ promotions: Promotion[] }>('/api/admin/promotions')
       .then(res => setPromotions(res.data.promotions ?? []))
-      .catch(() => setError('No se pudieron cargar las promociones'))
+      .catch(() => showToast('No se pudieron cargar las promociones', 'error'))
       .finally(() => setLoading(false))
   }, [])
+
+  // El form de "Nueva promoción" queda armado para el tab en el que se abrió
+  // (servicio o producto) — si se cambia de tab con el form abierto, hay que
+  // cerrarlo, si no se ve el formulario de un tipo mientras se navega al otro.
+  const changeTab = (next: PageTab) => {
+    setTab(next)
+    setShowForm(false)
+    setEditing(null)
+    setConfirmDelete(null)
+  }
 
   const filtered = promotions.filter(p => p.type === tab)
 
   const handleSave = async (promo: Promotion) => {
-    setError(null)
     try {
       if (promo.id) {
         const res = await api.put<{ promotion: Promotion }>(`/api/admin/promotions/${promo.id}`, promo)
@@ -64,20 +74,19 @@ export function PromotionsPage() {
       setShowForm(false)
       setEditing(null)
     } catch (err: any) {
-      setError(safeErrorMessage(err, 'No se pudo guardar la promoción'))
+      showToast(safeErrorMessage(err, 'No se pudo guardar la promoción'), 'error')
     }
   }
 
   const handleDelete = async () => {
     if (!confirmDelete) return
     setDeleting(true)
-    setError(null)
     try {
       await api.delete(`/api/admin/promotions/${confirmDelete.id}`)
       setPromotions(prev => prev.filter(p => p.id !== confirmDelete.id))
       setConfirmDelete(null)
     } catch {
-      setError('No se pudo eliminar la promoción')
+      showToast('No se pudo eliminar la promoción', 'error')
     } finally {
       setDeleting(false)
     }
@@ -107,7 +116,7 @@ export function PromotionsPage() {
         {TABS.map(t => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => changeTab(t.id)}
             style={{
               padding: '8px 20px', border: 'none', borderRadius: '8px',
               fontSize: '15px', fontWeight: 700, cursor: 'pointer',
@@ -120,8 +129,6 @@ export function PromotionsPage() {
           </button>
         ))}
       </div>
-
-      {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
 
       {tab === 'automatic' ? (
         <AutoPromotionsSection />

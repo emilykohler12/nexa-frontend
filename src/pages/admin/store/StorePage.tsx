@@ -28,6 +28,16 @@ export function StorePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Un movimiento de inventario puede tocar el stock de uno o dos productos
+  // (si se edita y se le cambia el producto vinculado) — el backend devuelve
+  // el stock ya actualizado de cada uno para reflejarlo al toque acá.
+  const handleProductStockChange = (affected: { id: string; stock: number }[]) => {
+    setProducts(prev => prev.map(p => {
+      const match = affected.find(a => a.id === p.id)
+      return match ? { ...p, stock: match.stock } : p
+    }))
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', fontFamily: "'Lato', sans-serif" }}>
 
@@ -75,7 +85,7 @@ export function StorePage() {
         ) : (
           <>
             {activeTab === 'products'  && <ProductsTab products={products} onProductsChange={setProducts} />}
-            {activeTab === 'inventory' && <InventoryTab products={products} />}
+            {activeTab === 'inventory' && <InventoryTab products={products} onProductStockChange={handleProductStockChange} />}
           </>
         )}
       </div>

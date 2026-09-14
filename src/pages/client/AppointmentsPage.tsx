@@ -5,7 +5,7 @@ import { useTenant }      from '@/features/tenant/TenantContext'
 import { useAuth, isFirstVisit } from '@/features/auth/AuthContext'
 import { api }            from '@/shared/utils/api'
 import { ROUTES }         from '@/app/config/routes.config'
-import { appointmentStatus } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
 import { Calendar, Clock, User, Users, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
@@ -39,6 +39,7 @@ interface Appointment {
   price:             number
   depositAmount:     number
   status:            AppointmentStatus
+  cancelReason?:     string | null
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   details?:          AppointmentDetailsValue | null
   comboGroupId?:     string | null
@@ -283,7 +284,7 @@ export function AppointmentsPage() {
               const activeLegs = legs.filter(l => l.status === 'confirmed' || l.status === 'pending')
               // Estado de la fila: si queda alguna pata activa, ese; si no, la primera.
               const rowAppt = activeLegs[0] ?? head
-              const status = appointmentStatus[rowAppt.status]
+              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason)
               const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
               const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
               const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
@@ -338,7 +339,7 @@ export function AppointmentsPage() {
             }
 
             const appt = row.appt
-            const status = appointmentStatus[appt.status]
+            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason)
             return (
               <div
                 key={appt.id}

@@ -102,7 +102,7 @@ export function ProductPromotionsSection() {
         </div>
 
         <div className="relative">
-          {promotions.length > 1 && (
+          {promotions.length > 5 && (
             <button
               onClick={() => scrollByCard(-1)}
               aria-label="Anterior"
@@ -190,7 +190,7 @@ export function ProductPromotionsSection() {
             })}
           </div>
 
-          {promotions.length > 1 && (
+          {promotions.length > 5 && (
             <button
               onClick={() => scrollByCard(1)}
               aria-label="Siguiente"
@@ -203,7 +203,7 @@ export function ProductPromotionsSection() {
           )}
         </div>
 
-        {promotions.length > 1 && (
+        {promotions.length > 5 && (
           <div className="flex items-center justify-center gap-2 mt-4">
             {promotions.map((promo, idx) => (
               <button

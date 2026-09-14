@@ -10,20 +10,20 @@ import { SpecialServiceZonesModal } from './SpecialServiceZonesModal'
 import { ConfirmDeleteModal }  from './ConfirmDeleteModal'
 import type { AdminService, ServiceFormValues, ServiceZone, ServicePackage } from './types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 import '@/shared/ui/admin/admin-controls.css'
 import './services.css'
 
 type FormKind = 'regular' | 'special' | null
 
 export function ServicesPage() {
+  const { showToast } = useToast()
   const [services,       setServices]       = useState<AdminService[]>([])
   const [loading,        setLoading]        = useState(true)
   const [editingService, setEditingService] = useState<AdminService | null>(null)
   const [formKind,       setFormKind]       = useState<FormKind>(null)
   const [zonesService,   setZonesService]   = useState<AdminService | null>(null)
   const [deletingService, setDeletingService] = useState<AdminService | null>(null)
-  const [error,          setError]          = useState<string | null>(null)
-  const [notice,         setNotice]         = useState<string | null>(null)
   // Separado del error de página — este se muestra arriba del formulario,
   // que es un overlay y tapa cualquier mensaje que aparezca atrás.
   const [formError,      setFormError]      = useState<string | null>(null)
@@ -32,7 +32,7 @@ export function ServicesPage() {
   useEffect(() => {
     api.get<{ services: AdminService[] }>('/api/services/all')
       .then(res => setServices(res.data.services))
-      .catch(() => setError('No se pudieron cargar los servicios'))
+      .catch(() => showToast('No se pudieron cargar los servicios', 'error'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -76,20 +76,19 @@ export function ServicesPage() {
 
   const confirmDelete = async () => {
     if (!deletingService) return
-    setError(null)
-    setNotice(null)
     try {
       const res = await api.delete<{ success: boolean; deactivated?: boolean; message?: string }>(`/api/services/${deletingService.id}`)
       if (res.data?.deactivated) {
         // Tenía turnos asociados — el backend lo desactivó en vez de borrarlo,
         // así que sigue existiendo (como inactivo), no se saca de la lista.
         setServices(prev => prev.map(s => s.id === deletingService.id ? { ...s, status: 'inactive' } : s))
-        setNotice(res.data.message ?? `"${deletingService.name}" tenía turnos registrados, así que se desactivó en vez de eliminarse.`)
+        showToast(res.data.message ?? `"${deletingService.name}" tenía turnos registrados, así que se desactivó en vez de eliminarse.`, 'info')
       } else {
         setServices(prev => prev.filter(s => s.id !== deletingService.id))
+        showToast(`"${deletingService.name}" se eliminó.`, 'success')
       }
     } catch {
-      setError('Error al eliminar el servicio')
+      showToast('Error al eliminar el servicio', 'error')
     } finally {
       setDeletingService(null)
     }
@@ -100,7 +99,7 @@ export function ServicesPage() {
       const res = await api.patch<{ service: AdminService }>(`/api/services/${id}/status`)
       setServices(prev => prev.map(s => s.id === id ? res.data.service : s))
     } catch {
-      setError('Error al cambiar el estado')
+      showToast('Error al cambiar el estado', 'error')
     }
   }
 
@@ -122,13 +121,6 @@ export function ServicesPage() {
           </button>
         </div>
       </div>
-
-      {error && <p className="services-error">{error}</p>}
-      {notice && (
-        <p style={{ color: '#8a6800', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '8px', padding: '10px 14px', fontSize: '15px', fontWeight: 600, margin: 0 }}>
-          {notice}
-        </p>
-      )}
 
       {loading ? (
         <p className="services-loading">Cargando servicios...</p>

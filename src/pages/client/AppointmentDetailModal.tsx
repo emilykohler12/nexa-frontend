@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Calendar, Clock, User, DollarSign, Shield, MapPin, Phone, AlertCircle, Users, Image as ImageIcon, FileText, Pencil, Tag } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
-import { appointmentStatus } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
 import type { AppointmentStatus } from '@/features/client/types'
 import { PostBookingDetails, type AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
 import './AppointmentsPage.css'
@@ -17,6 +17,7 @@ interface Appointment {
   price:             number
   depositAmount:     number
   status:            AppointmentStatus
+  cancelReason?:     string | null
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   details?:          AppointmentDetailsValue | null
   selectedZones?:    { name: string; price: number; duration: number }[]
@@ -28,6 +29,7 @@ export interface ComboLeg {
   serviceName:      string
   professionalName: string
   status:           AppointmentStatus
+  cancelReason?:    string | null
   price:            number
 }
 
@@ -48,7 +50,7 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
   if (!business) return null
   const { primaryColor, accentColor, policies, contactInfo } = business
 
-  const status = appointmentStatus[appointment.status]
+  const status = getAppointmentStatusDisplay(appointment.status, appointment.cancelReason)
   const remaining = Math.max(0, appointment.price - appointment.depositAmount)
   const depositPaid = appointment.paymentStatus === 'paid' || appointment.paymentStatus === 'partial'
   const details = appointment.details
@@ -161,7 +163,7 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {comboLegs.map(leg => {
-                  const legStatus = appointmentStatus[leg.status]
+                  const legStatus = getAppointmentStatusDisplay(leg.status, leg.cancelReason)
                   const legActive = leg.status === 'confirmed' || leg.status === 'pending'
                   return (
                     <div key={leg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', background: '#f9f9f9', borderRadius: '10px', fontFamily: 'var(--font-lato)' }}>

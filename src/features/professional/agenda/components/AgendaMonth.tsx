@@ -1,5 +1,5 @@
 import type { Appointment } from '@/features/professional/types/appointment'
-import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
+import { getAppointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 
 const DAYS_HEADER = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
 
@@ -55,7 +55,7 @@ export function AgendaMonth({ appointments, month, primary, onEventClick }: Prop
                     {day}
                   </div>
                   {getAppts(day).slice(0, 3).map(a => {
-                    const cfg = appointmentStatusConfig[a.status]
+                    const cfg = getAppointmentStatusConfig(a.status, a.cancelReason)
                     return (
                       <button key={a.id} onClick={() => onEventClick(a)} title={a.comboGroupId ? `Combo — ${a.client.name} — ${a.serviceName}` : `${a.client.name} — ${a.serviceName}`}
                         style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', border: 'none', borderLeft: a.comboGroupId ? '2px solid #d4af37' : 'none', borderRadius: '4px', padding: '3px 6px', marginBottom: '2px', background: cfg.bg, cursor: 'pointer', textAlign: 'left', fontFamily: "'Lato', sans-serif" }}>

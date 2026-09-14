@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, Home, X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import type { AdminClient } from '../types'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
 type GalleryCategory = 'before' | 'after'
 
@@ -19,9 +20,9 @@ const CATEGORY_LABEL: Record<GalleryCategory, string> = {
 }
 
 export function GalleryTab({ client }: { client: AdminClient }) {
+  const { showToast } = useToast()
   const [photos,  setPhotos]  = useState<ClientGalleryPhoto[]>([])
   const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState<string | null>(null)
   const [pending, setPending] = useState<{ file: string; category: GalleryCategory; showOnHome: boolean } | null>(null)
   const [saving,  setSaving]  = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -47,7 +48,6 @@ export function GalleryTab({ client }: { client: AdminClient }) {
   const confirmUpload = async () => {
     if (!pending) return
     setSaving(true)
-    setError(null)
     try {
       const res = await api.post<{ photo: ClientGalleryPhoto }>(`/api/admin/clients/${client.id}/gallery`, {
         url:        pending.file,
@@ -57,7 +57,7 @@ export function GalleryTab({ client }: { client: AdminClient }) {
       setPhotos(prev => [res.data.photo, ...prev])
       setPending(null)
     } catch {
-      setError('No se pudo subir la foto')
+      showToast('No se pudo subir la foto', 'error')
     } finally {
       setSaving(false)
     }
@@ -70,7 +70,7 @@ export function GalleryTab({ client }: { client: AdminClient }) {
       await api.patch(`/api/admin/clients/${client.id}/gallery/${photo.id}`, { showOnHome: next })
     } catch {
       setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, showOnHome: !next } : p))
-      setError('No se pudo actualizar la foto')
+      showToast('No se pudo actualizar la foto', 'error')
     }
   }
 
@@ -81,7 +81,7 @@ export function GalleryTab({ client }: { client: AdminClient }) {
       await api.delete(`/api/admin/clients/${client.id}/gallery/${id}`)
     } catch {
       setPhotos(prev)
-      setError('No se pudo eliminar la foto')
+      showToast('No se pudo eliminar la foto', 'error')
     }
   }
 
@@ -99,8 +99,6 @@ export function GalleryTab({ client }: { client: AdminClient }) {
         </button>
         <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFile} style={{ display: 'none' }} />
       </div>
-
-      {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
 
       {loading ? (
         <p style={{ textAlign: 'center', padding: '48px', color: '#000', fontSize: '16px' }}>Cargando...</p>

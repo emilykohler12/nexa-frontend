@@ -9,6 +9,7 @@ import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { SERVICE_CATEGORIES } from '@/app/data/shared'
 import type { AutoPromotion, AutoPromotionFormValues, AutoPromotionTrigger, AutoPromotionAudience } from '@/app/data/admin/promotions/autoPromotionTypes'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
 interface AdminClientOption { id: string; name: string; email: string }
 
@@ -49,18 +50,18 @@ function emptyForm(): AutoPromotionFormValues {
 }
 
 export function AutoPromotionsSection() {
+  const { showToast } = useToast()
   const [items, setItems]     = useState<AutoPromotion[]>([])
   const [clients, setClients] = useState<AdminClientOption[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<AutoPromotion | AutoPromotionFormValues | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AutoPromotion | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ autoPromotions: AutoPromotion[] }>('/api/admin/auto-promotions')
       .then(res => setItems(res.data.autoPromotions ?? []))
-      .catch(() => setError('No se pudieron cargar las campañas'))
+      .catch(() => showToast('No se pudieron cargar las campañas', 'error'))
       .finally(() => setLoading(false))
     api.get<{ clients: AdminClientOption[] }>('/api/admin/clients')
       .then(res => setClients(res.data.clients ?? []))
@@ -68,7 +69,6 @@ export function AutoPromotionsSection() {
   }, [])
 
   const handleSave = async (values: AutoPromotionFormValues, id?: string) => {
-    setError(null)
     try {
       if (id) {
         const res = await api.put<{ autoPromotion: AutoPromotion }>(`/api/admin/auto-promotions/${id}`, values)
@@ -79,7 +79,7 @@ export function AutoPromotionsSection() {
       }
       setEditing(null)
     } catch (err: any) {
-      setError(safeErrorMessage(err, 'No se pudo guardar la campaña'))
+      showToast(safeErrorMessage(err, 'No se pudo guardar la campaña'), 'error')
     }
   }
 
@@ -88,20 +88,19 @@ export function AutoPromotionsSection() {
       const res = await api.put<{ autoPromotion: AutoPromotion }>(`/api/admin/auto-promotions/${p.id}`, { active: !p.active })
       setItems(prev => prev.map(x => x.id === p.id ? res.data.autoPromotion : x))
     } catch {
-      setError('No se pudo cambiar el estado de la campaña')
+      showToast('No se pudo cambiar el estado de la campaña', 'error')
     }
   }
 
   const handleDelete = async () => {
     if (!confirmDelete) return
     setDeleting(true)
-    setError(null)
     try {
       await api.delete(`/api/admin/auto-promotions/${confirmDelete.id}`)
       setItems(prev => prev.filter(p => p.id !== confirmDelete.id))
       setConfirmDelete(null)
     } catch {
-      setError('No se pudo eliminar la campaña')
+      showToast('No se pudo eliminar la campaña', 'error')
     } finally {
       setDeleting(false)
     }
@@ -114,8 +113,6 @@ export function AutoPromotionsSection() {
           <Plus size={16} /> Nueva campaña
         </button>
       </div>
-
-      {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
 
       {editing && (
         <AutoPromotionForm

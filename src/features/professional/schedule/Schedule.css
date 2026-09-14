@@ -26,7 +26,7 @@
 }
 
 .schedule-title {
-  font-family: 'Lato', sans-serif;
+  font-family: var(--font-playfair);
   font-size: 29px;
   font-weight: 700;
   color: #000;

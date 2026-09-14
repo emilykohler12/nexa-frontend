@@ -4,6 +4,7 @@ import { api } from '@/shared/utils/api'
 import { STORE_CATEGORIES } from '@/app/data/admin/store/store.data'
 import type { StoreProduct, ProductStatus } from '@/app/data/admin/store/types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
 const STATUS_LABEL: Record<ProductStatus, string> = {
   active:       'Activo',
@@ -22,12 +23,12 @@ interface Props {
 }
 
 export function ProductsTab({ products, onProductsChange }: Props) {
+  const { showToast } = useToast()
   const [search, setSearch]     = useState('')
   const [category, setCategory] = useState('')
   const [editing, setEditing]   = useState<StoreProduct | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [error, setError]       = useState<string | null>(null)
-  const [notice, setNotice]     = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<StoreProduct | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -40,28 +41,27 @@ export function ProductsTab({ products, onProductsChange }: Props) {
     if (!confirmDelete) return
     const target = confirmDelete
     setDeleting(true)
-    setError(null)
-    setNotice(null)
+    setDeleteError(null)
     try {
       const res = await api.delete<{ success: boolean; deactivated?: boolean; message?: string }>(`/api/store/products/${target.id}`)
       if (res.data?.deactivated) {
         // Tenía compras asociadas — el backend lo desactivó en vez de borrarlo,
         // así que sigue existiendo (como inactivo), no se saca de la lista.
         onProductsChange(products.map(p => p.id === target.id ? { ...p, status: 'inactive' } : p))
-        setNotice(res.data.message ?? `"${target.name}" tenía ventas registradas, así que se desactivó en vez de eliminarse.`)
+        showToast(res.data.message ?? `"${target.name}" tenía ventas registradas, así que se desactivó en vez de eliminarse.`, 'info')
       } else {
         onProductsChange(products.filter(p => p.id !== target.id))
+        showToast(`"${target.name}" se eliminó.`, 'success')
       }
       setConfirmDelete(null)
     } catch (err: any) {
-      setError(safeErrorMessage(err, 'No se pudo eliminar el producto'))
+      setDeleteError(safeErrorMessage(err, 'No se pudo eliminar el producto'))
     } finally {
       setDeleting(false)
     }
   }
 
   const handleSave = async (product: StoreProduct) => {
-    setError(null)
     try {
       if (product.id) {
         const res = await api.put<{ product: StoreProduct }>(`/api/store/products/${product.id}`, product)
@@ -73,7 +73,7 @@ export function ProductsTab({ products, onProductsChange }: Props) {
       setEditing(null)
       setShowForm(false)
     } catch {
-      setError('No se pudo guardar el producto')
+      showToast('No se pudo guardar el producto', 'error')
     }
   }
 
@@ -96,13 +96,6 @@ export function ProductsTab({ products, onProductsChange }: Props) {
           <Plus size={16} /> Nuevo producto
         </button>
       </div>
-
-      {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
-      {notice && (
-        <p style={{ color: '#8a6800', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontWeight: 600, margin: 0 }}>
-          {notice}
-        </p>
-      )}
 
       {showForm && editing && (
         <ProductForm product={editing} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} />
@@ -179,7 +172,7 @@ export function ProductsTab({ products, onProductsChange }: Props) {
             <p style={{ margin: '0 0 20px', fontSize: '15px', color: '#000' }}>
               Se va a eliminar <strong>{confirmDelete.name}</strong> de la tienda. Esta acción no se puede deshacer.
             </p>
-            {error && <p style={{ margin: '0 0 14px', fontSize: '14px', color: '#e53935', fontWeight: 600 }}>{error}</p>}
+            {deleteError && <p style={{ margin: '0 0 14px', fontSize: '14px', color: '#e53935', fontWeight: 600 }}>{deleteError}</p>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setConfirmDelete(null)} disabled={deleting} style={ghostBtnStyle}>Cancelar</button>
               <button

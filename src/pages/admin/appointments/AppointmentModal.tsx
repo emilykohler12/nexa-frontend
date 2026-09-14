@@ -32,6 +32,17 @@ const STATUS_STYLES = {
   no_show:   { bg: 'rgba(0,0,0,0.08)',      color: '#555'    },
 };
 
+// Un turno "cancelado" por falta de pago nunca llegó a confirmarse — distinto
+// de una cancelación real hecha por el cliente/staff.
+function statusLabelFor(appointment: Appointment): string {
+  if (appointment.status === 'cancelled' && appointment.cancelReason === 'unpaid_expired') return 'No se pagó a tiempo';
+  return STATUS_LABELS[appointment.status];
+}
+function statusStyleFor(appointment: Appointment) {
+  if (appointment.status === 'cancelled' && appointment.cancelReason === 'unpaid_expired') return { bg: 'rgba(0,0,0,0.06)', color: '#777' };
+  return STATUS_STYLES[appointment.status];
+}
+
 export function AppointmentModal({
   appointment, professionals, onClose, onCancel, onReactivate, onSave,
 }: Props) {
@@ -147,10 +158,10 @@ export function AppointmentModal({
             <span style={{
               fontSize: '12px', fontWeight: 600,
               padding: '3px 10px', borderRadius: '20px',
-              background: STATUS_STYLES[appointment.status].bg,
-              color: STATUS_STYLES[appointment.status].color,
+              background: statusStyleFor(appointment).bg,
+              color: statusStyleFor(appointment).color,
             }}>
-              {STATUS_LABELS[appointment.status]}
+              {statusLabelFor(appointment)}
             </span>
           </div>
           <button onClick={onClose} aria-label="Cerrar" style={{

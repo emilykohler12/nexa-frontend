@@ -9,3 +9,12 @@ export const appointmentStatusConfig: Record<AppointmentStatus, { label: string;
   cancelled:  { label: 'Cancelado',   bg: '#fee2e2', color: '#dc2626' },
   no_show:    { label: 'No asistió',  bg: '#fff7ed', color: '#ea580c' },
 }
+
+// Un turno "cancelado" por falta de pago nunca llegó a confirmarse — mostrarlo
+// como "Cancelado" a secas hace pensar que el cliente/staff lo canceló a propósito.
+export function getAppointmentStatusConfig(status: AppointmentStatus, cancelReason?: string | null) {
+  if (status === 'cancelled' && cancelReason === 'unpaid_expired') {
+    return { label: 'No se pagó a tiempo', bg: '#f3f4f6', color: '#6b7280' }
+  }
+  return appointmentStatusConfig[status]
+}

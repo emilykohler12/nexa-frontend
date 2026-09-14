@@ -129,7 +129,7 @@ export function Agenda() {
 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Agenda</h1>
+          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: 'var(--font-playfair)' }}>Agenda</h1>
           <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Administrá tus turnos y disponibilidad</p>
         </div>
 

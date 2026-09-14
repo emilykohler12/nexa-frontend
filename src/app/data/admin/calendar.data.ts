@@ -45,6 +45,7 @@ export interface CalendarAppointment {
   start: string;
   end: string;
   status: AppointmentStatus;
+  cancelReason?: string | null;
   clientNotes?: string;
   professionalNotes?: string;
   backgroundColor?: string;

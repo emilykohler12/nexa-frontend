@@ -56,7 +56,7 @@ export function Notifications() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Notificaciones</h1>
+          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: 'var(--font-playfair)' }}>Notificaciones</h1>
           <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>{unread > 0 ? `${unread} sin leer` : 'Todo al día'}</p>
         </div>
         {unread > 0 && (

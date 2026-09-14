@@ -67,7 +67,7 @@ export function Statistics() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', fontFamily: "'Lato', sans-serif" }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Estadísticas</h1>
+          <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: 'var(--font-playfair)' }}>Estadísticas</h1>
           <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Tu rendimiento y actividad</p>
         </div>
         <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: '10px', padding: '3px', gap: '2px' }}>

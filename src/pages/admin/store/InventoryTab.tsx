@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import type { StoreProduct, InventoryMovement, MovementType } from '@/app/data/admin/store/types'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
 const TYPE_LABEL: Record<MovementType, string> = {
   entry: 'Entrada',
@@ -15,11 +16,14 @@ const TYPE_COLOR: Record<MovementType, string> = {
 
 const MOVEMENT_TYPES: MovementType[] = ['entry', 'exit']
 
+interface AffectedProduct { id: string; stock: number }
+
 interface Props {
   products: StoreProduct[]
+  onProductStockChange: (affected: AffectedProduct[]) => void
 }
 
-export function InventoryTab({ products }: Props) {
+export function InventoryTab({ products, onProductStockChange }: Props) {
   const emptyForm = (): Omit<InventoryMovement, 'id'> => ({
     productId:   products[0]?.id ?? '',
     productName: products[0]?.name ?? '',
@@ -31,10 +35,10 @@ export function InventoryTab({ products }: Props) {
 
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [loading, setLoading]     = useState(true)
+  const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing]   = useState<InventoryMovement | null>(null)
   const [form, setForm]         = useState<Omit<InventoryMovement, 'id'>>(emptyForm())
-  const [error, setError]       = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ movements: InventoryMovement[] }>('/api/store/movements')
@@ -64,19 +68,20 @@ export function InventoryTab({ products }: Props) {
   }
 
   const handleSave = async () => {
-    setError(null)
     try {
       if (editing) {
-        const res = await api.put<{ movement: InventoryMovement }>(`/api/store/movements/${editing.id}`, form)
+        const res = await api.put<{ movement: InventoryMovement; affectedProducts: AffectedProduct[] }>(`/api/store/movements/${editing.id}`, form)
         setMovements(prev => prev.map(m => m.id === editing.id ? res.data.movement : m))
+        onProductStockChange(res.data.affectedProducts ?? [])
       } else {
-        const res = await api.post<{ movement: InventoryMovement }>('/api/store/movements', form)
+        const res = await api.post<{ movement: InventoryMovement; affectedProducts: AffectedProduct[] }>('/api/store/movements', form)
         setMovements(prev => [res.data.movement, ...prev])
+        onProductStockChange(res.data.affectedProducts ?? [])
       }
       setShowForm(false)
       setEditing(null)
     } catch {
-      setError('No se pudo guardar el movimiento')
+      showToast('No se pudo guardar el movimiento', 'error')
     }
   }
 
@@ -84,10 +89,11 @@ export function InventoryTab({ products }: Props) {
     const prev = movements
     setMovements(prev.filter(m => m.id !== id))
     try {
-      await api.delete(`/api/store/movements/${id}`)
+      const res = await api.delete<{ success: boolean; affectedProducts: AffectedProduct[] }>(`/api/store/movements/${id}`)
+      onProductStockChange(res.data.affectedProducts ?? [])
     } catch {
       setMovements(prev)
-      setError('No se pudo eliminar el movimiento')
+      showToast('No se pudo eliminar el movimiento', 'error')
     }
   }
 
@@ -99,8 +105,6 @@ export function InventoryTab({ products }: Props) {
           <Plus size={15} /> Registrar movimiento
         </button>
       </div>
-
-      {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
 
       {showForm && (
         <div style={{ background: '#fafafa', border: '1px solid #e8e8e8', borderRadius: '12px', padding: '20px' }}>

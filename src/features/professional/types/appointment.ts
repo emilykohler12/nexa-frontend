@@ -40,6 +40,7 @@ export interface Appointment {
   date:           string
   time:           string
   status:         AppointmentStatus
+  cancelReason?:  string | null
   paymentStatus:  PaymentStatus
   internalNotes:  string
   isSimultaneous: boolean

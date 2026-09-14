@@ -9,6 +9,15 @@ const STATUS_CONFIG: Record<AppointmentHistoryStatus, { label: string; color: st
   no_show:   { label: 'No asistió', color: '#000'    },
 }
 
+// Un turno "cancelado" por falta de pago nunca llegó a confirmarse — distinto
+// de una cancelación real hecha por el cliente/staff.
+function getStatusConfig(status: AppointmentHistoryStatus, cancelReason?: string | null) {
+  if (status === 'cancelled' && cancelReason === 'unpaid_expired') {
+    return { label: 'No se pagó a tiempo', color: '#999' }
+  }
+  return STATUS_CONFIG[status]
+}
+
 export function HistoryTab({ client }: { client: AdminClient }) {
   const [history, setHistory] = useState<ClientAppointmentHistory[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,7 +61,7 @@ export function HistoryTab({ client }: { client: AdminClient }) {
         </thead>
         <tbody>
           {history.map((appt) => {
-            const status = STATUS_CONFIG[appt.status]
+            const status = getStatusConfig(appt.status, appt.cancelReason)
             return (
               <tr key={appt.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
                 <td style={{ padding: '13px 16px', color: '#000', fontWeight: 700 }}>{appt.service}</td>

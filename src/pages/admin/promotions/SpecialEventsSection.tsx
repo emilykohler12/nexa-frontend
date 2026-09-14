@@ -10,6 +10,7 @@ import { Plus, Edit2, Trash2, Sparkles, Calendar } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { SpecialEvent, SpecialEventFormValues } from '@/app/data/admin/promotions/specialEventTypes'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
 interface ServiceOption { id: string; name: string; status: string }
 interface ProfessionalOption { id: string; name: string }
@@ -30,6 +31,7 @@ function toFormValues(e: SpecialEvent): SpecialEventFormValues {
 }
 
 export function SpecialEventsSection() {
+  const { showToast } = useToast()
   const [items, setItems]               = useState<SpecialEvent[]>([])
   const [services, setServices]         = useState<ServiceOption[]>([])
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([])
@@ -37,12 +39,11 @@ export function SpecialEventsSection() {
   const [editing, setEditing]           = useState<{ id: string | null; values: SpecialEventFormValues } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<SpecialEvent | null>(null)
   const [deleting, setDeleting]         = useState(false)
-  const [error, setError]               = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ specialEvents: SpecialEvent[] }>('/api/admin/special-events')
       .then(res => setItems(res.data.specialEvents ?? []))
-      .catch(() => setError('No se pudieron cargar los eventos especiales'))
+      .catch(() => showToast('No se pudieron cargar los eventos especiales', 'error'))
       .finally(() => setLoading(false))
     api.get<{ services: ServiceOption[] }>('/api/services')
       .then(res => setServices((res.data.services ?? []).filter(s => s.status === 'active')))
@@ -53,7 +54,6 @@ export function SpecialEventsSection() {
   }, [])
 
   const handleSave = async (id: string | null, values: SpecialEventFormValues) => {
-    setError(null)
     try {
       if (id) {
         const res = await api.put<{ specialEvent: SpecialEvent }>(`/api/admin/special-events/${id}`, values)
@@ -64,7 +64,7 @@ export function SpecialEventsSection() {
       }
       setEditing(null)
     } catch (err: any) {
-      setError(safeErrorMessage(err, 'No se pudo guardar el evento especial'))
+      showToast(safeErrorMessage(err, 'No se pudo guardar el evento especial'), 'error')
     }
   }
 
@@ -73,20 +73,19 @@ export function SpecialEventsSection() {
       const res = await api.put<{ specialEvent: SpecialEvent }>(`/api/admin/special-events/${e.id}`, { active: !e.active })
       setItems(prev => prev.map(x => x.id === e.id ? res.data.specialEvent : x))
     } catch {
-      setError('No se pudo cambiar el estado del evento')
+      showToast('No se pudo cambiar el estado del evento', 'error')
     }
   }
 
   const handleDelete = async () => {
     if (!confirmDelete) return
     setDeleting(true)
-    setError(null)
     try {
       await api.delete(`/api/admin/special-events/${confirmDelete.id}`)
       setItems(prev => prev.filter(x => x.id !== confirmDelete.id))
       setConfirmDelete(null)
     } catch {
-      setError('No se pudo eliminar el evento')
+      showToast('No se pudo eliminar el evento', 'error')
     } finally {
       setDeleting(false)
     }
@@ -101,8 +100,6 @@ export function SpecialEventsSection() {
           <Plus size={16} /> Nuevo evento especial
         </button>
       </div>
-
-      {error && <p style={{ color: '#e53935', fontSize: '14px', fontWeight: 600, margin: 0 }}>{error}</p>}
 
       {editing && (
         <SpecialEventForm

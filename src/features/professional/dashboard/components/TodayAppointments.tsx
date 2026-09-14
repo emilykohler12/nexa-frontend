@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/config/routes.config'
-import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
+import { getAppointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import type { Appointment } from '@/features/professional/types/appointment'
 
 interface Props {
@@ -38,7 +38,7 @@ export function TodayAppointments({ appointments, primary, accent }: Props) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {today.map(apt => {
-            const cfg = appointmentStatusConfig[apt.status]
+            const cfg = getAppointmentStatusConfig(apt.status, apt.cancelReason)
             return (
               <div key={apt.id} style={{
                 display: 'flex', alignItems: 'center', gap: '14px',

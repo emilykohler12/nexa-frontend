@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, X } from 'lucide-react'
 import type { AdminClient } from './types'
 
 interface Props {
@@ -9,7 +9,8 @@ interface Props {
 }
 
 export function ClientList({ clients, onSelect, onCreate }: Props) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch]   = useState('')
+  const [focused, setFocused] = useState(false)
 
   const filtered = clients.filter(c =>
     `${c.name ?? ''} ${c.email ?? ''} ${c.phone ?? ''}`
@@ -32,14 +33,45 @@ export function ClientList({ clients, onSelect, onCreate }: Props) {
         </button>
       </div>
 
-      <div style={{ position: 'relative', maxWidth: '400px' }}>
-        <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
-        <input
-          placeholder="Buscar por nombre, email o teléfono..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ ...inputStyle, paddingLeft: '36px', width: '100%' }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            position: 'relative', maxWidth: '420px', width: '100%',
+            borderRadius: '999px',
+            border: `1.5px solid ${focused ? '#069494' : '#e5e5e5'}`,
+            background: focused ? '#fff' : '#f7f7f7',
+            boxShadow: focused ? '0 0 0 4px rgba(6,148,148,0.1)' : 'none',
+            transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
+          }}
+        >
+          <Search size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: focused ? '#069494' : '#999', transition: 'color 0.15s' }} />
+          <input
+            placeholder="Buscar por nombre, email o teléfono..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={{ ...inputStyle, paddingLeft: '42px', paddingRight: search ? '38px' : '16px', width: '100%', border: 'none', background: 'transparent', borderRadius: '999px' }}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              aria-label="Limpiar búsqueda"
+              style={{
+                position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                width: '22px', height: '22px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+                background: '#e5e5e5', color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        {search && (
+          <span style={{ fontSize: '13px', color: '#777', fontFamily: "'Lato', sans-serif" }}>
+            {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
       {filtered.length === 0 ? (

@@ -16,7 +16,10 @@ const TONE: Record<ToastType, { bg: string; fg: string; Icon: typeof CheckCircle
   info:    { bg: '#069494', fg: '#fff', Icon: Info          },
 }
 
-export function Toast({ message, type = 'info', onClose, duration = 5000 }: Props) {
+// La "tarjeta" visual sin posicionamiento propio — así ToastProvider puede
+// apilar varias dentro de un único contenedor `fixed` sin que cada una
+// pelee por la misma esquina de la pantalla.
+export function ToastCard({ message, type = 'info', onClose, duration = 5000 }: Props) {
   useEffect(() => {
     const t = setTimeout(onClose, duration)
     return () => clearTimeout(t)
@@ -26,7 +29,7 @@ export function Toast({ message, type = 'info', onClose, duration = 5000 }: Prop
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[500] flex items-start gap-3 rounded-2xl px-5 py-4 shadow-2xl animate-in"
+      className="flex items-start gap-3 rounded-2xl px-5 py-4 shadow-2xl animate-in"
       style={{
         background: bg,
         color: fg,
@@ -47,6 +50,15 @@ export function Toast({ message, type = 'info', onClose, duration = 5000 }: Prop
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+    </div>
+  )
+}
+
+// Uso standalone (un solo toast, sin ToastProvider) — se posiciona solo.
+export function Toast(props: Props) {
+  return (
+    <div className="fixed bottom-6 right-6 z-[500]">
+      <ToastCard {...props} />
     </div>
   )
 }

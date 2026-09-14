@@ -1,6 +1,6 @@
 import { CalendarClock } from 'lucide-react'
 import type { Appointment } from '@/features/professional/types/appointment'
-import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
+import { getAppointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import { groupByCombo } from '@/shared/utils/comboGroup'
 
 export interface SpecialAssignment {
@@ -51,7 +51,7 @@ export function AgendaDay({ appointments, day, primary, onEventClick, specialAss
                         <div style={{ fontSize: '10px', fontWeight: 700, color: '#8a6800', padding: '0 4px 2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Combo</div>
                       )}
                       {group.items.map(a => {
-                        const cfg = appointmentStatusConfig[a.status]
+                        const cfg = getAppointmentStatusConfig(a.status, a.cancelReason)
                         return (
                           <button
                             key={a.id}

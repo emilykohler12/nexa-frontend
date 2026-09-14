@@ -39,7 +39,7 @@ export function Client() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
 
       <div>
-        <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Clientes</h1>
+        <h1 style={{ fontSize: '29px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: 'var(--font-playfair)' }}>Clientes</h1>
         <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>Historial y fichas de tus clientes</p>
       </div>
 

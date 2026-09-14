@@ -38,4 +38,5 @@ export interface ClientAppointmentHistory {
   time: string
   price: number
   status: AppointmentHistoryStatus
+  cancelReason?: string | null
 }
