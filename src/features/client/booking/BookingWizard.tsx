@@ -22,7 +22,7 @@ function isMultiComponentCombo(service: Service): boolean {
   return Boolean(service.isCombo && (service.comboServiceIds?.length ?? 0) >= 2)
 }
 
-interface NavState { serviceId?: string; professionalId?: string }
+interface NavState { serviceId?: string; professionalId?: string; date?: string }
 
 export function BookingWizard() {
   const { business } = useTenant()
@@ -49,7 +49,11 @@ export function BookingWizard() {
     ...EMPTY_BOOKING,
     serviceId: prefill?.serviceId ?? null,
     professionalId: prefill?.professionalId ?? null,
+    date: prefill?.date ?? null,
   })
+  // Solo la manda un evento especial (ver SpecialEventSection en el home) — ahí
+  // el día no se elige, viene fijo, y el cliente solo puede elegir el horario.
+  const dateLocked = !!prefill?.date
   const [paymentSummary, setPaymentSummary] = useState<ConfirmedSummary | null>(null)
   const [comboService, setComboService] = useState<Service | null>(null)
   const [specialService, setSpecialService] = useState<Service | null>(null)
@@ -209,6 +213,7 @@ export function BookingWizard() {
           serviceId={selection.serviceId}
           selectedDate={selection.date}
           selectedTime={selection.time}
+          dateLocked={dateLocked}
           onSelectDate={date => setSelection(s => ({ ...s, date, time: null }))}
           onSelectTime={time => setSelection(s => ({ ...s, time }))}
         />

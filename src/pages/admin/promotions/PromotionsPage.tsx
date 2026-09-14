@@ -4,6 +4,7 @@ import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { Promotion, PromotionType, PromotionStatus, PromotionKind, PromotionItem } from '@/app/data/admin/promotions/types'
 import { AutoPromotionsSection } from './AutoPromotionsSection'
+import { SpecialEventsSection } from './SpecialEventsSection'
 
 const todayISO = () => new Date().toISOString().split('T')[0]
 
@@ -22,11 +23,12 @@ function kindLabel(promo: Promotion): string {
   return 'Descuento'
 }
 
-type PageTab = PromotionType | 'automatic'
+type PageTab = PromotionType | 'automatic' | 'events'
 
 const TABS: { id: PageTab; label: string }[] = [
   { id: 'service',   label: 'Servicios' },
   { id: 'product',   label: 'Productos' },
+  { id: 'events',    label: 'Eventos especiales' },
   { id: 'automatic', label: 'Campañas automáticas' },
 ]
 
@@ -89,10 +91,12 @@ export function PromotionsPage() {
           <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>
             {tab === 'automatic'
               ? 'Reglas internas que le mandan un descuento por mail a un cliente — nunca se ven en la página principal'
+              : tab === 'events'
+              ? 'Jornadas puntuales (ej: Depilación definitiva) con una profesional y fecha fijas, destacadas en la página principal'
               : 'Ofertas de servicios y productos que aparecen en la página principal'}
           </p>
         </div>
-        {tab !== 'automatic' && (
+        {tab !== 'automatic' && tab !== 'events' && (
           <button onClick={() => { setEditing(emptyPromotion(tab)); setShowForm(true) }} style={primaryBtnStyle}>
             <Plus size={16} /> Nueva promoción
           </button>
@@ -121,6 +125,8 @@ export function PromotionsPage() {
 
       {tab === 'automatic' ? (
         <AutoPromotionsSection />
+      ) : tab === 'events' ? (
+        <SpecialEventsSection />
       ) : (
         <>
       {showForm && editing && (

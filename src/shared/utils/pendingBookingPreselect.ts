@@ -9,6 +9,9 @@ const KEY = 'nexa_pending_booking_preselect'
 export interface BookingPreselect {
   serviceId?:      string
   professionalId?: string
+  // Solo la manda un evento especial (ver SpecialEventSection) — cuando viene,
+  // el wizard bloquea la fecha y el cliente solo elige el horario.
+  date?:           string
 }
 
 export function setPendingBookingPreselect(preselect: BookingPreselect) {

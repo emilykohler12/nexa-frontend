@@ -20,6 +20,9 @@ interface Props {
   // Se incrementa para forzar un refetch (ej: después de un 409 porque el
   // horario elegido se ocupó justo antes de confirmar).
   refreshSignal?: number;
+  // Viene de un evento especial (ver SpecialEventSection en el home): el día
+  // ya está fijo, no se muestra el selector de fecha, solo el de horario.
+  dateLocked?: boolean;
 }
 
 interface AvailabilityRow {
@@ -46,7 +49,7 @@ function freeSlotsFor(res: AvailabilityResponse, date: string): string[] {
   return dayRows.flatMap(row => generateSlots({ start: row.startTime, end: row.endTime })).filter(t => !booked.has(t));
 }
 
-export function DateTimeStep({ professionalId, serviceId, selectedDate, selectedTime, onSelectDate, onSelectTime, refreshSignal }: Props) {
+export function DateTimeStep({ professionalId, serviceId, selectedDate, selectedTime, onSelectDate, onSelectTime, refreshSignal, dateLocked }: Props) {
   const { business } = useTenant();
   const [freeSlots, setFreeSlots] = useState<string[]>([]);
   const [hasWorkingHours, setHasWorkingHours] = useState(false);
@@ -105,17 +108,26 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
   return (
     <div>
       <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-        ¿Cuándo querés venir?
+        {dateLocked ? 'Elegí el horario' : '¿Cuándo querés venir?'}
       </h2>
 
-      <input
-        type="date"
-        value={selectedDate ?? ''}
-        min={new Date().toISOString().split('T')[0]}
-        onChange={e => onSelectDate(e.target.value)}
-        className="w-full border rounded-xl p-3 mb-6 outline-none"
-        style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)', color: primaryColor }}
-      />
+      {dateLocked && selectedDate ? (
+        <div
+          className="w-full rounded-xl p-3 mb-6"
+          style={{ background: '#f7f7f7', border: '1px solid #e5e5e5', fontFamily: 'var(--font-lato)', color: primaryColor, fontWeight: 600 }}
+        >
+          {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </div>
+      ) : (
+        <input
+          type="date"
+          value={selectedDate ?? ''}
+          min={new Date().toISOString().split('T')[0]}
+          onChange={e => onSelectDate(e.target.value)}
+          className="w-full border rounded-xl p-3 mb-6 outline-none"
+          style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)', color: primaryColor }}
+        />
+      )}
 
       {selectedDate && loading && (
         <p className="text-gray-400 text-center py-6" style={{ fontFamily: 'var(--font-lato)' }}>

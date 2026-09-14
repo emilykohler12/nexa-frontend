@@ -7,6 +7,7 @@ import { StatsSection }       from '@/features/home/components/StatsSection';
 import { TestimonialsSection }from '@/features/home/components/TestimonialsSection';
 import { GallerySection }     from '@/features/home/components/GallerySection';
 import { ServicePromotionsSection } from '@/features/home/components/ServicePromotionsSection';
+import { SpecialEventSection }      from '@/features/home/components/SpecialEventSection';
 import { ProductPromotionsSection } from '@/features/home/components/ProductPromotionsSection';
 import { JoinUsSection }      from '@/features/home/components/JoinUsSection';
 import { Footer }             from '@/features/home/components/Footer';
@@ -69,6 +70,7 @@ export function HomePage() {
       )}
 
       <StatsSection />
+      <SpecialEventSection />
       <ServicePromotionsSection />
       <TestimonialsSection />
       <GallerySection />
