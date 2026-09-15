@@ -25,7 +25,7 @@ export function GallerySection() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (!business) return null
+  if (!business || loading || pairs.length === 0) return null
 
   // Con pocas fotos (3 o menos) no hace falta animar — ya entran todas.
   const shouldScroll = pairs.length > 3
@@ -40,26 +40,18 @@ export function GallerySection() {
         <h2 className="text-2xl mb-8" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
           Galería de trabajos
         </h2>
-        {loading ? (
-          <p className="text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>Cargando...</p>
-        ) : pairs.length === 0 ? (
-          <p className="text-gray-400" style={{ fontFamily: 'var(--font-lato)' }}>
-            Todavía no hay fotos cargadas
-          </p>
-        ) : (
-          <div className="gallery-viewport">
-            <div
-              className={`gallery-track${shouldScroll ? ' gallery-track--scrolling' : ' gallery-track--static'}`}
-              style={shouldScroll ? { animationDuration: `${duration}s` } : undefined}
-            >
-              {track.map((pair, i) => (
-                <div className="gallery-card-wrap" key={`${pair.id}-${i}`}>
-                  <GalleryCard pair={pair} />
-                </div>
-              ))}
-            </div>
+        <div className="gallery-viewport">
+          <div
+            className={`gallery-track${shouldScroll ? ' gallery-track--scrolling' : ' gallery-track--static'}`}
+            style={shouldScroll ? { animationDuration: `${duration}s` } : undefined}
+          >
+            {track.map((pair, i) => (
+              <div className="gallery-card-wrap" key={`${pair.id}-${i}`}>
+                <GalleryCard pair={pair} />
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
       <style>{`
