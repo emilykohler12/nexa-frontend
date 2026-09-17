@@ -379,6 +379,18 @@ export function AppointmentModal({
               </>
             ) : null}
 
+            {appointment.status === 'cancelled' && appointment.paymentStatus === 'refunded' && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)',
+                borderRadius: '10px', padding: '10px 12px', margin: '4px 0',
+                fontSize: '13px', fontWeight: 700, color: '#8a6800',
+              }}>
+                <DollarSign size={14} />
+                Seña a devolver — canceló dentro del plazo, contactalo para coordinar el reembolso.
+              </div>
+            )}
+
             {((appointment.selectedZones?.length ?? 0) > 0 || (appointment.selectedPackages?.length ?? 0) > 0) && (
               <InfoRow icon={<Tag size={14} />} label="Zonas y paquetes elegidos">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>

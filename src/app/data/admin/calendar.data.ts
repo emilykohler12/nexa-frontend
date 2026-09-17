@@ -46,6 +46,8 @@ export interface CalendarAppointment {
   end: string;
   status: AppointmentStatus;
   cancelReason?: string | null;
+  paymentStatus?: string;
+  depositAmount?: number;
   clientNotes?: string;
   professionalNotes?: string;
   backgroundColor?: string;

@@ -17,6 +17,7 @@ import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
 import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
 import { InfoModal } from '@/shared/ui/molecules/InfoModal'
 import { ReviewPromptModal } from '@/features/client/reviews/ReviewPromptModal'
+import { RefundWhatsAppModal } from './RefundWhatsAppModal'
 
 type Filter = 'upcoming' | 'history' | 'cancelled'
 
@@ -66,6 +67,10 @@ export function AppointmentsPage() {
   const [confirmCancelAppt, setConfirmCancelAppt] = useState<Appointment | null>(null)
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
   const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
+  // No hay reembolso automático (no hay integración de refunds con Mercado
+  // Pago) — cuando corresponde devolución, se lo decimos al cliente y le
+  // mostramos cómo escribirnos por WhatsApp para coordinarla a mano.
+  const [showRefundNotice, setShowRefundNotice] = useState(false)
 
   const refetchAppointments = () =>
     api.get<{ appointments: Appointment[] }>('/api/client/appointments')
@@ -97,7 +102,7 @@ export function AppointmentsPage() {
   }
 
   if (!business || !user) return null
-  const { primaryColor, accentColor } = business
+  const { primaryColor, accentColor, whatsapp } = business
 
   const firstName = user.name.split(' ')[0]
   const firstTime = isFirstVisit(user)
@@ -154,10 +159,11 @@ export function AppointmentsPage() {
         type: 'info',
         text: res.data.partialCombo === false
           ? (res.data.refunded
-              ? 'Cancelaste el último servicio del combo. La seña se reembolsa según la política del negocio.'
+              ? 'Cancelaste el último servicio del combo. Te corresponde la devolución de la seña.'
               : 'Cancelaste el último servicio del combo. La seña no se reembolsa por cancelarse fuera del plazo.')
           : 'Servicio cancelado. Los demás servicios del combo siguen en pie.',
       })
+      if (res.data.partialCombo === false && res.data.refunded) setShowRefundNotice(true)
     } catch (err: any) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el servicio.') })
     } finally {
@@ -194,9 +200,10 @@ export function AppointmentsPage() {
         setToast({
           type: refunded ? 'success' : 'info',
           text: refunded
-            ? 'Se canceló el combo completo. La seña se reembolsa según la política del negocio.'
+            ? 'Se canceló el combo completo. Te corresponde la devolución de la seña.'
             : 'Se canceló el combo completo. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
         })
+        if (refunded) setShowRefundNotice(true)
       } else {
         const res = await api.patch<{ appointment: Appointment; refunded: boolean }>(
           `/api/client/appointments/${appt.id}/cancel`
@@ -205,9 +212,10 @@ export function AppointmentsPage() {
         setToast({
           type: res.data.refunded ? 'success' : 'info',
           text: res.data.refunded
-            ? 'Turno cancelado. La seña se reembolsa según la política del negocio.'
+            ? 'Turno cancelado. Te corresponde la devolución de la seña.'
             : 'Turno cancelado. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
         })
+        if (res.data.refunded) setShowRefundNotice(true)
       }
     } catch (err: any) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el turno.') })
@@ -484,6 +492,14 @@ export function AppointmentsPage() {
           primaryColor={primaryColor}
           accentColor={accentColor}
           onDone={() => setReviewQueue(prev => prev.slice(1))}
+        />
+      )}
+
+      {showRefundNotice && whatsapp && (
+        <RefundWhatsAppModal
+          whatsapp={whatsapp}
+          accentColor={primaryColor}
+          onClose={() => setShowRefundNotice(false)}
         />
       )}
     </div>
