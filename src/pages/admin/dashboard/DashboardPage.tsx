@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type { CSSProperties } from 'react'
 import { DollarSign, CalendarCheck2, UserPlus, Percent, CalendarX2, Repeat, Wallet, Undo2 } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { formatCurrency } from '@/shared/utils/format'
@@ -17,6 +18,16 @@ const PERIOD_OPTIONS: { key: PeriodFilter; label: string }[] = [
   { key: 'month', label: 'Mes'    },
   { key: 'year',  label: 'Año'    },
 ]
+
+// Fila de KPIs centrada como grupo — así en pantallas muy anchas las cards no
+// se estiran para llenar todo el ancho, y si una fila queda incompleta (ej.
+// 4 KPIs no llenan la última fila en un monitor grande) no cuelgan a la
+// izquierda sino que se mantienen agrupadas al centro. Ancho fijo (no
+// flex-grow) para que todas las cards midan exactamente lo mismo sin importar
+// cuántas entren en cada fila — si no, una fila con menos cards que otra
+// terminaba estirando las suyas más que las demás.
+const KPI_ROW_STYLE: CSSProperties = { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px' }
+const KPI_ITEM_STYLE: CSSProperties = { flex: '0 0 240px', maxWidth: '100%' }
 
 const EMPTY_DASHBOARD_DATA: DashboardData = {
   depositRevenueTotal: 0,
@@ -86,11 +97,11 @@ export function DashboardPage() {
       ) : (
         <>
           {/* KPIs superiores */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-            <KpiCard label="Ingresos por señas confirmadas" value={formatCurrency(data.depositRevenueTotal)} icon={<DollarSign size={18} />} accentColor="#069494" />
-            <KpiCard label="Turnos asistidos"                value={String(data.attendedAppointments)}      icon={<CalendarCheck2 size={18} />} accentColor="#d4af37" />
-            <KpiCard label="Clientes nuevos"                 value={String(data.newClients)}                 icon={<UserPlus size={18} />}       accentColor="#7986cb" />
-            <KpiCard label="Ocupación de agenda"             value={`${data.occupancyPercent.toLocaleString('es-AR')}%`} icon={<Percent size={18} />} accentColor="#4db6ac" />
+          <div style={KPI_ROW_STYLE}>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Ingresos por señas confirmadas" value={formatCurrency(data.depositRevenueTotal)} icon={<DollarSign size={18} />} accentColor="#069494" /></div>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Turnos asistidos"                value={String(data.attendedAppointments)}      icon={<CalendarCheck2 size={18} />} accentColor="#d4af37" /></div>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Clientes nuevos"                 value={String(data.newClients)}                 icon={<UserPlus size={18} />}       accentColor="#7986cb" /></div>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Ocupación de agenda"             value={`${data.occupancyPercent.toLocaleString('es-AR')}%`} icon={<Percent size={18} />} accentColor="#4db6ac" /></div>
           </div>
 
           {/* Gráficos */}
@@ -107,17 +118,19 @@ export function DashboardPage() {
           <ProfessionalPerformanceTable data={data.professionalPerformance} />
 
           {/* KPIs inferiores */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-            <KpiCard label="Turnos no asistidos" value={String(data.noShowAppointments)} icon={<CalendarX2 size={18} />} accentColor="#e53935" />
-            <KpiCard
-              label="Clientes que volvieron a agendar"
-              value={String(data.returningClients)}
-              icon={<Repeat size={18} />}
-              accentColor="#069494"
-              sublabel={`Dentro de los ${data.returningWindowDays} días`}
-            />
-            <KpiCard label="Saldo pendiente a cobrar en local" value={formatCurrency(data.pendingBalance)} icon={<Wallet size={18} />} accentColor="#d4af37" />
-            <KpiCard label="Señas reembolsadas" value={String(data.refundedDeposits)} icon={<Undo2 size={18} />} accentColor="#a1887f" />
+          <div style={KPI_ROW_STYLE}>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Turnos no asistidos" value={String(data.noShowAppointments)} icon={<CalendarX2 size={18} />} accentColor="#e53935" /></div>
+            <div style={KPI_ITEM_STYLE}>
+              <KpiCard
+                label="Clientes que volvieron a agendar"
+                value={String(data.returningClients)}
+                icon={<Repeat size={18} />}
+                accentColor="#069494"
+                sublabel={`Dentro de los ${data.returningWindowDays} días`}
+              />
+            </div>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Saldo pendiente a cobrar en local" value={formatCurrency(data.pendingBalance)} icon={<Wallet size={18} />} accentColor="#d4af37" /></div>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Señas reembolsadas" value={String(data.refundedDeposits)} icon={<Undo2 size={18} />} accentColor="#a1887f" /></div>
           </div>
         </>
       )}

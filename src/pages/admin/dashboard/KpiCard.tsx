@@ -30,7 +30,7 @@ export function KpiCard({ label, value, icon, accentColor = '#069494', sublabel 
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
-          fontSize: '14px',
+          fontSize: '13px',
           fontWeight: 700,
           color: '#000',
           textTransform: 'uppercase',
@@ -49,12 +49,12 @@ export function KpiCard({ label, value, icon, accentColor = '#069494', sublabel 
         </div>
       </div>
 
-      <div style={{ fontSize: '35px', fontWeight: 700, color: '#000', lineHeight: 1 }}>
+      <div style={{ fontSize: '34px', fontWeight: 700, color: '#000', lineHeight: 1 }}>
         {value}
       </div>
 
       {sublabel && (
-        <span style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}>
+        <span style={{ fontSize: '13px', color: '#666', fontWeight: 600 }}>
           {sublabel}
         </span>
       )}

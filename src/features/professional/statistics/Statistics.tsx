@@ -77,8 +77,10 @@ export function Statistics() {
         <p style={{ color: '#000', fontSize: '16px' }}>Cargando estadísticas...</p>
       ) : (
         <>
-          {/* KPIs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+          {/* KPIs — fila centrada como grupo: en pantallas anchas las cards no se
+              estiran para llenar todo el ancho, y si queda una fila incompleta
+              se mantiene agrupada al centro en vez de colgar a la izquierda. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px' }}>
             {[
               { label: 'Turnos futuros',   value: String(data.futureConfirmedAppointments), color: primary,   sub: `confirmados con seña pagada, ${PERIOD_SUB[period]}` },
               { label: 'Horas trabajadas', value: data.hoursWorked.toLocaleString('es-AR'),  color: '#7986cb', sub: `turnos finalizados, ${PERIOD_SUB[period]}` },
@@ -86,11 +88,11 @@ export function Statistics() {
               { label: 'Dinero ganado',    value: formatCurrency(data.totalRevenue),         color: accent,    sub: `servicios realizados, ${PERIOD_SUB[period]}` },
               { label: 'Calificación',     value: `⭐ ${data.avgRating}`,                     color: '#d4af37', sub: 'promedio histórico de clientes' },
             ].map(kpi => (
-              <div key={kpi.label} style={{ background: '#fff', border: '1px solid #eeeeee', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden' }}>
+              <div key={kpi.label} style={{ flex: '0 0 210px', maxWidth: '100%', background: '#fff', border: '1px solid #eeeeee', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: kpi.color }} />
-                <p style={{ fontSize: '26px', fontWeight: 700, color: '#000', margin: 0, fontFamily: "'Lato', sans-serif" }}>{kpi.value}</p>
-                <p style={{ fontSize: '12px', color: '#000', margin: '4px 0 0', fontFamily: "'Lato', sans-serif" }}>{kpi.label}</p>
-                <p style={{ fontSize: '11px', color: '#888', margin: '2px 0 0', fontFamily: "'Lato', sans-serif" }}>{kpi.sub}</p>
+                <p style={{ fontSize: '25px', fontWeight: 700, color: '#000', margin: 0, fontFamily: "'Lato', sans-serif" }}>{kpi.value}</p>
+                <p style={{ fontSize: '11px', color: '#000', margin: '4px 0 0', fontFamily: "'Lato', sans-serif" }}>{kpi.label}</p>
+                <p style={{ fontSize: '10px', color: '#888', margin: '2px 0 0', fontFamily: "'Lato', sans-serif" }}>{kpi.sub}</p>
               </div>
             ))}
           </div>
