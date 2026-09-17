@@ -134,6 +134,7 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           date:           summary.date,
           time:           summary.time,
           termsAccepted:  true,
+          promotionId:    summary.promotionId,
         })
         const newAppointmentId = res.data.appointment?.id ?? null
         setAppointmentId(newAppointmentId)

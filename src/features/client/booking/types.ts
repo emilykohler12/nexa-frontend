@@ -7,6 +7,8 @@ export interface BookingSelection {
   professionalId: string | null
   date: string | null
   time: string | null
+  // Solo viene de una promo de servicio en el home (ver ServicePromotionsSection).
+  promotionId: string | null
 }
 
 export const EMPTY_BOOKING: BookingSelection = {
@@ -14,6 +16,7 @@ export const EMPTY_BOOKING: BookingSelection = {
   professionalId: null,
   date: null,
   time: null,
+  promotionId: null,
 }
 
 export const BOOKING_STEPS: { id: BookingStep; label: string }[] = [

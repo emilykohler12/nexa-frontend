@@ -22,7 +22,7 @@ function isMultiComponentCombo(service: Service): boolean {
   return Boolean(service.isCombo && (service.comboServiceIds?.length ?? 0) >= 2)
 }
 
-interface NavState { serviceId?: string; professionalId?: string; date?: string }
+interface NavState { serviceId?: string; professionalId?: string; date?: string; promotionId?: string }
 
 export function BookingWizard() {
   const { business } = useTenant()
@@ -50,6 +50,7 @@ export function BookingWizard() {
     serviceId: prefill?.serviceId ?? null,
     professionalId: prefill?.professionalId ?? null,
     date: prefill?.date ?? null,
+    promotionId: prefill?.promotionId ?? null,
   })
   // Solo la manda un evento especial (ver SpecialEventSection en el home) — ahí
   // el día no se elige, viene fijo, y el cliente solo puede elegir el horario.
@@ -195,7 +196,12 @@ export function BookingWizard() {
             // (viniendo desde su ficha en el home) en la primera selección.
             setSelection(s => {
               const isGenuineChange = s.serviceId !== null && service.id !== s.serviceId
-              return { ...s, serviceId: service.id, professionalId: isGenuineChange ? null : s.professionalId }
+              return {
+                ...s,
+                serviceId: service.id,
+                professionalId: isGenuineChange ? null : s.professionalId,
+                promotionId: isGenuineChange ? null : s.promotionId,
+              }
             })
           }}
         />

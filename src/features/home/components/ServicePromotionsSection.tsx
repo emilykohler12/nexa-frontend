@@ -42,9 +42,9 @@ export function ServicePromotionsSection() {
   const handleReserve = (promo: Promotion) => {
     const serviceId = promo.items[0]?.id
     if (isAuthenticated && user?.role === 'client') {
-      navigate(ROUTES.CLIENT_BOOK, { state: serviceId ? { serviceId } : undefined })
+      navigate(ROUTES.CLIENT_BOOK, { state: serviceId ? { serviceId, promotionId: promo.id } : undefined })
     } else {
-      if (serviceId) setPendingBookingPreselect({ serviceId })
+      if (serviceId) setPendingBookingPreselect({ serviceId, promotionId: promo.id })
       navigate(ROUTES.LOGIN)
     }
   }

@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, CalendarDays, Users, TrendingUp } from 'lucide-react'
+import { DollarSign, CalendarCheck2, UserPlus, Percent, CalendarX2, Repeat, Wallet, Undo2 } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { formatCurrency } from '@/shared/utils/format'
 import { KpiCard } from './KpiCard'
-import { RevenueChart, AppointmentsChart } from './RevenueChart'
-import { ProfessionalStats } from './ProfessionalStats'
-import { StatusAndPayments } from './StatusAndPayments'
+import { TopProductsChart } from './TopProductsChart'
+import { RevenueByCategoryChart } from './RevenueByCategoryChart'
+import { PeakHoursHeatmap } from './PeakHoursHeatmap'
+import { PromotionConversionChart } from './PromotionConversionChart'
+import { ServiceProfitabilityTable } from './ServiceProfitabilityTable'
+import { ProfessionalPerformanceTable } from './ProfessionalPerformanceTable'
 import type { PeriodFilter, DashboardData } from './types'
 
 const PERIOD_OPTIONS: { key: PeriodFilter; label: string }[] = [
@@ -15,24 +19,22 @@ const PERIOD_OPTIONS: { key: PeriodFilter; label: string }[] = [
 ]
 
 const EMPTY_DASHBOARD_DATA: DashboardData = {
-  totalRevenue: 0, prevRevenue: 0,
-  totalAppointments: 0, prevAppointments: 0,
-  newClients: 0, prevNewClients: 0,
-  avgTicket: 0, prevAvgTicket: 0,
-  revenueChart: [],
-  serviceStats: [],
-  professionalStats: [],
-  appointmentStatus: [],
-  paymentStats: [],
+  depositRevenueTotal: 0,
+  attendedAppointments: 0,
+  newClients: 0,
+  occupancyPercent: 0,
+  topProducts: [],
+  categoryRevenue: [],
+  heatmap: [],
+  promotionConversion: [],
+  serviceProfitability: [],
+  professionalPerformance: [],
+  noShowAppointments: 0,
+  returningClients: 0,
+  returningWindowDays: 30,
+  pendingBalance: 0,
+  refundedDeposits: 0,
 }
-
-const pct = (current: number, prev: number) =>
-  prev === 0 ? 0 : ((current - prev) / prev) * 100
-
-const money = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M`
-  : n >= 1_000   ? `$${(n / 1_000).toFixed(0)}k`
-  : `$${n}`
 
 export function DashboardPage() {
   const [period, setPeriod] = useState<PeriodFilter>('month')
@@ -83,29 +85,40 @@ export function DashboardPage() {
         <p style={{ fontFamily: "'Lato', sans-serif", color: '#000', fontSize: '17px' }}>Cargando métricas...</p>
       ) : (
         <>
-          {/* KPIs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-            <KpiCard label="Ingresos"        value={money(data.totalRevenue)}     prev={money(data.prevRevenue)}          changePercent={pct(data.totalRevenue, data.prevRevenue)}         icon={<DollarSign size={18} />}  accentColor="#069494" />
-            <KpiCard label="Turnos"          value={String(data.totalAppointments)} prev={String(data.prevAppointments)} changePercent={pct(data.totalAppointments, data.prevAppointments)} icon={<CalendarDays size={18} />} accentColor="#d4af37" />
-            <KpiCard label="Clientes nuevos" value={String(data.newClients)}       prev={String(data.prevNewClients)}     changePercent={pct(data.newClients, data.prevNewClients)}           icon={<Users size={18} />}       accentColor="#7986cb" />
-            <KpiCard label="Ticket promedio" value={money(data.avgTicket)}         prev={money(data.prevAvgTicket)}       changePercent={pct(data.avgTicket, data.prevAvgTicket)}             icon={<TrendingUp size={18} />}  accentColor="#a1887f" />
+          {/* KPIs superiores */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+            <KpiCard label="Ingresos por señas confirmadas" value={formatCurrency(data.depositRevenueTotal)} icon={<DollarSign size={18} />} accentColor="#069494" />
+            <KpiCard label="Turnos asistidos"                value={String(data.attendedAppointments)}      icon={<CalendarCheck2 size={18} />} accentColor="#d4af37" />
+            <KpiCard label="Clientes nuevos"                 value={String(data.newClients)}                 icon={<UserPlus size={18} />}       accentColor="#7986cb" />
+            <KpiCard label="Ocupación de agenda"             value={`${data.occupancyPercent.toLocaleString('es-AR')}%`} icon={<Percent size={18} />} accentColor="#4db6ac" />
           </div>
 
           {/* Gráficos */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <RevenueChart      data={data.revenueChart} title="Ingresos por período" />
-            <AppointmentsChart data={data.revenueChart} title="Turnos por período"   />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '14px' }}>
+            <TopProductsChart data={data.topProducts} />
+            <RevenueByCategoryChart data={data.categoryRevenue} />
+            <PromotionConversionChart data={data.promotionConversion} />
           </div>
 
-          {/* Estado turnos + señas + servicios */}
-          <StatusAndPayments
-            statusData={data.appointmentStatus}
-            paymentData={data.paymentStats}
-            serviceData={data.serviceStats}
-          />
+          <PeakHoursHeatmap data={data.heatmap} />
 
-          {/* Profesionales */}
-          <ProfessionalStats data={data.professionalStats} />
+          {/* Tablas */}
+          <ServiceProfitabilityTable data={data.serviceProfitability} />
+          <ProfessionalPerformanceTable data={data.professionalPerformance} />
+
+          {/* KPIs inferiores */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+            <KpiCard label="Turnos no asistidos" value={String(data.noShowAppointments)} icon={<CalendarX2 size={18} />} accentColor="#e53935" />
+            <KpiCard
+              label="Clientes que volvieron a agendar"
+              value={String(data.returningClients)}
+              icon={<Repeat size={18} />}
+              accentColor="#069494"
+              sublabel={`Dentro de los ${data.returningWindowDays} días`}
+            />
+            <KpiCard label="Saldo pendiente a cobrar en local" value={formatCurrency(data.pendingBalance)} icon={<Wallet size={18} />} accentColor="#d4af37" />
+            <KpiCard label="Señas reembolsadas" value={String(data.refundedDeposits)} icon={<Undo2 size={18} />} accentColor="#a1887f" />
+          </div>
         </>
       )}
 

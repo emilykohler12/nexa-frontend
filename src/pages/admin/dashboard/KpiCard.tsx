@@ -1,21 +1,13 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
-
 interface Props {
   label: string
   value: string
-  prev: string
-  changePercent: number
   icon: React.ReactNode
   accentColor?: string
+  // Aclaración corta debajo del valor (ej: "Ventana de 30 días") — opcional.
+  sublabel?: string
 }
 
-export function KpiCard({ label, value, prev, changePercent, icon, accentColor = '#069494' }: Props) {
-  const isUp      = changePercent > 0
-  const isFlat    = changePercent === 0
-  const trendColor = isFlat ? '#000' : isUp ? '#069494' : '#e53935'
-  const TrendIcon  = isFlat ? Minus : isUp ? TrendingUp : TrendingDown
-  const absChange  = Math.abs(changePercent).toFixed(1)
-
+export function KpiCard({ label, value, icon, accentColor = '#069494', sublabel }: Props) {
   return (
     <div style={{
       background: '#ffffff',
@@ -51,6 +43,7 @@ export function KpiCard({ label, value, prev, changePercent, icon, accentColor =
           background: `${accentColor}18`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: accentColor,
+          flexShrink: 0,
         }}>
           {icon}
         </div>
@@ -60,23 +53,11 @@ export function KpiCard({ label, value, prev, changePercent, icon, accentColor =
         {value}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '5px',
-          background: isFlat ? '#f0f0f0' : isUp ? 'rgba(6,148,148,0.12)' : 'rgba(229,57,53,0.1)',
-          color: trendColor,
-          borderRadius: '20px',
-          padding: '4px 12px',
-          fontSize: '16px',
-          fontWeight: 700,
-        }}>
-          <TrendIcon size={15} />
-          <span>{isFlat ? 'Sin cambio' : `${isUp ? '+' : '-'}${absChange}%`}</span>
-        </div>
-        <span style={{ fontSize: '15px', color: '#000', fontWeight: 600 }}>
-          vs {prev} anterior
+      {sublabel && (
+        <span style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}>
+          {sublabel}
         </span>
-      </div>
+      )}
     </div>
   )
 }

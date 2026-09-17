@@ -12,6 +12,9 @@ export interface BookingPreselect {
   // Solo la manda un evento especial (ver SpecialEventSection) — cuando viene,
   // el wizard bloquea la fecha y el cliente solo elige el horario.
   date?:           string
+  // Solo la manda una promo de servicio (ver ServicePromotionsSection) — el
+  // wizard la lleva hasta la confirmación para cobrar el precio promocional.
+  promotionId?:    string
 }
 
 export function setPendingBookingPreselect(preselect: BookingPreselect) {
