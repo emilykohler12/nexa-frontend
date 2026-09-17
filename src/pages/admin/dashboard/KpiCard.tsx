@@ -17,6 +17,10 @@ export function KpiCard({ label, value, icon, accentColor = '#069494', sublabel 
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
+      // Alto fijo — sin esto, una card con label de 3 líneas + sublabel queda
+      // más alta que una sin sublabel, y como cada fila de flex-wrap crece
+      // independiente, dos filas de KPIs terminaban con alturas distintas.
+      minHeight: '184px',
       boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       fontFamily: "'Lato', sans-serif",
       position: 'relative',
