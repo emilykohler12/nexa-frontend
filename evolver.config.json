@@ -1,0 +1,89 @@
+{
+  "version": "1.0.0",
+  "agents": [
+    {
+      "id": "booking-flow-optimizer",
+      "name": "Booking Flow UI Optimization",
+      "description": "Evolve ComboBookingFlow.tsx for UX performance and conversion",
+      "target": "src/features/client/booking/ComboBookingFlow.tsx",
+      "genes": [
+        {
+          "name": "stepValidationMode",
+          "type": "enum",
+          "values": ["eager", "lazy", "progressive"],
+          "current": "eager",
+          "reason": "Optimize validation timing for user experience"
+        },
+        {
+          "name": "preloadStrategy",
+          "type": "enum",
+          "values": ["none", "next-step", "all-steps"],
+          "current": "none",
+          "reason": "Preload data to reduce perceived wait times"
+        },
+        {
+          "name": "debounceDelay",
+          "type": "number",
+          "range": [100, 1000],
+          "current": 300,
+          "reason": "Balance responsiveness vs. API call efficiency"
+        },
+        {
+          "name": "errorRecoveryStrategy",
+          "type": "enum",
+          "values": ["retry-once", "retry-exponential", "user-choice"],
+          "current": "retry-once",
+          "reason": "Improve reliability on network failures"
+        },
+        {
+          "name": "autoSaveInterval",
+          "type": "number",
+          "range": [0, 60000],
+          "current": 10000,
+          "reason": "Prevent data loss without annoying the user"
+        }
+      ],
+      "capsules": [
+        {
+          "name": "page-load-time",
+          "test": "npm run test:e2e -- booking-flow.spec.ts",
+          "metric": "load_time_ms",
+          "target": "< 2000",
+          "weight": 0.35,
+          "description": "Initial page load must be < 2 seconds"
+        },
+        {
+          "name": "conversion-rate",
+          "test": "npm run test:e2e -- booking-completion.spec.ts",
+          "metric": "completion_rate",
+          "target": "> 85%",
+          "weight": 0.35,
+          "description": "Users must complete booking > 85% of the time"
+        },
+        {
+          "name": "interaction-latency",
+          "test": "npm run test:e2e -- booking-interactions.spec.ts",
+          "metric": "avg_latency_ms",
+          "target": "< 200",
+          "weight": 0.2,
+          "description": "UI interactions must respond in < 200ms"
+        },
+        {
+          "name": "bundle-size",
+          "test": "npm run build -- --analyze",
+          "metric": "bundle_kb",
+          "target": "< 250",
+          "weight": 0.1,
+          "description": "Component bundle must stay under 250KB"
+        }
+      ],
+      "iterations": {
+        "max": 15,
+        "populationSize": 6,
+        "mutationRate": 0.4,
+        "elitismRate": 0.25,
+        "strategy": "genetic-algorithm"
+      }
+    }
+  ]
+}
