@@ -27,5 +27,9 @@
     "noFallthroughCasesInSwitch": true
     
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Los .test.ts(x) quedan fuera del build de producción (tsc -b) — los tipos
+  // de @testing-library/jest-dom no están en el "types" de acá arriba. Los
+  // chequea aparte tsconfig.test.json (ver "npm run typecheck:all").
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }

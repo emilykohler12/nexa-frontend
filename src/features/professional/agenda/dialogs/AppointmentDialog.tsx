@@ -4,14 +4,15 @@ import { appointmentStatusConfig } from '@/features/professional/utils/appointme
 import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
 
 interface Props {
-  appointment: Appointment
-  primary:     string
-  accent:      string
-  onClose:     () => void
-  onSave:      (updated: Appointment) => void
+  appointment:     Appointment
+  primary:         string
+  accent:          string
+  onClose:         () => void
+  onSave:          (updated: Appointment) => void
+  onMarkArrival:   (appointment: Appointment) => void
 }
 
-export function AppointmentDialog({ appointment, primary, accent, onClose, onSave }: Props) {
+export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival }: Props) {
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
 
@@ -120,6 +121,25 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             <span style={{ fontSize: '14px', color: '#000' }}>Precio del servicio</span>
             <span style={{ fontSize: '22px', fontWeight: 700, color: accent }}>${appointment.servicePrice.toLocaleString('es-AR')}</span>
           </div>
+
+          {/* Llegada */}
+          {appointment.status === 'confirmed' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: appointment.arrivedAt ? '#eafaf0' : '#fff8e8', borderRadius: '12px', gap: '10px' }}>
+              <span style={{ fontSize: '14px', color: '#000' }}>
+                {appointment.arrivedAt
+                  ? `Llegó a las ${new Date(appointment.arrivedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Todavía no registró la llegada — a los 20 min de la hora pactada se marca "No asistió" sola.'}
+              </span>
+              {!appointment.arrivedAt && (
+                <button
+                  onClick={() => onMarkArrival(appointment)}
+                  style={{ padding: '8px 14px', border: 'none', borderRadius: '10px', background: primary, color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: "'Lato', sans-serif", whiteSpace: 'nowrap' }}
+                >
+                  Marcar llegada
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Estado */}
           <div>

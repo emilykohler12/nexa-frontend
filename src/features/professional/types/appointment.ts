@@ -42,6 +42,10 @@ export interface Appointment {
   status:         AppointmentStatus
   cancelReason?:  string | null
   paymentStatus:  PaymentStatus
+  // Cuándo se registró que la clienta llegó al local — la propia clienta desde su
+  // app, o la profesional por ella. En null hasta 20 min después de la hora
+  // pactada, el turno se marca 'no_show' solo (ver autoNoShow.job.ts en el backend).
+  arrivedAt?:     string | null
   internalNotes:  string
   isSimultaneous: boolean
   // Las otras profesionales del combo simultáneo, con su servicio, duración y precio.

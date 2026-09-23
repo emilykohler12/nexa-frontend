@@ -50,7 +50,7 @@ export function TopProductsChart({ data }: Props) {
                 ) : null
               }
             />
-            <Bar dataKey="quantity" radius={[0, 6, 6, 0]} barSize={18} label={{ position: 'right', fontSize: 12, fontWeight: 700, fill: '#000', formatter: (v: number) => v }}>
+            <Bar dataKey="quantity" radius={[0, 6, 6, 0]} barSize={18} label={{ position: 'right', fontSize: 12, fontWeight: 700, fill: '#000', formatter: (v: any) => v }}>
               {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
             </Bar>
           </BarChart>

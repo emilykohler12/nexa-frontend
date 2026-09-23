@@ -1,0 +1,28 @@
+name: CI frontend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck:all
+      - run: npm test
+      - run: npm run build
+      # `npm run lint` no está en el gate todavía: el repo ya tiene ~100
+      # errores de lint preexistentes (ninguno de esta sesión) y bloquear CI
+      # con eso desde el día uno solo generaría ruido. Corre igual, sin
+      # frenar el build, para ir viendo el número sin romper nada.
+      - run: npm run lint
+        continue-on-error: true

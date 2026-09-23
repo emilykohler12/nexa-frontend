@@ -42,6 +42,9 @@ interface Appointment {
   status:            AppointmentStatus
   cancelReason?:     string | null
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
+  // Cuándo registraste que llegaste al local. Si un turno confirmado queda sin
+  // esto 20 minutos después de la hora pactada, se marca "No asistió" solo.
+  arrivedAt?:        string | null
   details?:          AppointmentDetailsValue | null
   comboGroupId?:     string | null
   // Presente cuando el turno se reprogramó y el cliente todavía no vio el aviso.
@@ -67,6 +70,7 @@ export function AppointmentsPage() {
   const [confirmCancelAppt, setConfirmCancelAppt] = useState<Appointment | null>(null)
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
   const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
+  const [arrivingId, setArrivingId] = useState<string | null>(null)
   // No hay reembolso automático (no hay integración de refunds con Mercado
   // Pago) — cuando corresponde devolución, se lo decimos al cliente y le
   // mostramos cómo escribirnos por WhatsApp para coordinarla a mano.
@@ -237,6 +241,27 @@ export function AppointmentsPage() {
     navigate(ROUTES.CLIENT_BOOK, { state: { serviceId: appt.serviceId, professionalId: appt.professionalId } })
   }
 
+  // Nunca usar toISOString() acá — convierte a UTC y puede correr la fecha (mismo motivo que en Agenda.tsx del profesional).
+  const todayLocal = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  const canMarkArrival = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && a.date === todayLocal()
+
+  const markArrival = async (appt: Appointment) => {
+    setArrivingId(appt.id)
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/client/appointments/${appt.id}/arrival`)
+      setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
+      setToast({ type: 'success', text: '¡Listo! Avisamos que llegaste.' })
+    } catch (err: any) {
+      setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo registrar tu llegada.') })
+    } finally {
+      setArrivingId(null)
+    }
+  }
+
   return (
     <div className="appointments-page">
 
@@ -378,12 +403,28 @@ export function AppointmentsPage() {
                   <span><Clock size={14} />{appt.duration} min</span>
                 </div>
 
+                {canMarkArrival(appt) && (
+                  <div className="appointment-meta" style={{ color: '#b45309' }}>
+                    <span>Al llegar al local, marcá tu llegada — si pasan 20 min de tu hora sin avisar, el turno se libera.</span>
+                  </div>
+                )}
+
                 <div className="appointment-footer">
                   <span className="appointment-price" style={{ color: accentColor }}>
                     ${appt.price.toLocaleString('es-AR')}
                   </span>
                   {(appt.status === 'confirmed' || appt.status === 'pending') && !isPast(appt) ? (
                     <div className="appointment-actions">
+                      {canMarkArrival(appt) && (
+                        <button
+                          onClick={e => { e.stopPropagation(); markArrival(appt) }}
+                          disabled={arrivingId === appt.id}
+                          className="appointment-cancel-btn"
+                          style={{ color: '#0a7a4a' }}
+                        >
+                          {arrivingId === appt.id ? 'Marcando...' : 'Ya llegué'}
+                        </button>
+                      )}
                       {!appt.comboGroupId && (
                         <button
                           className="appointment-reschedule-btn"
@@ -401,6 +442,15 @@ export function AppointmentsPage() {
                         <X size={14} /> {cancellingId === appt.id ? 'Cancelando...' : 'Cancelar'}
                       </button>
                     </div>
+                  ) : canMarkArrival(appt) ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); markArrival(appt) }}
+                      disabled={arrivingId === appt.id}
+                      className="appointment-cancel-btn"
+                      style={{ color: '#0a7a4a' }}
+                    >
+                      {arrivingId === appt.id ? 'Marcando...' : 'Ya llegué'}
+                    </button>
                   ) : (
                     <button
                       onClick={e => { e.stopPropagation(); handleRebook(appt) }}
