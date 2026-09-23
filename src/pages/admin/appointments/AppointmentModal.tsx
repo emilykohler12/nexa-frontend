@@ -4,7 +4,7 @@ import {
   DollarSign, FileText, Calendar, ChevronDown,
   AlertCircle, Users, Image as ImageIcon, Tag,
 } from 'lucide-react';
-import type { Appointment } from './types';
+import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
 
 interface Props {
@@ -14,7 +14,12 @@ interface Props {
   onCancel: (id: string) => Promise<string | null>;
   onReactivate: (id: string) => Promise<string | null>;
   onSave: (updated: Appointment) => Promise<string | null>;
+  onRegisterBalancePayment: (id: string, data: { method: BalancePaymentMethod; amount: number }) => Promise<string | null>;
 }
+
+const BALANCE_METHOD_LABEL: Record<BalancePaymentMethod, string> = {
+  cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', other: 'Otro',
+};
 
 const STATUS_LABELS = {
   confirmed: 'Confirmado',
@@ -44,7 +49,7 @@ function statusStyleFor(appointment: Appointment) {
 }
 
 export function AppointmentModal({
-  appointment, professionals, onClose, onCancel, onReactivate, onSave,
+  appointment, professionals, onClose, onCancel, onReactivate, onSave, onRegisterBalancePayment,
 }: Props) {
   const [editing, setEditing]             = useState(false);
   const [form, setForm]                   = useState<Appointment | null>(appointment);
@@ -405,6 +410,24 @@ export function AppointmentModal({
             )}
           </Section>
 
+          {!editing && !['cancelled', 'no_show'].includes(appointment.status) && (
+            <>
+              <Divider />
+              <SectionTitle color={profColor}>
+                <DollarSign size={13} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'middle' }} />
+                Pago
+              </SectionTitle>
+              <Section>
+                {appointment.depositAmount !== undefined && (
+                  <InfoRow icon={<DollarSign size={14} />} label="Seña (Mercado Pago)">
+                    ${appointment.depositAmount.toLocaleString('es-AR')} — {appointment.paymentStatus === 'pending' ? 'sin pagar' : appointment.paymentStatus === 'refunded' ? 'reembolsada' : 'pagada'}
+                  </InfoRow>
+                )}
+                <BalancePaymentSection appointment={appointment} onRegister={onRegisterBalancePayment} />
+              </Section>
+            </>
+          )}
+
           <Divider />
 
           {/* Observaciones del profesional */}
@@ -563,5 +586,67 @@ function Btn({ children, onClick, variant, disabled }: {
     >
       {children}
     </button>
+  );
+}
+
+function BalancePaymentSection({ appointment, onRegister }: {
+  appointment: Appointment;
+  onRegister:  (id: string, data: { method: BalancePaymentMethod; amount: number }) => Promise<string | null>;
+}) {
+  const remaining = Math.max(0, appointment.servicePrice - (appointment.depositAmount ?? 0));
+  const [method, setMethod] = useState<BalancePaymentMethod>('cash');
+  const [amount, setAmount] = useState(remaining || appointment.servicePrice);
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  if (appointment.paymentStatus === 'paid') {
+    const bp = appointment.balancePayment;
+    return (
+      <InfoRow icon={<DollarSign size={14} />} label="Saldo cobrado en el local">
+        {bp
+          ? `$${bp.amount.toLocaleString('es-AR')} en ${BALANCE_METHOD_LABEL[bp.method]}${bp.collectedByName ? ` — registrado por ${bp.collectedByName}` : ''}`
+          : 'Pagado por completo'}
+      </InfoRow>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Registrar cobro del saldo (en el local)
+      </label>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <select
+          value={method}
+          onChange={e => setMethod(e.target.value as BalancePaymentMethod)}
+          style={{ flex: '1 1 130px', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', color: '#000', fontFamily: "'Lato', sans-serif", outline: 'none' }}
+        >
+          {(Object.keys(BALANCE_METHOD_LABEL) as BalancePaymentMethod[]).map(m => (
+            <option key={m} value={m}>{BALANCE_METHOD_LABEL[m]}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min={1}
+          value={amount}
+          onChange={e => setAmount(Number(e.target.value))}
+          style={{ flex: '1 1 90px', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', color: '#000', fontFamily: "'Lato', sans-serif", outline: 'none' }}
+        />
+        <Btn
+          variant="primary"
+          disabled={saving || !(amount > 0)}
+          onClick={async () => {
+            setSaving(true);
+            setError(null);
+            const err = await onRegister(appointment.id, { method, amount });
+            setSaving(false);
+            if (err) setError(err);
+          }}
+        >
+          {saving ? 'Guardando...' : 'Registrar cobro'}
+        </Btn>
+      </div>
+      {error && <p style={{ margin: 0, fontSize: '13px', color: '#e53935' }}>{error}</p>}
+    </div>
   );
 }

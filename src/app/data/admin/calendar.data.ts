@@ -3,6 +3,15 @@
 // ============================================================
 
 export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'no_show';
+export type BalancePaymentMethod = 'cash' | 'transfer' | 'card' | 'other';
+
+export interface BalancePayment {
+  method:          BalancePaymentMethod;
+  amount:          number;
+  paidAt:          string;
+  collectedById:   string | null;
+  collectedByName: string | null;
+}
 
 export interface CalendarProfessional {
   id: string;
@@ -48,6 +57,7 @@ export interface CalendarAppointment {
   cancelReason?: string | null;
   paymentStatus?: string;
   depositAmount?: number;
+  balancePayment?: BalancePayment | null;
   clientNotes?: string;
   professionalNotes?: string;
   backgroundColor?: string;

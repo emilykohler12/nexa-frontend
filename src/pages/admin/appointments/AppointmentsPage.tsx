@@ -7,7 +7,7 @@ import { CreateAppointmentModal } from './CreateAppointmentModal'
 import { CalendarWeek }       from './CalendarWeek'
 import { CalendarMonth }      from './CalendarMonth'
 import { CalendarDay }        from './CalendarDay'
-import type { Appointment, Professional } from './types'
+import type { Appointment, Professional, BalancePaymentMethod } from './types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 type ViewMode = 'month' | 'week' | 'day'
@@ -117,6 +117,17 @@ export function AppointmentsPage() {
     }
   }
 
+  const handleRegisterBalancePayment = async (id: string, data: { method: BalancePaymentMethod; amount: number }): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/admin/appointments/${id}/balance-payment`, data)
+      setAppointments(p => p.map(a => a.id === id ? res.data.appointment : a))
+      setModalAppt(res.data.appointment)
+      return null
+    } catch (err: any) {
+      return safeErrorMessage(err, 'No se pudo registrar el cobro.')
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '20px', fontFamily: "'Lato', sans-serif" }}>
 
@@ -187,6 +198,7 @@ export function AppointmentsPage() {
           onCancel={handleCancel}
           onReactivate={handleReactivate}
           onSave={handleSave}
+          onRegisterBalancePayment={handleRegisterBalancePayment}
         />
       )}
 

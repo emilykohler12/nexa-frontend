@@ -40,25 +40,20 @@ function cargarSdkFacebook(): Promise<void> {
   return sdkReady;
 }
 
-export type PerfilFacebook = { email: string; name: string; picture?: string };
-
-export async function requestFacebookProfile(): Promise<PerfilFacebook> {
+// Solo pide el access_token — el perfil (email/nombre) lo verifica el backend
+// contra la Graph API de Facebook (ver social.provider.ts), nunca se confía
+// en nada que Facebook le devuelva directo al navegador.
+export async function requestFacebookAccessToken(): Promise<string> {
   await cargarSdkFacebook();
 
   return new Promise((resolve, reject) => {
     window.FB.login(
       (response: any) => {
-        if (!response.authResponse) {
+        if (!response.authResponse?.accessToken) {
           reject(new Error("Login con Facebook cancelado"));
           return;
         }
-        window.FB.api("/me", { fields: "name,email,picture" }, (profile: any) => {
-          if (!profile || profile.error) {
-            reject(new Error("No se pudo obtener el perfil de Facebook"));
-            return;
-          }
-          resolve({ email: profile.email, name: profile.name, picture: profile.picture?.data?.url });
-        });
+        resolve(response.authResponse.accessToken);
       },
       { scope: "email,public_profile" }
     );

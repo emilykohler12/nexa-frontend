@@ -7,4 +7,6 @@ export type {
   CalendarAppointment as Appointment,
   CalendarProfessional as Professional,
   AppointmentStatus,
+  BalancePaymentMethod,
+  BalancePayment,
 } from '@/app/data/admin/calendar.data';

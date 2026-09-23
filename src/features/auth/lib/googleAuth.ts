@@ -6,13 +6,10 @@ declare global {
   }
 }
 
-export type PerfilGoogle = {
-  email: string;
-  name: string;
-  picture?: string;
-};
-
-export function requestGoogleProfile(): Promise<PerfilGoogle> {
+// Solo pide el access_token — el perfil (email/nombre) lo verifica el backend
+// contra el propio servidor de Google (ver social.provider.ts), nunca se
+// confía en nada que Google le devuelva directo al navegador.
+export function requestGoogleAccessToken(): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!window.google) {
       reject(new Error("El SDK de Google no cargó. Revisá el <script> en index.html."));
@@ -26,20 +23,12 @@ export function requestGoogleProfile(): Promise<PerfilGoogle> {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: appConfig.googleClientId,
       scope: "email profile",
-      callback: async (response: any) => {
-        if (response.error) {
+      callback: (response: any) => {
+        if (response.error || !response.access_token) {
           reject(new Error("No se pudo completar el login con Google"));
           return;
         }
-        try {
-          const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-            headers: { Authorization: `Bearer ${response.access_token}` },
-          });
-          const profile = await res.json();
-          resolve({ email: profile.email, name: profile.name, picture: profile.picture });
-        } catch {
-          reject(new Error("No se pudo obtener el perfil de Google"));
-        }
+        resolve(response.access_token);
       },
     });
 
