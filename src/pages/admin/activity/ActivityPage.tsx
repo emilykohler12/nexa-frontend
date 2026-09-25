@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Check, X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
-import { translateStatus } from '@/shared/utils/statusLabels'
 import { ACTIVITY_MODULE_LABEL, ACTIVITY_LEVEL_CONFIG, getActivityColor } from '@/app/data/admin/activity.data'
 import type { ActivityLog, ActivityModule, ActivityLevel } from '@/app/data/admin/activity.data'
 import './ActivityPage.css'

@@ -11,10 +11,9 @@ import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ROUTES } from '@/app/config/routes.config'
 
 export function RegisterForm() {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterInput>({
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
   })
-  const termsAccepted = watch('termsAccepted')
   const registerUser  = useRegister()
   const { business }  = useTenant()
   const [showPass, setShowPass] = useState(false)

@@ -69,21 +69,6 @@ export function useRegister() {
   })
 }
 
-export function useSocialLogin() {
-  const queryClient = useQueryClient()
-  const { login }   = useAuth()
-
-  return useMutation({
-    mutationFn: authApi.socialLogin,
-    onSuccess: (data) => {
-      if (data.user) {
-        login(data.user)
-        queryClient.setQueryData(['auth', 'me'], data)
-      }
-    },
-  })
-}
-
 export function useLogout() {
   const queryClient = useQueryClient()
   const navigate    = useNavigate()

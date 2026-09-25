@@ -125,7 +125,7 @@ export function ProductPromotionsSection() {
             className="product-promo-track flex gap-6 overflow-x-auto pb-2 px-1"
             style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none' }}
           >
-            {promotions.map((promo, idx) => {
+            {promotions.map((promo) => {
               const badge = badgeFor(promo)
               const justAdded = addedId === promo.id
 
