@@ -1,5 +1,4 @@
 import * as Sentry from "@sentry/react";
-import { BrowserTracing } from "@sentry/tracing";
 
 export function initSentry() {
   const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
@@ -12,8 +11,8 @@ export function initSentry() {
   Sentry.init({
     dsn: sentryDsn,
     integrations: [
-      new BrowserTracing(),
-      new Sentry.Replay({
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true,
       }),
