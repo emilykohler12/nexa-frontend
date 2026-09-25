@@ -10,9 +10,6 @@ export const authApi = {
   register: (data: RegisterInput) =>
     api.post<{ user: User }>('/api/auth/register', data).then(r => r.data),
 
-  socialLogin: (data: { provider: 'google' | 'facebook'; accessToken: string; mode: 'login' | 'register'; termsAccepted?: boolean }) =>
-    api.post<{ user: User; created: boolean }>('/api/auth/social-login', data).then(r => r.data),
-
   me: () =>
     api.get<{ user: User | null }>('/api/auth/me').then(r => r.data),
 

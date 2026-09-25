@@ -87,7 +87,7 @@ export function Client() {
             </div>
             {client.nextAppointment && (
               <span style={{ fontSize: '13px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: 'rgba(6,148,148,0.1)', color: primary }}>
-                Turno hoy
+                Turno
               </span>
             )}
           </div>

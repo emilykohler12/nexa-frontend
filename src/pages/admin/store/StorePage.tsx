@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/shared/utils/api';
 import { ProductsTab }   from './ProductsTab';
 import { InventoryTab }  from './InventoryTab';
+import { OrdersTab }     from './OrdersTab';
 import type { StoreProduct } from '@/app/data/admin/store/types';
 
 // ============================================================
@@ -9,11 +10,12 @@ import type { StoreProduct } from '@/app/data/admin/store/types';
 // Tabs: Productos | Inventario | Pedidos
 // ============================================================
 
-type StoreTab = 'products' | 'inventory';
+type StoreTab = 'products' | 'inventory' | 'orders';
 
 const TABS: { id: StoreTab; label: string }[] = [
   { id: 'products',  label: 'Productos'  },
   { id: 'inventory', label: 'Movimientos' },
+  { id: 'orders',    label: 'Pedidos' },
 ];
 
 export function StorePage() {
@@ -86,6 +88,7 @@ export function StorePage() {
           <>
             {activeTab === 'products'  && <ProductsTab products={products} onProductsChange={setProducts} />}
             {activeTab === 'inventory' && <InventoryTab products={products} onProductStockChange={handleProductStockChange} />}
+            {activeTab === 'orders'    && <OrdersTab />}
           </>
         )}
       </div>

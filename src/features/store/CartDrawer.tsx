@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, Minus, Plus, Trash2, Store, Truck, Check, ExternalLink, RefreshCw, Clock, LogIn, ShoppingBag, ArrowRight } from 'lucide-react'
+import { X, Minus, Plus, Trash2, Store, Truck, Check, ExternalLink, RefreshCw, Clock, LogIn, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { useAuth } from '@/features/auth/AuthContext'
 import { api } from '@/shared/utils/api'
@@ -74,6 +74,38 @@ export function CartDrawer() {
     }
   }
 
+  // Alternativa a Mercado Pago: el pedido se guarda YA (sin que el admin
+  // tenga que cargar nada antes), pero queda 'pending' hasta que el admin lo
+  // marque pago a mano — ver markPaidByAdmin en el backend. Por eso vacía el
+  // carrito y va directo a 'success', sin pasar por 'waitingPayment'.
+  const handleConfirmWhatsapp = async () => {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await api.post<{ order: { id: string } }>('/api/client/orders', {
+        items: items.map(i => ({ productId: i.productId, quantity: i.quantity, promotionId: i.promotionId ?? null })),
+        delivery: {
+          type: deliveryType,
+          address: deliveryType === 'delivery' ? address.trim() : null,
+        },
+        phone: phone.trim() || null,
+        notes: notes.trim() || null,
+        paymentMethod: 'whatsapp',
+      })
+
+      if (business?.whatsapp) {
+        const message = `Hola! Hice un pedido de ${items.reduce((s, i) => s + i.quantity, 0)} producto(s) por $${total.toLocaleString('es-AR')} y quiero coordinar el pago por este medio.`
+        window.open(`https://wa.me/${business.whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
+      }
+      clear()
+      setPhase('success')
+    } catch (err: any) {
+      setError(safeErrorMessage(err, 'No se pudo confirmar el pedido. Intentá de nuevo.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const checkPaymentStatus = async () => {
     if (!orderId) return
     setCheckingPayment(true)
@@ -101,7 +133,7 @@ export function CartDrawer() {
   // Guard después de todos los hooks — si no hay tenant cargado, no se renderiza
   // nada, pero los hooks ya corrieron en orden estable.
   if (!business) return null
-  const { primaryColor, accentColor, contactInfo } = business
+  const { primaryColor, accentColor, contactInfo, whatsapp } = business
 
   return (
     <>
@@ -253,6 +285,17 @@ export function CartDrawer() {
                   {submitting ? 'Procesando pago...' : `Pagar $${total.toLocaleString('es-AR')}`}
                 </button>
               </div>
+
+              {whatsapp && (
+                <button
+                  onClick={handleConfirmWhatsapp}
+                  disabled={submitting}
+                  className="w-full py-3 rounded-xl font-semibold transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+                  style={{ background: '#25D36615', color: '#1a1a1a', fontFamily: 'var(--font-lato)' }}
+                >
+                  <MessageCircle size={16} color="#25D366" /> Coordinar el pago por WhatsApp
+                </button>
+              )}
             </div>
           ) : (
             <div className="p-5 flex flex-col gap-5">

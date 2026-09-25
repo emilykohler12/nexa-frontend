@@ -57,7 +57,9 @@ export interface CalendarAppointment {
   cancelReason?: string | null;
   paymentStatus?: string;
   depositAmount?: number;
+  depositMethod?: 'mercadopago' | 'whatsapp' | null;
   balancePayment?: BalancePayment | null;
+  polishRemoval?: { label: string | null; price: number } | null;
   clientNotes?: string;
   professionalNotes?: string;
   backgroundColor?: string;

@@ -35,18 +35,29 @@ interface Props {
   editMode?:     boolean
   onDone:        (value: AppointmentDetailsValue) => void
   onCancel?:     () => void
+  // Para un combo/servicio simultáneo: alergias y acompañante son datos de LA
+  // VISITA, no de cada servicio — se preguntan una sola vez (showSharedFields
+  // en ese primer paso) y se replican con presetShared en los pasos siguientes
+  // (showSharedFields=false), que solo preguntan lo específico de esa categoría.
+  showSharedFields?:   boolean
+  showCategoryFields?: boolean
+  presetShared?: { allergies: string | null; accompanied: boolean; companionName: string | null }
+  title?: string
 }
 
-export function PostBookingDetails({ appointmentId, categoryId, initial, editMode, onDone, onCancel }: Props) {
+export function PostBookingDetails({
+  appointmentId, categoryId, initial, editMode, onDone, onCancel,
+  showSharedFields = true, showCategoryFields = true, presetShared, title,
+}: Props) {
   const { business } = useTenant()
-  const showDesignQuestion = DESIGN_CATEGORIES.includes(categoryId)
-  const isNails  = categoryId === 'unas'
-  const isHair   = categoryId === 'cabello'
-  const isFace   = categoryId === 'rostro'
+  const showDesignQuestion = showCategoryFields && DESIGN_CATEGORIES.includes(categoryId)
+  const isNails  = showCategoryFields && categoryId === 'unas'
+  const isHair   = showCategoryFields && categoryId === 'cabello'
+  const isFace   = showCategoryFields && categoryId === 'rostro'
 
-  const [allergies, setAllergies]         = useState(initial?.allergies ?? '')
-  const [accompanied, setAccompanied]     = useState<boolean | null>(initial?.accompanied ?? null)
-  const [companionName, setCompanionName] = useState(initial?.companionName ?? '')
+  const [allergies, setAllergies]         = useState(initial?.allergies ?? presetShared?.allergies ?? '')
+  const [accompanied, setAccompanied]     = useState<boolean | null>(initial?.accompanied ?? presetShared?.accompanied ?? null)
+  const [companionName, setCompanionName] = useState(initial?.companionName ?? presetShared?.companionName ?? '')
   const [designMode, setDesignMode]       = useState<DesignMode>(initial?.designPreference?.type ?? 'text')
   const [designText, setDesignText]       = useState(initial?.designPreference?.type === 'text' ? initial.designPreference.value ?? '' : '')
   const [designImage, setDesignImage]     = useState<string | null>(initial?.designPreference?.type === 'image' ? initial.designPreference.value : null)
@@ -76,7 +87,9 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
   }
 
   const handleSubmit = async () => {
-    if (!consentAlertas) {
+    // El consentimiento solo se pide en el paso que muestra alergias/acompañante
+    // — los pasos "solo categoría" de un combo ya vienen después de ese paso.
+    if (showSharedFields && !consentAlertas) {
       setConsentError(true)
       return
     }
@@ -98,6 +111,13 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
       wantsExtensions: isHair ? wantsExtensions : null,
       skinType:        isFace ? skinType : null,
     }
+    // El paso "compartido" de un combo no guarda nada — el padre lo aplica a
+    // cada turno junto con lo específico de cada servicio (ver ComboBookingFlow).
+    if (!showCategoryFields) {
+      setSaving(false)
+      onDone(payload)
+      return
+    }
     try {
       await api.patch(`/api/client/appointments/${appointmentId}/details`, { ...payload, consentAlertas: true })
       onDone(payload)
@@ -112,75 +132,79 @@ export function PostBookingDetails({ appointmentId, categoryId, initial, editMod
   return (
     <div>
       <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-        {editMode ? 'Editar información del turno' : 'Antes de terminar...'}
+        {title ?? (editMode ? 'Editar información del turno' : 'Antes de terminar...')}
       </h2>
       <p className="text-sm text-gray-500 mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
         Esta información le sirve al profesional para prepararse mejor para tu turno. Es opcional.
       </p>
 
       <div className="flex flex-col gap-6">
-        <div>
-          <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
-            ¿Tenés alguna alergia que el profesional deba saber?
-          </p>
-          <textarea
-            value={allergies}
-            onChange={e => setAllergies(e.target.value)}
-            rows={2}
-            placeholder="Ej: alergia a algún producto, esmalte, tinte..."
-            className="w-full px-4 py-3 rounded-xl border outline-none resize-none"
-            style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-          />
-          {/* RF-06.02 — consentimiento para guardar observaciones operativas */}
-          <label className="flex items-start gap-2 mt-2 text-xs cursor-pointer" style={{ fontFamily: 'var(--font-lato)' }}>
-            <input
-              type="checkbox"
-              checked={consentAlertas}
-              onChange={e => { setConsentAlertas(e.target.checked); if (e.target.checked) setConsentError(false) }}
-              className="mt-0.5"
-            />
-            <span style={{ color: '#777' }}>
-              Autorizo a {business.name} a guardar estas observaciones operativas únicamente para la realización del servicio.
-            </span>
-          </label>
-          {consentError && (
-            <p className="text-xs mt-1" style={{ color: '#e53935' }}>
-              Necesitamos tu autorización para guardar esta información.
-            </p>
-          )}
-        </div>
+        {showSharedFields && (
+          <>
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+                ¿Tenés alguna alergia que el profesional deba saber?
+              </p>
+              <textarea
+                value={allergies}
+                onChange={e => setAllergies(e.target.value)}
+                rows={2}
+                placeholder="Ej: alergia a algún producto, esmalte, tinte..."
+                className="w-full px-4 py-3 rounded-xl border outline-none resize-none"
+                style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
+              />
+              {/* RF-06.02 — consentimiento para guardar observaciones operativas */}
+              <label className="flex items-start gap-2 mt-2 text-xs cursor-pointer" style={{ fontFamily: 'var(--font-lato)' }}>
+                <input
+                  type="checkbox"
+                  checked={consentAlertas}
+                  onChange={e => { setConsentAlertas(e.target.checked); if (e.target.checked) setConsentError(false) }}
+                  className="mt-0.5"
+                />
+                <span style={{ color: '#777' }}>
+                  Autorizo a {business.name} a guardar estas observaciones operativas únicamente para la realización del servicio.
+                </span>
+              </label>
+              {consentError && (
+                <p className="text-xs mt-1" style={{ color: '#e53935' }}>
+                  Necesitamos tu autorización para guardar esta información.
+                </p>
+              )}
+            </div>
 
-        <div>
-          <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
-            ¿Vas a venir acompañado/a?
-          </p>
-          <div className="flex gap-2 mb-2">
-            {([{ v: true, l: 'Sí' }, { v: false, l: 'No' }] as const).map(opt => (
-              <button
-                key={String(opt.v)}
-                onClick={() => setAccompanied(opt.v)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                style={{
-                  background: accompanied === opt.v ? primaryColor : '#f3f4f6',
-                  color: accompanied === opt.v ? 'white' : '#555',
-                  fontFamily: 'var(--font-lato)',
-                }}
-              >
-                {opt.l}
-              </button>
-            ))}
-          </div>
-          {accompanied && (
-            <input
-              type="text"
-              value={companionName}
-              onChange={e => setCompanionName(e.target.value)}
-              placeholder="¿Por quién venís acompañado/a? (opcional)"
-              className="w-full px-4 py-3 rounded-xl border outline-none"
-              style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-            />
-          )}
-        </div>
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-lato)', color: '#333' }}>
+                ¿Vas a venir acompañado/a?
+              </p>
+              <div className="flex gap-2 mb-2">
+                {([{ v: true, l: 'Sí' }, { v: false, l: 'No' }] as const).map(opt => (
+                  <button
+                    key={String(opt.v)}
+                    onClick={() => setAccompanied(opt.v)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{
+                      background: accompanied === opt.v ? primaryColor : '#f3f4f6',
+                      color: accompanied === opt.v ? 'white' : '#555',
+                      fontFamily: 'var(--font-lato)',
+                    }}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+              {accompanied && (
+                <input
+                  type="text"
+                  value={companionName}
+                  onChange={e => setCompanionName(e.target.value)}
+                  placeholder="¿Por quién venís acompañado/a? (opcional)"
+                  className="w-full px-4 py-3 rounded-xl border outline-none"
+                  style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
+                />
+              )}
+            </div>
+          </>
+        )}
 
         {isNails && (
           <>

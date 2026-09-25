@@ -11,6 +11,10 @@ import { HomePage }    from '@/pages/public/HomePage'
 import { LoginPage }   from '@/pages/public/LoginPage'
 import { ProfessionalRegisterPage } from '@/pages/public/ProfessionalRegisterPage'
 import { PrivacyPolicyPage } from '@/pages/public/PrivacyPolicyPage'
+import { TermsConditionsPage } from '@/pages/public/TermsConditionsPage'
+import { CookiesPolicyPage } from '@/pages/public/CookiesPolicyPage'
+import { CancellationPolicyPage } from '@/pages/public/CancellationPolicyPage'
+import { ARCORightsPage } from '@/pages/public/ARCORightsPage'
 import { PaymentResultPage } from '@/pages/public/PaymentResultPage'
 
 import { AppointmentsPage as ClientAppointmentsPage } from '@/pages/client/AppointmentsPage'
@@ -51,6 +55,10 @@ export function AppRouter() {
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route path="/registro-profesional" element={<ProfessionalRegisterPage />} />
           <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
+          <Route path={ROUTES.TERMS_CONDITIONS} element={<TermsConditionsPage />} />
+          <Route path={ROUTES.COOKIES_POLICY} element={<CookiesPolicyPage />} />
+          <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
+          <Route path={ROUTES.ARCO_RIGHTS} element={<ARCORightsPage />} />
           <Route path={ROUTES.PAYMENT_RESULT} element={<PaymentResultPage />} />
         </Route>
 

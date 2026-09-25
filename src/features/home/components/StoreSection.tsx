@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Search, X } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { FavoriteStarButton } from '@/shared/ui/atoms/FavoriteStarButton'
@@ -25,6 +26,7 @@ export function StoreSection() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [detailProduct, setDetailProduct] = useState<Product | null>(null)
   const [addedId, setAddedId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     api.get<{ products: Product[] }>('/api/store/products')
@@ -41,9 +43,10 @@ export function StoreSection() {
 
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
 
-  const filteredProducts = activeCategory
-    ? products.filter(p => p.category === activeCategory)
-    : products
+  const searchTerm = search.trim().toLowerCase()
+  const filteredProducts = products
+    .filter(p => !activeCategory || p.category === activeCategory)
+    .filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm))
 
   const handleAddToCart = (product: Product, quantity = 1) => {
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.imageUrl }, quantity)
@@ -64,11 +67,36 @@ export function StoreSection() {
             {tiendaTitle}
           </h2>
           <p
-            className="text-gray-500 max-w-2xl mx-auto text-lg"
+            className="text-gray-500 max-w-2xl mx-auto text-lg mb-6"
             style={{ fontFamily: 'var(--font-lato)' }}
           >
             {tiendaSubtitle}
           </p>
+          <div style={{ position: 'relative', maxWidth: '420px', margin: '0 auto' }}>
+            <Search size={18} color="#999" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar un producto por nombre..."
+              style={{
+                width: '100%', padding: '12px 44px', borderRadius: '999px',
+                border: '1px solid #e0e0e0', fontSize: '15px', outline: 'none',
+                fontFamily: 'var(--font-lato)', color: '#333',
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = accentColor)}
+              onBlur={e => (e.currentTarget.style.borderColor = '#e0e0e0')}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                aria-label="Limpiar búsqueda"
+                style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex' }}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Filtro de categorías */}
@@ -112,7 +140,7 @@ export function StoreSection() {
             className="text-center py-20 text-gray-400"
             style={{ fontFamily: 'var(--font-lato)' }}
           >
-            No hay productos cargados todavía
+            {searchTerm ? `No encontramos productos que coincidan con "${search.trim()}"` : 'No hay productos cargados todavía'}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">

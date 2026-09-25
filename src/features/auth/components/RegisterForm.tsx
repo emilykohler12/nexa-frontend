@@ -9,7 +9,6 @@ import { useRegister } from '../hooks/useAuth'
 import { useTenant }   from '@/features/tenant/TenantContext'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ROUTES } from '@/app/config/routes.config'
-import { SocialLoginButtons } from './SocialLoginButtons'
 
 export function RegisterForm() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterInput>({
@@ -162,15 +161,6 @@ export function RegisterForm() {
           }
         </button>
 
-        {/* Separador */}
-        <div className="divider">
-          <div className="divider-line" />
-          <span className="divider-text">O ingresar con</span>
-          <div className="divider-line" />
-        </div>
-
-        {/* Social */}
-        <SocialLoginButtons mode="register" termsAccepted={termsAccepted} disabled={registerUser.isPending} />
 
       </div>
     </form>

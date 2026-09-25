@@ -6,7 +6,7 @@
 // llega el webhook de Mercado Pago confirmando el pago real — nunca antes.
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ExternalLink, RefreshCw, Check, Clock, MapPin, Info, Shield } from 'lucide-react'
+import { ExternalLink, RefreshCw, Check, Clock, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
@@ -161,6 +161,55 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     })()
   }
 
+  // Alternativa a Mercado Pago: el turno se guarda YA (sin que el admin tenga
+  // que cargar nada antes), pero la seña queda 'pending' hasta que el admin la
+  // marque paga a mano — ver registerWhatsappDepositPaid en el backend. Por
+  // eso salta directo a 'details', nunca pasa por 'waitingPayment'.
+  const handlePayViaWhatsapp = () => {
+    if (!termsAccepted) {
+      setTermsError(true)
+      return
+    }
+    setTermsError(false)
+    setPhase('processing')
+    setPayError(null)
+    ;(async () => {
+      try {
+        const res = await api.post<{ appointment: { id: string; professionalId?: string; professionalName?: string } }>('/api/client/appointments', {
+          serviceId:      summary.serviceId,
+          professionalId: summary.professionalId,
+          date:           summary.date,
+          time:           summary.time,
+          termsAccepted:  true,
+          promotionId:    summary.promotionId,
+          depositMethod:  'whatsapp',
+        })
+        const newAppointmentId = res.data.appointment?.id ?? null
+        setAppointmentId(newAppointmentId)
+        if (summary.professionalId === ANY_PROFESSIONAL_ID) {
+          if (res.data.appointment?.professionalName) setAssignedProfessionalName(res.data.appointment.professionalName)
+          if (res.data.appointment?.professionalId)   setAssignedProfessionalId(res.data.appointment.professionalId)
+        }
+
+        if (whatsapp) {
+          const proName = res.data.appointment?.professionalName ?? summary.professionalName
+          const message = `Hola! Reservé el turno de ${summary.serviceName} con ${proName} para el ${summary.dateLabel} a las ${summary.time} y quiero coordinar el pago de la seña ($${summary.depositAmount.toLocaleString('es-AR')}) por este medio.`
+          window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
+        }
+
+        setPhase(newAppointmentId ? 'details' : 'success')
+      } catch (err: any) {
+        const code = err?.response?.data?.code
+        if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+          setPhase('slotTaken')
+        } else {
+          setPayError(safeErrorMessage(err, 'No pudimos reservar el turno. Intentá de nuevo.'))
+          setPhase('paying')
+        }
+      }
+    })()
+  }
+
   // El pago real se confirma por webhook en el backend, no en esta pestaña —
   // así que preguntamos cada unos segundos si ya se acreditó. También hay un
   // botón manual para el caso de que el usuario vuelva antes de que dispare
@@ -189,7 +238,7 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
   // Guard después de todos los hooks — mantiene el orden de hooks estable
   // aunque el tenant todavía no haya cargado.
   if (!business) return null
-  const { primaryColor, accentColor, contactInfo, ubicacion } = business
+  const { primaryColor, accentColor, contactInfo, ubicacion, whatsapp } = business
 
   if (phase === 'expired') {
     return (
@@ -472,6 +521,17 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
       >
         {phase === 'processing' ? 'Procesando pago...' : `Pagar $${summary.depositAmount.toLocaleString('es-AR')}`}
       </button>
+
+      {whatsapp && (
+        <button
+          onClick={handlePayViaWhatsapp}
+          disabled={phase === 'processing'}
+          className="w-full mt-3 py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+          style={{ background: '#25D36615', color: '#1a1a1a', fontFamily: 'var(--font-lato)' }}
+        >
+          <MessageCircle size={17} color="#25D366" /> Coordinar el pago por WhatsApp
+        </button>
+      )}
     </div>
   )
 }

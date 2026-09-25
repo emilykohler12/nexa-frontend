@@ -58,9 +58,15 @@ export function ProductPromotionsSection() {
     if (promo.items.length === 0) return
 
     if (promo.kind === 'bundle') {
+      // El último ítem se lleva el resto en vez de redondearse como los demás,
+      // así la suma da EXACTO el precio del combo (redondear cada uno por
+      // separado puede perder o ganar $1 en la suma total).
       const realTotal = promo.items.reduce((s, i) => s + i.price, 0) || 1
-      promo.items.forEach(item => {
-        const scaledPrice = Math.round(item.price * (promo.price / realTotal))
+      let assignedSoFar = 0
+      promo.items.forEach((item, idx) => {
+        const isLast = idx === promo.items.length - 1
+        const scaledPrice = isLast ? promo.price - assignedSoFar : Math.round(item.price * (promo.price / realTotal))
+        assignedSoFar += scaledPrice
         addItem({ productId: item.id, name: item.name, price: scaledPrice, image: promo.image, promotionId: promo.id }, 1)
       })
     } else if (promo.kind === 'buy_x_pay_y' && promo.buyQty && promo.payQty) {
@@ -122,7 +128,6 @@ export function ProductPromotionsSection() {
             {promotions.map((promo, idx) => {
               const badge = badgeFor(promo)
               const justAdded = addedId === promo.id
-              const raised = idx % 2 === 1
 
               return (
                 <div
@@ -133,7 +138,6 @@ export function ProductPromotionsSection() {
                     scrollSnapAlign: 'start',
                     border: '1px solid #ece6da',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
-                    marginTop: raised ? 0 : 14,
                   }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 20px 40px -16px ${primaryColor}45` }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.05)' }}

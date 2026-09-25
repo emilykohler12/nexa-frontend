@@ -7,7 +7,6 @@ import { loginSchema, type LoginInput } from '../model/schemas'
 import { useLogin } from '../hooks/useAuth'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ForgotPasswordModal } from './ForgotPasswordModal'
-import { SocialLoginButtons } from './SocialLoginButtons'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function LoginForm() {
@@ -97,15 +96,6 @@ export function LoginForm() {
             </button>
           </div>
 
-          {/* Separador */}
-          <div className="divider">
-            <div className="divider-line" />
-            <span className="divider-text">O ingresar con</span>
-            <div className="divider-line" />
-          </div>
-
-          {/* Social */}
-          <SocialLoginButtons mode="login" disabled={login.isPending} />
 
         </div>
       </form>

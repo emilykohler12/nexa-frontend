@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield } from 'lucide-react'
+import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { generateSlots } from '@/features/professional/onboarding/types'
@@ -42,11 +42,12 @@ interface AvailabilityRow { dayOfWeek: number; startTime: string; endTime: strin
 interface AvailabilityResponse { availability: AvailabilityRow[]; bookedTimes?: string[] }
 interface PaymentSettings { depositAmount: number; depositPercent: boolean }
 
-type Phase = 'assign' | 'datetime' | 'confirm' | 'waitingPayment' | 'details' | 'success'
+type Phase = 'assign' | 'datetime' | 'confirm' | 'waitingPayment' | 'shared-details' | 'details' | 'success'
 
 const POLL_MS = 5000
 
-interface DetailsQueueItem { appointmentId: string; categoryId: string }
+interface DetailsQueueItem { appointmentId: string; categoryId: string; serviceName: string }
+interface SharedDetails { allergies: string | null; accompanied: boolean; companionName: string | null }
 
 interface Props {
   combo: Service
@@ -109,6 +110,9 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [detailsQueue, setDetailsQueue] = useState<DetailsQueueItem[]>([])
+  // Alergias/acompañante se preguntan UNA sola vez para todo el combo (no una
+  // por servicio) — se guardan acá y se replican en cada PATCH de detalles.
+  const [sharedDetails, setSharedDetails] = useState<SharedDetails | null>(null)
   const [comboGroupId, setComboGroupId] = useState<string | null>(null)
   const [checkingPayment, setCheckingPayment] = useState(false)
   const [proPoliciesById, setProPoliciesById] = useState<Record<string, {
@@ -174,7 +178,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   }, [components.length])
 
   if (!business) return null
-  const { primaryColor, accentColor, contactInfo, ubicacion } = business
+  const { primaryColor, accentColor, contactInfo, ubicacion, whatsapp } = business
 
   const allAssigned = components.length > 0 && components.every(c => c.professionalId)
   const assignedProfessionalIds = Array.from(new Set(components.map(c => c.professionalId).filter(Boolean))) as string[]
@@ -233,7 +237,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     try {
       const res = await api.post<{ paymentStatus: string }>(`/api/client/appointments/combo/${comboGroupId}/verify-payment`)
       if (res.data.paymentStatus === 'partial') {
-        setPhase(detailsQueue.length > 0 ? 'details' : 'success')
+        setPhase(detailsQueue.length > 0 ? 'shared-details' : 'success')
       }
     } catch {
       /* chequeo de fondo */
@@ -281,7 +285,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (depositMethod: 'mercadopago' | 'whatsapp' = 'mercadopago') => {
     setSubmitting(true)
     setError(null)
     try {
@@ -294,6 +298,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
           date: sharedDate,
           time: sharedTime,
         })),
+        depositMethod,
       })
 
       const newGroupId = res.data.comboGroupId
@@ -306,7 +311,9 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       const queue = createdAppointments
         .map(a => {
           const comp = components.find(c => c.serviceId === a.serviceId)
-          return comp && DETAILS_CATEGORIES.includes(comp.categoryId) ? { appointmentId: a.id, categoryId: comp.categoryId } : null
+          return comp && DETAILS_CATEGORIES.includes(comp.categoryId)
+            ? { appointmentId: a.id, categoryId: comp.categoryId, serviceName: comp.serviceName }
+            : null
         })
         .filter((x): x is DetailsQueueItem => x !== null)
       setDetailsQueue(queue)
@@ -314,7 +321,23 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       // Si no hay seña que cobrar (combo sin precio / seña 0), no se abre
       // Mercado Pago — se pasa directo a las preguntas.
       if (deposit <= 0) {
-        setPhase(queue.length > 0 ? 'details' : 'success')
+        setPhase(queue.length > 0 ? 'shared-details' : 'success')
+        return
+      }
+
+      // Coordinar por WhatsApp: el combo ya quedó reservado (arriba), no se
+      // abre Mercado Pago — la seña queda 'pending' hasta que el admin la
+      // marque paga a mano (ver registerWhatsappDepositPaid en el backend).
+      if (depositMethod === 'whatsapp') {
+        if (whatsapp) {
+          const serviceDetails = components
+            .map(c => `${c.serviceName} con ${c.professionals.find(p => p.id === c.professionalId)?.name ?? 'a definir'}`)
+            .join(', ')
+          const dateLabel = sharedDate ? new Date(sharedDate + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }) : ''
+          const message = `Hola! Reservé un turno simultáneo (${serviceDetails}) para el ${dateLabel} a las ${sharedTime} y quiero coordinar el pago de la seña ($${deposit.toLocaleString('es-AR')}) por este medio.`
+          window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
+        }
+        setPhase(queue.length > 0 ? 'shared-details' : 'success')
         return
       }
 
@@ -539,13 +562,24 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         </div>
 
         <button
-          onClick={handleSubmit}
+          onClick={() => handleSubmit('mercadopago')}
           disabled={submitting}
           className="w-full py-4 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
         >
           {submitting ? 'Procesando...' : `Pagar seña · $${deposit.toLocaleString('es-AR')}`}
         </button>
+
+        {whatsapp && (
+          <button
+            onClick={() => handleSubmit('whatsapp')}
+            disabled={submitting}
+            className="w-full mt-3 py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+            style={{ background: '#25D36615', color: '#1a1a1a', fontFamily: 'var(--font-lato)' }}
+          >
+            <MessageCircle size={17} color="#25D366" /> Coordinar el pago por WhatsApp
+          </button>
+        )}
       </div>
     )
   }
@@ -575,6 +609,22 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     )
   }
 
+  if (phase === 'shared-details') {
+    return (
+      <PostBookingDetails
+        appointmentId={detailsQueue[0].appointmentId}
+        categoryId={detailsQueue[0].categoryId}
+        showCategoryFields={false}
+        title="Antes de terminar..."
+        onDone={value => {
+          setSharedDetails({ allergies: value.allergies, accompanied: value.accompanied, companionName: value.companionName })
+          setPhase('details')
+        }}
+        onCancel={() => setPhase('success')}
+      />
+    )
+  }
+
   if (phase === 'details' && detailsQueue.length > 0) {
     const current = detailsQueue[0]
     const advance = () => {
@@ -588,6 +638,9 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       <PostBookingDetails
         appointmentId={current.appointmentId}
         categoryId={current.categoryId}
+        showSharedFields={false}
+        presetShared={sharedDetails ?? { allergies: null, accompanied: false, companionName: null }}
+        title={`Sobre tu turno de ${current.serviceName}`}
         onDone={advance}
         onCancel={advance}
       />

@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X, Phone, Mail, User, Scissors, Clock,
   DollarSign, FileText, Calendar, ChevronDown,
-  AlertCircle, Users, Image as ImageIcon, Tag,
+  AlertCircle, Users, Image as ImageIcon, Tag, MessageCircle,
 } from 'lucide-react';
+import { api } from '@/shared/utils/api';
 import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
+import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
 
 interface Props {
   appointment: Appointment | null;
@@ -15,6 +17,8 @@ interface Props {
   onReactivate: (id: string) => Promise<string | null>;
   onSave: (updated: Appointment) => Promise<string | null>;
   onRegisterBalancePayment: (id: string, data: { method: BalancePaymentMethod; amount: number }) => Promise<string | null>;
+  onRegisterPolishRemoval: (id: string, data: { label: string; price: number }) => Promise<string | null>;
+  onMarkDepositPaid: (id: string) => Promise<string | null>;
 }
 
 const BALANCE_METHOD_LABEL: Record<BalancePaymentMethod, string> = {
@@ -49,7 +53,7 @@ function statusStyleFor(appointment: Appointment) {
 }
 
 export function AppointmentModal({
-  appointment, professionals, onClose, onCancel, onReactivate, onSave, onRegisterBalancePayment,
+  appointment, professionals, onClose, onCancel, onReactivate, onSave, onRegisterBalancePayment, onRegisterPolishRemoval, onMarkDepositPaid,
 }: Props) {
   const [editing, setEditing]             = useState(false);
   const [form, setForm]                   = useState<Appointment | null>(appointment);
@@ -180,6 +184,43 @@ export function AppointmentModal({
 
         {/* Cuerpo */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+          {/* Estado del turno */}
+          {!editing && !['cancelled'].includes(appointment.status) && (
+            <Section>
+              <SectionTitle color={profColor}>Marcar estado</SectionTitle>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['confirmed', 'finished', 'no_show'].map(status => (
+                  appointment.status !== status && (
+                    <button
+                      key={status}
+                      onClick={async () => {
+                        setSaving(true);
+                        const result = await onSave({ ...appointment, status: status as 'confirmed' | 'finished' | 'no_show' | 'cancelled' });
+                        setSaving(false);
+                        if (!result) onClose();
+                      }}
+                      disabled={saving}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e5e5',
+                        background: '#f8f8f8',
+                        color: '#000',
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        fontFamily: "'Lato', sans-serif",
+                        opacity: saving ? 0.6 : 1,
+                      }}
+                    >
+                      {status === 'confirmed' ? 'Confirmar' : status === 'finished' ? 'Marcar finalizado' : 'No asistió'}
+                    </button>
+                  )
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* Fecha y hora */}
           {editing ? (
@@ -418,13 +459,21 @@ export function AppointmentModal({
                 Pago
               </SectionTitle>
               <Section>
-                {appointment.depositAmount !== undefined && (
+                {appointment.depositAmount !== undefined && appointment.depositMethod !== 'whatsapp' && (
                   <InfoRow icon={<DollarSign size={14} />} label="Seña (Mercado Pago)">
                     ${appointment.depositAmount.toLocaleString('es-AR')} — {appointment.paymentStatus === 'pending' ? 'sin pagar' : appointment.paymentStatus === 'refunded' ? 'reembolsada' : 'pagada'}
                   </InfoRow>
                 )}
+                {appointment.depositMethod === 'whatsapp' && (
+                  <WhatsappDepositSection appointment={appointment} onMarkPaid={onMarkDepositPaid} />
+                )}
                 <BalancePaymentSection appointment={appointment} onRegister={onRegisterBalancePayment} />
               </Section>
+              {appointment.details?.hasOtherSalonPolish && (
+                <Section>
+                  <PolishRemovalSection appointment={appointment} onRegister={onRegisterPolishRemoval} />
+                </Section>
+              )}
             </>
           )}
 
@@ -589,6 +638,49 @@ function Btn({ children, onClick, variant, disabled }: {
   );
 }
 
+// La clienta eligió coordinar la seña por WhatsApp en vez de Mercado Pago —
+// no hay webhook que confirme el pago solo, así que el admin lo marca a mano
+// una vez que lo cobra/coordina.
+function WhatsappDepositSection({ appointment, onMarkPaid }: {
+  appointment: Appointment;
+  onMarkPaid: (id: string) => Promise<string | null>;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  if (appointment.paymentStatus === 'partial' || appointment.paymentStatus === 'paid') {
+    return (
+      <InfoRow icon={<MessageCircle size={14} color="#25D366" />} label="Seña coordinada por WhatsApp">
+        ${(appointment.depositAmount ?? 0).toLocaleString('es-AR')} — pagada
+      </InfoRow>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Seña coordinada por WhatsApp — ${(appointment.depositAmount ?? 0).toLocaleString('es-AR')}, pendiente
+      </label>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Btn
+          variant="primary"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            setError(null);
+            const err = await onMarkPaid(appointment.id);
+            setSaving(false);
+            if (err) setError(err);
+          }}
+        >
+          {saving ? 'Guardando...' : 'Marcar seña como pagada'}
+        </Btn>
+      </div>
+      {error && <p style={{ margin: 0, fontSize: '13px', color: '#e53935' }}>{error}</p>}
+    </div>
+  );
+}
+
 function BalancePaymentSection({ appointment, onRegister }: {
   appointment: Appointment;
   onRegister:  (id: string, data: { method: BalancePaymentMethod; amount: number }) => Promise<string | null>;
@@ -644,6 +736,90 @@ function BalancePaymentSection({ appointment, onRegister }: {
           }}
         >
           {saving ? 'Guardando...' : 'Registrar cobro'}
+        </Btn>
+      </div>
+      {error && <p style={{ margin: 0, fontSize: '13px', color: '#e53935' }}>{error}</p>}
+    </div>
+  );
+}
+
+// Solo aparece si la clienta marcó "tenía esmaltado de otro salón para
+// retirar" al reservar. Puramente informativo: el admin ya cargó el total
+// real en "Registrar cobro del saldo" — esto es nada más para llevar un
+// control de cuánto de ese total correspondía al retiro.
+function PolishRemovalSection({ appointment, onRegister }: {
+  appointment: Appointment;
+  onRegister:  (id: string, data: { label: string; price: number }) => Promise<string | null>;
+}) {
+  const [rules, setRules]     = useState<PolishRemovalRule[]>([]);
+  const [ruleId, setRuleId]   = useState('');
+  const [label, setLabel]     = useState('');
+  const [price, setPrice]     = useState(0);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<{ rules: PolishRemovalRule[] }>('/api/settings/polish-removal-rules')
+      .then(res => setRules(res.data.rules ?? []))
+      .catch(() => setRules([]));
+  }, []);
+
+  if (appointment.polishRemoval) {
+    const pr = appointment.polishRemoval;
+    return (
+      <InfoRow icon={<AlertCircle size={14} color="#d4af37" />} label="Retiro de esmalte (solo a modo de control)">
+        {pr.label ? `${pr.label} — $${pr.price.toLocaleString('es-AR')}` : `$${pr.price.toLocaleString('es-AR')}`}
+      </InfoRow>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Retiro de esmalte (solo a modo de control, no suma a nada)
+      </label>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <select
+          value={ruleId}
+          onChange={e => {
+            const id = e.target.value;
+            setRuleId(id);
+            const rule = rules.find(r => r.id === id);
+            if (rule) { setLabel(rule.label); setPrice(rule.price); }
+          }}
+          style={{ flex: '1 1 150px', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', color: '#000', fontFamily: "'Lato', sans-serif", outline: 'none' }}
+        >
+          <option value="">Elegí una regla (opcional)...</option>
+          {rules.map(r => (
+            <option key={r.id} value={r.id}>{r.label} — ${r.price.toLocaleString('es-AR')}</option>
+          ))}
+        </select>
+        <input
+          value={label}
+          onChange={e => { setLabel(e.target.value); setRuleId(''); }}
+          placeholder="Nombre (ej: Capping)"
+          style={{ flex: '1 1 130px', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', color: '#000', fontFamily: "'Lato', sans-serif", outline: 'none' }}
+        />
+        <input
+          type="number"
+          min={0}
+          value={price || ''}
+          onChange={e => { setPrice(Number(e.target.value)); setRuleId(''); }}
+          placeholder="Precio"
+          style={{ flex: '1 1 90px', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', color: '#000', fontFamily: "'Lato', sans-serif", outline: 'none' }}
+        />
+        <Btn
+          variant="primary"
+          disabled={saving || !label.trim() || !(price > 0)}
+          onClick={async () => {
+            setSaving(true);
+            setError(null);
+            const err = await onRegister(appointment.id, { label: label.trim(), price });
+            setSaving(false);
+            if (err) setError(err);
+          }}
+        >
+          {saving ? 'Guardando...' : 'Guardar'}
         </Btn>
       </div>
       {error && <p style={{ margin: 0, fontSize: '13px', color: '#e53935' }}>{error}</p>}

@@ -1,12 +1,13 @@
 // src/pages/admin/services/ServicesPage.tsx
 import { useState, useEffect } from 'react'
-import { Plus, CalendarClock } from 'lucide-react'
+import { Plus, CalendarClock, Settings } from 'lucide-react'
 import { api }                 from '@/shared/utils/api'
 import { SERVICE_CATEGORIES }  from '@/app/data/shared'
 import { ServiceList }         from './ServiceList'
 import { ServiceFormModal }    from './ServiceFormModal'
 import { SpecialServiceFormModal } from './SpecialServiceFormModal'
 import { SpecialServiceZonesModal } from './SpecialServiceZonesModal'
+import { PolishRemovalRulesModal } from './PolishRemovalRulesModal'
 import { ConfirmDeleteModal }  from './ConfirmDeleteModal'
 import type { AdminService, ServiceFormValues, ServiceZone, ServicePackage } from './types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -28,6 +29,7 @@ export function ServicesPage() {
   // que es un overlay y tapa cualquier mensaje que aparezca atrás.
   const [formError,      setFormError]      = useState<string | null>(null)
   const [zonesError,     setZonesError]     = useState<string | null>(null)
+  const [showPolishRules, setShowPolishRules] = useState(false)
 
   useEffect(() => {
     api.get<{ services: AdminService[] }>('/api/services/all')
@@ -116,6 +118,9 @@ export function ServicesPage() {
           <button onClick={openCreateSpecialForm} className="admin-button-secondary" style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <CalendarClock size={16} /> Servicio especial
           </button>
+          <button onClick={() => setShowPolishRules(true)} className="admin-button-secondary" style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <Settings size={16} /> Reglas de retiro de esmalte
+          </button>
           <button onClick={openCreateForm} className="admin-button-primary">
             <Plus size={18} /> Nuevo servicio
           </button>
@@ -171,6 +176,10 @@ export function ServicesPage() {
           onConfirm={confirmDelete}
           onCancel={() => setDeletingService(null)}
         />
+      )}
+
+      {showPolishRules && (
+        <PolishRemovalRulesModal onClose={() => setShowPolishRules(false)} />
       )}
     </div>
   )

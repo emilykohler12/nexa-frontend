@@ -1,4 +1,5 @@
 export type OrderStatus = 'pending' | 'confirmed' | 'ready' | 'delivered' | 'cancelled'
+export type PaymentStatus = 'pending' | 'paid' | 'rejected' | 'cancelled' | 'refunded'
 
 export interface OrderItem {
   productId: string
@@ -19,6 +20,7 @@ export interface ClientOrder {
   phone:         string | null
   notes:         string | null
   paymentMethod: string | null
+  paymentStatus: PaymentStatus
   status:        OrderStatus
   createdAt:     string
 }

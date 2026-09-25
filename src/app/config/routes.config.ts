@@ -3,6 +3,10 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   PRIVACY_POLICY: '/politica-privacidad',
+  TERMS_CONDITIONS: '/terminos-condiciones',
+  COOKIES_POLICY: '/politica-cookies',
+  CANCELLATION_POLICY: '/politica-cancelacion',
+  ARCO_RIGHTS: '/derechos-arco',
   PAYMENT_RESULT: '/pago/resultado',
 
   CLIENT:               '/client',

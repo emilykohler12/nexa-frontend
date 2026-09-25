@@ -37,6 +37,11 @@ export function AppointmentsPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [showCreate, setShowCreate] = useState(false)
 
+  const refetchAppointments = () =>
+    api.get<{ appointments: Appointment[] }>('/api/admin/appointments')
+      .then(res => setAppointments(res.data.appointments ?? []))
+      .catch(() => {})
+
   useEffect(() => {
     api.get<{ professionals: ApiProfessional[] }>('/api/professionals')
       .then(res => {
@@ -52,9 +57,7 @@ export function AppointmentsPage() {
       })
       .catch(() => { setProfessionals([]); setSelectedIds([]) })
 
-    api.get<{ appointments: Appointment[] }>('/api/admin/appointments')
-      .then(res => setAppointments(res.data.appointments ?? []))
-      .catch(() => setAppointments([]))
+    refetchAppointments()
   }, [])
 
   const filtered = appointments.filter(a => selectedIds.includes(a.professionalId) && a.status !== 'cancelled')
@@ -83,10 +86,15 @@ export function AppointmentsPage() {
 
   // Devuelven null si se guardó bien, o un mensaje de error si no —
   // así el modal se queda abierto y muestra el error en vez de revertir en silencio.
+  //
+  // Siempre refresca la lista ENTERA (no solo parchea el turno tocado): cancelar
+  // una pata de un combo cancela el grupo completo del lado del backend, y si
+  // solo actualizamos localmente el id que tocamos, la otra pata queda en
+  // pantalla como si siguiera activa hasta recargar la página.
   const patchStatus = async (id: string, status: Appointment['status']): Promise<string | null> => {
     try {
-      const res = await api.patch<{ appointment?: Appointment }>(`/api/admin/appointments/${id}`, { status })
-      setAppointments(p => p.map(a => a.id === id ? (res.data.appointment ?? { ...a, status }) : a))
+      await api.patch(`/api/admin/appointments/${id}`, { status })
+      await refetchAppointments()
       return null
     } catch (err: any) {
       return safeErrorMessage(err, 'No se pudo actualizar el turno.')
@@ -114,6 +122,10 @@ export function AppointmentsPage() {
       return null
     } catch (err: any) {
       return safeErrorMessage(err, 'No se pudo guardar el turno.')
+    } finally {
+      // Reprogramar puede tocar el índice único de horarios de otro turno del
+      // mismo profesional — se refresca para no quedar con datos viejos.
+      refetchAppointments()
     }
   }
 
@@ -125,6 +137,30 @@ export function AppointmentsPage() {
       return null
     } catch (err: any) {
       return safeErrorMessage(err, 'No se pudo registrar el cobro.')
+    }
+  }
+
+  const handleRegisterPolishRemoval = async (id: string, data: { label: string; price: number }): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/admin/appointments/${id}/polish-removal`, data)
+      setAppointments(p => p.map(a => a.id === id ? res.data.appointment : a))
+      setModalAppt(res.data.appointment)
+      return null
+    } catch (err: any) {
+      return safeErrorMessage(err, 'No se pudo registrar el retiro de esmalte.')
+    }
+  }
+
+  // Puede afectar TODAS las patas de un combo (misma seña compartida) — se
+  // refresca la lista entera, igual que patchStatus con las cancelaciones.
+  const handleMarkDepositPaid = async (id: string): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/admin/appointments/${id}/deposit-paid`)
+      await refetchAppointments()
+      setModalAppt(res.data.appointment)
+      return null
+    } catch (err: any) {
+      return safeErrorMessage(err, 'No se pudo marcar la seña como pagada.')
     }
   }
 
@@ -199,6 +235,8 @@ export function AppointmentsPage() {
           onReactivate={handleReactivate}
           onSave={handleSave}
           onRegisterBalancePayment={handleRegisterBalancePayment}
+          onRegisterPolishRemoval={handleRegisterPolishRemoval}
+          onMarkDepositPaid={handleMarkDepositPaid}
         />
       )}
 

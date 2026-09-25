@@ -13,6 +13,14 @@ const STATUS_LABEL: Record<OrderStatus, { label: string; color: string }> = {
   cancelled: { label: 'Cancelado',  color: '#e53935' },
 }
 
+const PAYMENT_STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  pending:   { label: 'Falta pagar',    color: '#e53935' },
+  paid:      { label: 'Pagado',         color: '#4caf50' },
+  rejected:  { label: 'Rechazado',      color: '#e53935' },
+  cancelled: { label: 'Cancelado',      color: '#999' },
+  refunded:  { label: 'Reembolsado',    color: '#999' },
+}
+
 // Historial de compras del cliente — solo lectura, no se puede editar ni
 // cancelar un pedido ya hecho desde acá.
 export function OrdersHistory() {
@@ -50,6 +58,7 @@ export function OrdersHistory() {
         <div className="appointments-list">
           {orders.map(order => {
             const status = STATUS_LABEL[order.status]
+            const paymentStatus = PAYMENT_STATUS_LABEL[order.paymentStatus]
             return (
               <div key={order.id} className="appointment-card">
                 <div className="appointment-card-top">
@@ -62,9 +71,16 @@ export function OrdersHistory() {
                       <span>{order.delivery.type === 'pickup' ? 'Retiro en el local' : (order.delivery.address ?? 'Envío a domicilio')}</span>
                     </div>
                   </div>
-                  <span className="appointment-status" style={{ backgroundColor: `${status.color}1a`, color: status.color }}>
-                    {status.label}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                    <span className="appointment-status" style={{ backgroundColor: `${status.color}1a`, color: status.color }}>
+                      {status.label}
+                    </span>
+                    {paymentStatus && (
+                      <span className="appointment-status" style={{ backgroundColor: `${paymentStatus.color}1a`, color: paymentStatus.color, fontSize: '12px' }}>
+                        {paymentStatus.label}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>

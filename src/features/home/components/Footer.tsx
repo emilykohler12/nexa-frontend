@@ -96,11 +96,20 @@ export function Footer({ onNavigate }: FooterProps) {
         <div className="footer-col">
           <h4 className="footer-col-title">Legal</h4>
           <ul className="footer-list footer-list--muted">
-            <li onClick={() => navigate(ROUTES.PRIVACY_POLICY)} style={{ cursor: 'pointer' }}>
+            <li onClick={() => navigate(ROUTES.TERMS_CONDITIONS)} style={{ cursor: 'pointer' }}>
               Términos y condiciones
             </li>
             <li onClick={() => navigate(ROUTES.PRIVACY_POLICY)} style={{ cursor: 'pointer' }}>
               Política de privacidad
+            </li>
+            <li onClick={() => navigate(ROUTES.COOKIES_POLICY)} style={{ cursor: 'pointer' }}>
+              Política de cookies
+            </li>
+            <li onClick={() => navigate(ROUTES.CANCELLATION_POLICY)} style={{ cursor: 'pointer' }}>
+              Política de cancelación
+            </li>
+            <li onClick={() => navigate(ROUTES.ARCO_RIGHTS)} style={{ cursor: 'pointer' }}>
+              Derechos ARCO
             </li>
           </ul>
         </div>

@@ -73,12 +73,19 @@ export function ConfirmationStep({ selection, onConfirm }: Props) {
       selection.promotionId
         ? api.get<{ promotions: Promotion[] }>('/api/promotions/public')
         : Promise.resolve({ data: { promotions: [] } }),
+      // Solo para mostrar un nombre real en vez de "cualquier profesional
+      // disponible" — la reserva sigue mandando el sentinel "any" al backend,
+      // que vuelve a resolver quién queda asignado en el momento de crear el
+      // turno (puede diferir de este preview si la carga cambió mientras tanto).
+      selection.professionalId === ANY_PROFESSIONAL_ID && selection.serviceId
+        ? api.get<{ professionalId: string; professionalName: string }>(`/api/services/${selection.serviceId}/preferred-professional`).catch(() => null)
+        : Promise.resolve(null),
     ])
-      .then(([servicesRes, professionalsRes, paymentsRes, promotionsRes]) => {
+      .then(([servicesRes, professionalsRes, paymentsRes, promotionsRes, preferredRes]) => {
         setService(servicesRes.data.services.find(s => s.id === selection.serviceId) ?? null)
         setProfessional(
           selection.professionalId === ANY_PROFESSIONAL_ID
-            ? { id: ANY_PROFESSIONAL_ID, name: 'Cualquier profesional disponible' }
+            ? { id: ANY_PROFESSIONAL_ID, name: preferredRes?.data.professionalName ?? 'Cualquier profesional disponible' }
             : professionalsRes.data.professionals.find(p => p.id === selection.professionalId) ?? null
         )
         setPaymentSettings(paymentsRes.data.settings)

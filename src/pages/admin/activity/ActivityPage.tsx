@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Check, X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { translateStatus } from '@/shared/utils/statusLabels'
 import { ACTIVITY_MODULE_LABEL, ACTIVITY_LEVEL_CONFIG, getActivityColor } from '@/app/data/admin/activity.data'
 import type { ActivityLog, ActivityModule, ActivityLevel } from '@/app/data/admin/activity.data'
 import './ActivityPage.css'
@@ -11,6 +12,27 @@ function formatTimestamp(iso: string) {
   const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// Traduce estados en el texto del detalle (ej: "pending" → "Pendiente" en "estado: pending → paid")
+function translateStatusInDetail(detail: string): string {
+  let result = detail
+  for (const [key, value] of Object.entries({
+    confirmed: 'Confirmado',
+    pending: 'Pendiente',
+    finished: 'Finalizado',
+    cancelled: 'Cancelado',
+    no_show: 'No asistió',
+    ready: 'Listo',
+    delivered: 'Entregado',
+    paid: 'Pagado',
+    approved: 'Aprobado',
+  })) {
+    result = result.replaceAll(`"${key}"`, `"${value}"`)
+    result = result.replaceAll(`: ${key} →`, `: ${value} →`)
+    result = result.replaceAll(`→ ${key}`, `→ ${value}`)
+  }
+  return result
 }
 
 export function ActivityPage() {
@@ -124,7 +146,7 @@ export function ActivityPage() {
                 </div>
                 {isOpen && (log.detail || log.reviewId) && (
                   <div className="activity-detail">
-                    {log.detail && <p><strong>Detalle:</strong> {log.detail}</p>}
+                    {log.detail && <p><strong>Detalle:</strong> {translateStatusInDetail(log.detail)}</p>}
                     {log.reviewId && (
                       log.reviewStatus === 'pending' ? (
                         <div style={{ display: 'flex', gap: '8px', marginTop: log.detail ? '10px' : 0 }}>
