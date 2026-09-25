@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Plus, Edit2, Trash2, AlertTriangle, Upload } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { uploadImage } from '@/shared/utils/uploadImage'
 import { STORE_CATEGORIES } from '@/app/data/admin/store/store.data'
 import type { StoreProduct, ProductStatus } from '@/app/data/admin/store/types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -191,16 +192,20 @@ export function ProductsTab({ products, onProductsChange }: Props) {
 }
 
 function ProductForm({ product, onSave, onCancel }: { product: StoreProduct; onSave: (p: StoreProduct) => void; onCancel: () => void }) {
+  const { showToast } = useToast()
   const [form, setForm] = useState(product)
   const fileRef = useRef<HTMLInputElement>(null)
   const set = (k: keyof StoreProduct, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => set('imageUrl', reader.result as string)
-    reader.readAsDataURL(file)
+    try {
+      const url = await uploadImage(file, 'products')
+      set('imageUrl', url)
+    } catch {
+      showToast('No se pudo subir la imagen', 'error')
+    }
     e.target.value = ''
   }
 

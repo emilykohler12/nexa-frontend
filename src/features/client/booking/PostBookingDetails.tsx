@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Upload, PenLine } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
+import { uploadImage } from '@/shared/utils/uploadImage'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 // Categorías de servicio donde tiene sentido preguntar por un diseño de referencia
@@ -78,12 +79,15 @@ export function PostBookingDetails({
   if (!business) return null
   const { primaryColor } = business
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setDesignImage(reader.result as string)
-    reader.readAsDataURL(file)
+    try {
+      const url = await uploadImage(file, 'designs')
+      setDesignImage(url)
+    } catch {
+      setError('No se pudo subir la imagen. Intentá de nuevo.')
+    }
   }
 
   const handleSubmit = async () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, Home, X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { uploadImage } from '@/shared/utils/uploadImage'
 import type { AdminClient } from '../types'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
@@ -34,15 +35,16 @@ export function GalleryTab({ client }: { client: AdminClient }) {
       .finally(() => setLoading(false))
   }, [client.id])
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setPending({ file: reader.result as string, category: 'before', showOnHome: false })
-    }
-    reader.readAsDataURL(file)
     e.target.value = ''
+    try {
+      const url = await uploadImage(file, 'gallery')
+      setPending({ file: url, category: 'before', showOnHome: false })
+    } catch {
+      showToast('No se pudo subir la foto', 'error')
+    }
   }
 
   const confirmUpload = async () => {

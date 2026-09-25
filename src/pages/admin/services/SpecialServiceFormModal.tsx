@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Upload, Plus, Trash2 } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { uploadImage } from '@/shared/utils/uploadImage'
 import type { AdminService, ServiceFormValues, ServiceStatus, SpecialSlot } from './types'
 
 interface CategoryOption { id: string; label: string }
@@ -30,6 +31,7 @@ export function SpecialServiceFormModal({ service, categories, error, onSave, on
   const [status, setStatus]           = useState<ServiceStatus>(service?.status ?? 'active')
   const [date, setDate]               = useState(service?.specialDate ?? '')
   const [slots, setSlots]             = useState<SpecialSlot[]>(service?.specialSlots ?? [])
+  const [imageError, setImageError]   = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ professionals: ProfessionalOption[] }>('/api/professional/public')
@@ -53,13 +55,17 @@ export function SpecialServiceFormModal({ service, categories, error, onSave, on
     setSlots(prev => prev.filter((_, i) => i !== idx))
   }
 
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setImage(reader.result as string)
-    reader.readAsDataURL(file)
     e.target.value = ''
+    setImageError(null)
+    try {
+      const url = await uploadImage(file, 'services')
+      setImage(url)
+    } catch {
+      setImageError('No se pudo subir la imagen. Intentá de nuevo.')
+    }
   }
 
   const validSlots = slots.filter(s => s.time && s.professionalId)
@@ -99,9 +105,9 @@ export function SpecialServiceFormModal({ service, categories, error, onSave, on
         </div>
 
         <div className="service-form">
-          {error && (
+          {(error || imageError) && (
             <p style={{ margin: 0, padding: '10px 14px', background: 'rgba(229,57,53,0.08)', border: '1px solid rgba(229,57,53,0.2)', borderRadius: '8px', color: '#e53935', fontSize: '14px', fontWeight: 600, fontFamily: "'Lato', sans-serif" }}>
-              {error}
+              {error || imageError}
             </p>
           )}
 

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { Camera } from 'lucide-react'
+import { Camera, Loader2 } from 'lucide-react'
+import { uploadImage } from '@/shared/utils/uploadImage'
 
 interface Props {
   value:    string | null
@@ -10,18 +11,27 @@ interface Props {
 
 export function PhotoUpload({ value, onChange, primary, size = 80 }: Props) {
   const [preview, setPreview] = useState<string | null>(value)
+  const [uploading, setUploading] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      setPreview(result)
-      onChange(result)
+    // Preview instantáneo con el archivo local mientras se sube de verdad —
+    // así no hay que esperar a la red para ver algo en pantalla.
+    const localPreview = URL.createObjectURL(file)
+    setPreview(localPreview)
+    setUploading(true)
+    try {
+      const url = await uploadImage(file, 'profiles')
+      onChange(url)
+      setPreview(url)
+    } catch {
+      setPreview(value)
+    } finally {
+      setUploading(false)
+      URL.revokeObjectURL(localPreview)
     }
-    reader.readAsDataURL(file)
   }
 
   const initial = preview
@@ -56,6 +66,11 @@ export function PhotoUpload({ value, onChange, primary, size = 80 }: Props) {
             >
               <Camera size={22} color="#fff" />
             </div>
+            {uploading && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Loader2 size={20} color="#fff" className="animate-spin" />
+              </div>
+            )}
           </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>

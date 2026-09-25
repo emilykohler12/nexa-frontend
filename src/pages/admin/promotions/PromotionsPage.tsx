@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Edit2, Trash2, Upload, Check } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { uploadImage } from '@/shared/utils/uploadImage'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { Promotion, PromotionType, PromotionStatus, PromotionKind, PromotionItem } from '@/app/data/admin/promotions/types'
 import { AutoPromotionsSection } from './AutoPromotionsSection'
@@ -221,6 +222,7 @@ const KIND_OPTIONS: { id: PromotionKind; label: string; hint: string }[] = [
 ]
 
 function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; onSave: (p: Promotion) => void; onCancel: () => void }) {
+  const { showToast } = useToast()
   const [form, setForm] = useState(promotion)
   const [options, setOptions] = useState<PromotionItem[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -276,13 +278,16 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
     setForm(f => ({ ...f, kind, items: nextItems, buyQty: kind === 'buy_x_pay_y' ? (f.buyQty ?? 2) : null, payQty: kind === 'buy_x_pay_y' ? (f.payQty ?? 1) : null }))
   }
 
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => set('image', reader.result as string)
-    reader.readAsDataURL(file)
     e.target.value = ''
+    try {
+      const url = await uploadImage(file, 'promotions')
+      set('image', url)
+    } catch {
+      showToast('No se pudo subir la imagen', 'error')
+    }
   }
 
   const itemsValid = form.items.length >= minItems && form.items.length <= maxItems

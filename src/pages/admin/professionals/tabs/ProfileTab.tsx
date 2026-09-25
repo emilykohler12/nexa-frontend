@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload } from 'lucide-react';
 import { ROUTES } from '@/app/config/routes.config';
 import { api } from '@/shared/utils/api';
+import { uploadImage } from '@/shared/utils/uploadImage';
 import { validateAllSocials } from '@/shared/utils/social';
 import { SERVICE_CATEGORIES } from '@/app/data/shared';
 import type { AdminProfessional } from '../types';
@@ -63,13 +64,16 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
     set('services', next);
   };
 
-  const handlePhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => set('photo', reader.result as string);
-    reader.readAsDataURL(file);
     e.target.value = '';
+    try {
+      const url = await uploadImage(file, 'profiles');
+      set('photo', url);
+    } catch {
+      setSaveError('No se pudo subir la foto. Intentá de nuevo.');
+    }
   };
 
   const toggleDay = (day: DayKey) => {

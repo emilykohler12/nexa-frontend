@@ -5,6 +5,7 @@ import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X, Upload } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { uploadImage } from '@/shared/utils/uploadImage'
 import { serviceFormSchema } from './schemas'
 import type { ServiceFormSchema } from './schemas'
 import type { AdminService, ServiceFormValues } from './types'
@@ -27,6 +28,7 @@ const DEFAULT_MODAL_SIZE = { width: 560, height: 640 }
 const MIN_MODAL_SIZE     = { width: 360, height: 320 }
 
 export function ServiceFormModal({ service, categories, allServices, error, onSave, onClose }: Props) {
+  const [imageError, setImageError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Resize a mano desde la esquina inferior derecha — el "resize: both" nativo
@@ -127,13 +129,16 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
     }
   }
 
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setValue('image', reader.result as string, { shouldDirty: true })
-    reader.readAsDataURL(file)
     e.target.value = ''
+    try {
+      const url = await uploadImage(file, 'services')
+      setValue('image', url, { shouldDirty: true })
+    } catch {
+      setImageError('No se pudo subir la imagen. Intentá de nuevo.')
+    }
   }
 
   return (
@@ -150,9 +155,9 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="service-form">
-          {error && (
+          {(error || imageError) && (
             <p style={{ margin: 0, padding: '10px 14px', background: 'rgba(229,57,53,0.08)', border: '1px solid rgba(229,57,53,0.2)', borderRadius: '8px', color: '#e53935', fontSize: '14px', fontWeight: 600, fontFamily: "'Lato', sans-serif" }}>
-              {error}
+              {error || imageError}
             </p>
           )}
 

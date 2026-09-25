@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { api } from '@/shared/utils/api';
+import { uploadImage } from '@/shared/utils/uploadImage';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { BusinessSettings } from '@/app/data/admin/settings/types';
 import { SectionCard, Field, SaveBar } from './SettingsShared';
@@ -55,13 +56,16 @@ export function GeneralSection() {
   const setSocial = (k: keyof BusinessSettings['socials'], v: string) =>
     setForm(f => ({ ...f, socials: { ...f.socials, [k]: v || null } }));
 
-  const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => set('logo', reader.result as string);
-    reader.readAsDataURL(file);
     e.target.value = '';
+    try {
+      const url = await uploadImage(file, 'business');
+      set('logo', url);
+    } catch {
+      setSaveError('No se pudo subir el logo. Intentá de nuevo.');
+    }
   };
 
   const handleSave = async () => {
