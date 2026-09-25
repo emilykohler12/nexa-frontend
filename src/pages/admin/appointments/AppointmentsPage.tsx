@@ -25,7 +25,7 @@ function getWeekStart(date: Date): Date {
   return d
 }
 
-interface ApiProfessional { id: string; name: string; status?: string }
+interface ApiProfessional { id: string; name: string; status?: string; role?: string }
 
 export function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -46,9 +46,11 @@ export function AppointmentsPage() {
     api.get<{ professionals: ApiProfessional[] }>('/api/professionals')
       .then(res => {
         // Los profesionales desactivados no toman turnos nuevos — no tiene sentido
-        // que aparezcan como opción en el calendario de Turnos.
+        // que aparezcan como opción en el calendario de Turnos. El admin tampoco
+        // debe poder agendarse turnos a sí mismo desde acá, aunque /api/professionals
+        // lo incluya (para que pueda gestionarse en la sección Profesionales).
         const list = (res.data.professionals ?? [])
-          .filter(p => !p.status || p.status === 'active')
+          .filter(p => (!p.status || p.status === 'active') && p.role !== 'admin')
           .map((p, i) => ({
             id: p.id, name: p.name, color: PROFESSIONAL_COLORS[i % PROFESSIONAL_COLORS.length],
           }))

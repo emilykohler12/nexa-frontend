@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { api } from '@/shared/utils/api';
+import { useAuth } from '@/features/auth/AuthContext';
 import type { BusinessSettings } from '@/app/data/admin/settings/types';
 import { SectionCard, Field, SaveBar } from './SettingsShared';
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -17,6 +18,7 @@ const EMPTY_SETTINGS: BusinessSettings = {
 };
 
 export function GeneralSection() {
+  const { user } = useAuth();
   const logoFileRef = useRef<HTMLInputElement>(null);
   const [form, setForm]         = useState<BusinessSettings>(EMPTY_SETTINGS);
   const [policiesText, setPoliciesText] = useState('');
@@ -30,14 +32,22 @@ export function GeneralSection() {
     setLoadError(null);
     api.get<{ settings: BusinessSettings }>('/api/settings/business')
       .then(res => {
-        setForm(res.data.settings);
-        setPoliciesText((res.data.settings.policies ?? []).join('\n'));
+        const settings = res.data.settings;
+        // Si todavía no se cargó nombre/correo del negocio, se autocompleta con
+        // los de la cuenta admin logueada — mejor punto de partida que en blanco,
+        // y el admin lo puede pisar antes de guardar si el negocio usa otro mail.
+        setForm({
+          ...settings,
+          name:  settings.name?.trim()  ? settings.name  : (user?.name  ?? ''),
+          email: settings.email?.trim() ? settings.email : (user?.email ?? ''),
+        });
+        setPoliciesText((settings.policies ?? []).join('\n'));
       })
       .catch((err: any) => {
         setLoadError(safeErrorMessage(err, 'No se pudo cargar la información del negocio'));
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   const set = (k: keyof BusinessSettings, v: unknown) =>
     setForm(f => ({ ...f, [k]: v }));
