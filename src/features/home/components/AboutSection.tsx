@@ -101,62 +101,70 @@ export function AboutSection() {
           </p>
         </div>
 
-        {/* Historia + Valores */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="bg-white rounded-2xl p-6 border" style={{ borderColor: '#e5e5e5' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Heart className="w-6 h-6" style={{ color: accentColor }} />
-              <h3 className="text-2xl" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-                Nuestra Historia
-              </h3>
-            </div>
-            <div className="space-y-4">
-              {aboutText.map((paragraph, idx) => (
-                <p key={idx} className="text-gray-500 leading-relaxed" style={{ fontFamily: 'var(--font-lato)' }}>
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </div>
+        {/* Historia + Valores — cada una se oculta si el admin todavía no cargó
+            nada (nunca se muestra contenido de muestra a las clientas) */}
+        {(aboutText.length > 0 || values.length > 0) && (
+          <div className={`grid grid-cols-1 ${aboutText.length > 0 && values.length > 0 ? 'lg:grid-cols-2' : ''} gap-8 mb-12`}>
+            {aboutText.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border" style={{ borderColor: '#e5e5e5' }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Heart className="w-6 h-6" style={{ color: accentColor }} />
+                  <h3 className="text-2xl" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+                    Nuestra Historia
+                  </h3>
+                </div>
+                <div className="space-y-4">
+                  {aboutText.map((paragraph, idx) => (
+                    <p key={idx} className="text-gray-500 leading-relaxed" style={{ fontFamily: 'var(--font-lato)' }}>
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          <div className="bg-white rounded-2xl p-6 border" style={{ borderColor: '#e5e5e5' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Award className="w-6 h-6" style={{ color: accentColor }} />
-              <h3 className="text-2xl" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-                Nuestros Valores
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {values.map((value, idx) => {
-                const Icon = valueIcons[value.icon]
-                return (
-                  <div key={idx} className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: `${primaryColor}08` }}>
-                    <Icon className="w-5 h-5 mt-0.5" style={{ color: primaryColor }} />
-                    <div>
-                      <h4 className="font-semibold text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#222' }}>
-                        {value.title}
-                      </h4>
-                      <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
-                        {value.desc}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            {values.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border" style={{ borderColor: '#e5e5e5' }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Award className="w-6 h-6" style={{ color: accentColor }} />
+                  <h3 className="text-2xl" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+                    Nuestros Valores
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {values.map((value, idx) => {
+                    const Icon = valueIcons[value.icon]
+                    return (
+                      <div key={idx} className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: `${primaryColor}08` }}>
+                        <Icon className="w-5 h-5 mt-0.5" style={{ color: primaryColor }} />
+                        <div>
+                          <h4 className="font-semibold text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#222' }}>
+                            {value.title}
+                          </h4>
+                          <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
+                            {value.desc}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* Datos de contacto */}
+        {/* Datos de contacto — Teléfono/Correo se ocultan si el admin no cargó
+            nada (nunca se le muestra a las clientas un contacto de mentira) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {[
             { Icon: Share2, title: 'Redes sociales', social: true },
-            { Icon: Phone, title: 'Teléfono', lines: [contactInfo.phone, 'WhatsApp disponible'] },
-            { Icon: Mail, title: 'Correo', lines: [contactInfo.email] },
+            ...(contactInfo.phone ? [{ Icon: Phone, title: 'Teléfono', lines: [contactInfo.phone, 'WhatsApp disponible'] }] : []),
+            ...(contactInfo.email ? [{ Icon: Mail, title: 'Correo', lines: [contactInfo.email] }] : []),
             {
               Icon: Clock,
               title: 'Horarios',
-              lines: scheduleDays.length > 0 ? formatSchedule(scheduleDays) : contactInfo.schedule.split(' | '),
+              lines: scheduleDays.length > 0 ? formatSchedule(scheduleDays) : (contactInfo.schedule ? contactInfo.schedule.split(' | ') : ['Consultanos por WhatsApp']),
             },
           ].map(({ Icon, title, lines, social }, idx) => (
             <div
@@ -209,22 +217,24 @@ export function AboutSection() {
           ))}
         </div>
 
-        {/* Políticas */}
-        <div className="bg-white rounded-2xl p-6 border mb-8" style={{ borderColor: '#e5e5e5' }}>
-          <h3 className="text-2xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-            Políticas
-          </h3>
-          <ul className="space-y-3">
-            {policies.map((policy, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <Shield className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
-                <span className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
-                  {policy}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Políticas — se oculta si el admin todavía no cargó ninguna */}
+        {policies.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 border mb-8" style={{ borderColor: '#e5e5e5' }}>
+            <h3 className="text-2xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+              Políticas
+            </h3>
+            <ul className="space-y-3">
+              {policies.map((policy, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <Shield className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
+                  <span className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-lato)' }}>
+                    {policy}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Mapa */}
         {mapsEmbedUrl && (

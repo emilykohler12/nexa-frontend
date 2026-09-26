@@ -10,12 +10,14 @@ export const tenant = {
   heroSubtitle2: "Donde cada detalle cuenta para realzar tu belleza natural",
   primaryColor: "#069494",
   accentColor: "#d4af37",
-  whatsapp: "5493765018665",
-  instagram: "https://www.instagram.com/loren_estudio",
+  // Sin datos de prueba acá — hasta que el admin cargue esto en Configuración,
+  // tiene que quedar vacío en vez de mostrar un número/cuenta que no existen.
+  whatsapp: "",
+  instagram: null as string | null,
   facebook: null as string | null,
   twitter: null as string | null,
   tiktok: null as string | null,
-  ubicacion: "https://maps.app.goo.gl/RzvEdSEFRLH88ayD8",
+  ubicacion: null as string | null,
   kologic: {
     logo: "/images/logoKologic.svg",
     email: "emilynoralikohler@gmail.com",

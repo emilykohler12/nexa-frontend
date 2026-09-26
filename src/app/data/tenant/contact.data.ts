@@ -1,6 +1,9 @@
+// Sin datos de prueba acá — hasta que el admin cargue esto en Configuración
+// (o el email, que se autocompleta con la cuenta admin), tiene que quedar
+// vacío en vez de mostrarle a las clientas un contacto que no es real.
 export const contact = {
-  address: "Posadas, Misiones, Argentina",
-  phone: "+54 376 400-0000",
-  email: "info@lorenestudio.com",
-  schedule: "Lun - Vie: 9:00 - 20:00 | Sáb: 9:00 - 18:00",
+  address: "",
+  phone: "",
+  email: "",
+  schedule: "",
 };

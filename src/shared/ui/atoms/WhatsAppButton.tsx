@@ -5,7 +5,7 @@ import { useTenant } from '@/features/tenant/TenantContext'
 export function WhatsAppButton() {
   const { business } = useTenant()
 
-  if (!business) return null
+  if (!business || !business.whatsapp) return null
 
   return (
     <motion.a
