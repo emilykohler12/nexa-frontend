@@ -102,15 +102,6 @@ export function Footer({ onNavigate }: FooterProps) {
             <li onClick={() => navigate(ROUTES.PRIVACY_POLICY)} style={{ cursor: 'pointer' }}>
               Política de privacidad
             </li>
-            <li onClick={() => navigate(ROUTES.COOKIES_POLICY)} style={{ cursor: 'pointer' }}>
-              Política de cookies
-            </li>
-            <li onClick={() => navigate(ROUTES.CANCELLATION_POLICY)} style={{ cursor: 'pointer' }}>
-              Política de cancelación
-            </li>
-            <li onClick={() => navigate(ROUTES.ARCO_RIGHTS)} style={{ cursor: 'pointer' }}>
-              Derechos ARCO
-            </li>
           </ul>
         </div>
       </div>

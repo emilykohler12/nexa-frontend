@@ -2,11 +2,11 @@
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  // Política de Cookies y Política de Cancelación son secciones DENTRO de
+  // Términos y Condiciones (no páginas propias); Derechos ARCO es una sección
+  // dentro de Política de Privacidad — ver PrivacyPolicyPage/TermsConditionsPage.
   PRIVACY_POLICY: '/politica-privacidad',
   TERMS_CONDITIONS: '/terminos-condiciones',
-  COOKIES_POLICY: '/politica-cookies',
-  CANCELLATION_POLICY: '/politica-cancelacion',
-  ARCO_RIGHTS: '/derechos-arco',
   PAYMENT_RESULT: '/pago/resultado',
 
   CLIENT:               '/client',

@@ -27,13 +27,46 @@ export function TermsConditionsPage() {
             <li>Proporcionar información correcta y completa al registrarse</li>
             <li>Mantener la confidencialidad de tu contraseña</li>
             <li>No utilizar la plataforma para actividades ilícitas o fraudulentas</li>
-            <li>Cumplir con los plazos de cancelación según la Política de Cancelación</li>
+            <li>Cumplir con los plazos de cancelación detallados en la sección 4</li>
           </ul>
         </section>
 
         <section>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>4. Política de Cancelación</h2>
-          <p>Las cancelaciones de turnos deben realizarse con <strong>12 horas de anticipación</strong>. Las cancelaciones tardías o no-shows pueden resultar en la pérdida de la seña. Consulta nuestra Política de Cancelación para más detalles.</p>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>4. Política de Cancelación y No-Show</h2>
+          <p>Las cancelaciones de turnos deben realizarse con <strong>12 horas de anticipación</strong>. Las cancelaciones tardías o no-shows pueden resultar en la pérdida de la seña.</p>
+        </section>
+
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.1 Cancelación dentro de Plazo</h2>
+          <p>Las cancelaciones realizadas <strong>con 12 horas o más de anticipación</strong> a la hora del turno serán <strong>100% reembolsables</strong>. Se devuelve el monto total incluyendo la seña (depósito).</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.2 Cancelación Fuera de Plazo</h2>
+          <p>Las cancelaciones realizadas <strong>menos de 12 horas antes</strong> del turno <strong>pierden la seña</strong> (depósito). El monto restante será reembolsado. Nota: Si cancelaste pero no pagaste, no hay reembolso.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.3 No-Show (No Asistencia)</h2>
+          <p>Si no asistes al turno programado y <strong>no lo cancelaste 12 horas antes</strong>, <strong>pierdes la seña</strong> (100% de lo pagado como depósito). El profesional no está obligado a devolver dinero en este caso.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.4 Cancelación Parcial (Combos)</h2>
+          <p>Si contrataste un combo (servicios simultáneos) y cancelas <strong>parcialmente</strong>, solo se anulan los servicios indicados. La seña se ajusta según los servicios remanentes.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.5 Depósitos (Seña)</h2>
+          <p>La seña es un <strong>depósito obligatorio</strong> para reservar tu turno. Sirve para asegurar tu compromiso. Si cancelas con plazo, recuperas la seña + el resto. Si no cumples, la pierdes.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.6 Reprogramación</h2>
+          <p>Puedes reprogramar tu turno a otra fecha/hora <strong>sin costo</strong> siempre que lo hagas <strong>con 12 horas de anticipación</strong>. Los cambios fuera de plazo pueden estar sujetos a disponibilidad.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.7 Cumplimiento Legal</h2>
+          <p>Esta política cumple con la Ley 24.240 (Defensa del Consumidor) y regulaciones sobre comercio electrónico en Argentina. Las sumas de dinero se especifican en moneda de curso legal.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>4.8 Excepciones</h2>
+          <p>El profesional puede aceptar excepciones (cancelación sin seña, reembolso tardío) por razones de fuerza mayor. Consulta a través de WhatsApp.</p>
         </section>
 
         <section>
@@ -43,7 +76,7 @@ export function TermsConditionsPage() {
             <li>Mercado Pago (transferencia bancaria, tarjeta de crédito)</li>
             <li>Coordinación directa por WhatsApp</li>
           </ul>
-          <p style={{ marginTop: '12px' }}>Al confirmar el pago, aceptas los términos de pago y la Política de Cancelación.</p>
+          <p style={{ marginTop: '12px' }}>Al confirmar el pago, aceptas los términos de pago y la Política de Cancelación de la sección 4.</p>
         </section>
 
         <section>
@@ -62,8 +95,27 @@ export function TermsConditionsPage() {
         </section>
 
         <section>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>8. Cookies</h2>
-          <p>Esta plataforma utiliza cookies de sesión para autenticación. Consulta nuestra Política de Cookies para más información.</p>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>8. Política de Cookies</h2>
+          <p>Esta plataforma utiliza cookies de sesión para autenticación.</p>
+        </section>
+
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>8.1 ¿Qué son las Cookies?</h2>
+          <p>Las cookies son pequeños archivos almacenados en tu dispositivo que permiten a la plataforma recordar información sobre ti entre visitas.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>8.2 Cookies que Usamos</h2>
+          <p><strong>Cookies de Sesión (Obligatorias):</strong></p>
+          <ul style={{ marginLeft: '20px' }}>
+            <li><code>access_token</code> (JWT): Token de autenticación, válido 15 minutos</li>
+            <li><code>refresh_token</code> (JWT): Token para renovar sesión, válido 7 días</li>
+          </ul>
+          <p style={{ marginTop: '16px' }}><strong>Cookies de SDKs Deshabilitados:</strong></p>
+          <p>Aunque los botones de login de Google y Facebook han sido deshabilitados, los SDKs pueden estar presentes en el código base y pueden setear cookies propias (Google Analytics, Meta Pixel) en navegadores que los cargan. Estamos trabajando en remover estos completamente.</p>
+        </section>
+        <section>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '8px' }}>8.3 Control de Cookies</h2>
+          <p>Puedes controlar y eliminar cookies desde tu navegador (Chrome, Firefox, Safari, etc.). Eliminar cookies te desconectará de la plataforma.</p>
         </section>
 
         <section>
