@@ -8,6 +8,7 @@ import { api } from '@/shared/utils/api';
 import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
 import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
+import { companionText } from '@/shared/utils/companion'
 
 interface Props {
   appointment: Appointment | null;
@@ -271,7 +272,7 @@ export function AppointmentModal({
           </Section>
 
           {appointment.details && (
-            appointment.details.allergies || appointment.details.accompanied || appointment.details.designPreference?.value ||
+            appointment.details.allergies || appointment.details.hasCompanion || appointment.details.designPreference?.value ||
             appointment.details.hasOtherSalonPolish || appointment.details.isNailReconstruction || appointment.details.hairLength ||
             appointment.details.wantsExtensions || appointment.details.skinType
           ) && (
@@ -284,9 +285,9 @@ export function AppointmentModal({
                     <span style={{ color: '#e53935' }}>{appointment.details.allergies}</span>
                   </InfoRow>
                 )}
-                {appointment.details.accompanied && (
+                {appointment.details.hasCompanion && (
                   <InfoRow icon={<Users size={14} />} label="Acompañante">
-                    {appointment.details.companionName || 'Viene acompañado/a'}
+                    {companionText(appointment.details)}
                   </InfoRow>
                 )}
                 {appointment.details.designPreference?.value && (

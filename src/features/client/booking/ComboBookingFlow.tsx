@@ -7,6 +7,7 @@ import type { Service } from './steps/ServiceStep'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { PostBookingDetails } from './PostBookingDetails'
+import type { CompanionRelation } from '@/shared/utils/companion'
 
 // Mismas categorías que en PostBookingDetails.tsx — ahí vive la lógica de
 // qué preguntas mostrar según la categoría del servicio.
@@ -47,7 +48,7 @@ type Phase = 'assign' | 'datetime' | 'confirm' | 'waitingPayment' | 'shared-deta
 const POLL_MS = 5000
 
 interface DetailsQueueItem { appointmentId: string; categoryId: string; serviceName: string }
-interface SharedDetails { allergies: string | null; accompanied: boolean; companionName: string | null }
+interface SharedDetails { allergies: string | null; hasCompanion: boolean; companionRelation: CompanionRelation | null }
 
 interface Props {
   combo: Service
@@ -617,7 +618,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         showCategoryFields={false}
         title="Antes de terminar..."
         onDone={value => {
-          setSharedDetails({ allergies: value.allergies, accompanied: value.accompanied, companionName: value.companionName })
+          setSharedDetails({ allergies: value.allergies, hasCompanion: value.hasCompanion, companionRelation: value.companionRelation })
           setPhase('details')
         }}
         onCancel={() => setPhase('success')}
@@ -639,7 +640,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         appointmentId={current.appointmentId}
         categoryId={current.categoryId}
         showSharedFields={false}
-        presetShared={sharedDetails ?? { allergies: null, accompanied: false, companionName: null }}
+        presetShared={sharedDetails ?? { allergies: null, hasCompanion: false, companionRelation: null }}
         title={`Sobre tu turno de ${current.serviceName}`}
         onDone={advance}
         onCancel={advance}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
 import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
+import { companionText } from '@/shared/utils/companion'
 
 interface Props {
   appointment:     Appointment
@@ -61,7 +62,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
 
           {/* Info cargada por el cliente al reservar */}
           {appointment.details && (
-            appointment.details.allergies || appointment.details.accompanied || appointment.details.designPreference?.value ||
+            appointment.details.allergies || appointment.details.hasCompanion || appointment.details.designPreference?.value ||
             appointment.details.hasOtherSalonPolish || appointment.details.isNailReconstruction || appointment.details.hairLength ||
             appointment.details.wantsExtensions || appointment.details.skinType
           ) && (
@@ -69,8 +70,8 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
               {appointment.details.allergies && (
                 <Row><AlertCircle size={14} color="#e53935" /><span style={{ color: '#e53935' }}>{appointment.details.allergies}</span></Row>
               )}
-              {appointment.details.accompanied && (
-                <Row><Users size={14} /><span>Viene acompañado/a{appointment.details.companionName ? ` de ${appointment.details.companionName}` : ''}</span></Row>
+              {appointment.details.hasCompanion && (
+                <Row><Users size={14} /><span>{companionText(appointment.details)}</span></Row>
               )}
               {appointment.details.designPreference?.value && (
                 appointment.details.designPreference.type === 'image' ? (

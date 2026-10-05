@@ -4,6 +4,7 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { uploadImage } from '@/shared/utils/uploadImage'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { COMPANION_RELATIONS, COMPANION_RELATION_LABELS, type CompanionRelation } from '@/shared/utils/companion'
 
 // Categorías de servicio donde tiene sentido preguntar por un diseño de referencia
 const DESIGN_CATEGORIES = ['unas', 'cabello', 'rostro']
@@ -15,8 +16,8 @@ type DesignMode = 'image' | 'text'
 
 export interface AppointmentDetailsValue {
   allergies:        string | null
-  accompanied:      boolean
-  companionName:    string | null
+  hasCompanion:      boolean
+  companionRelation: CompanionRelation | null
   designPreference: { type: DesignMode; value: string | null } | null
   // Uñas
   hasOtherSalonPolish:     boolean | null
@@ -42,7 +43,7 @@ interface Props {
   // (showSharedFields=false), que solo preguntan lo específico de esa categoría.
   showSharedFields?:   boolean
   showCategoryFields?: boolean
-  presetShared?: { allergies: string | null; accompanied: boolean; companionName: string | null }
+  presetShared?: { allergies: string | null; hasCompanion: boolean; companionRelation: CompanionRelation | null }
   title?: string
 }
 
@@ -57,8 +58,8 @@ export function PostBookingDetails({
   const isFace   = showCategoryFields && categoryId === 'rostro'
 
   const [allergies, setAllergies]         = useState(initial?.allergies ?? presetShared?.allergies ?? '')
-  const [accompanied, setAccompanied]     = useState<boolean | null>(initial?.accompanied ?? presetShared?.accompanied ?? null)
-  const [companionName, setCompanionName] = useState(initial?.companionName ?? presetShared?.companionName ?? '')
+  const [accompanied, setAccompanied]     = useState<boolean | null>(initial?.hasCompanion ?? presetShared?.hasCompanion ?? null)
+  const [companionRelation, setCompanionRelation] = useState<CompanionRelation | null>(initial?.companionRelation ?? presetShared?.companionRelation ?? null)
   const [designMode, setDesignMode]       = useState<DesignMode>(initial?.designPreference?.type ?? 'text')
   const [designText, setDesignText]       = useState(initial?.designPreference?.type === 'text' ? initial.designPreference.value ?? '' : '')
   const [designImage, setDesignImage]     = useState<string | null>(initial?.designPreference?.type === 'image' ? initial.designPreference.value : null)
@@ -102,8 +103,8 @@ export function PostBookingDetails({
     setError(null)
     const payload: AppointmentDetailsValue = {
       allergies:       allergies.trim() || null,
-      accompanied:     accompanied ?? false,
-      companionName:   accompanied ? (companionName.trim() || null) : null,
+      hasCompanion:      accompanied ?? false,
+      companionRelation: accompanied ? companionRelation : null,
       designPreference: showDesignQuestion
         ? { type: designMode, value: designMode === 'image' ? designImage : designText.trim() || null }
         : null,
@@ -196,15 +197,20 @@ export function PostBookingDetails({
                   </button>
                 ))}
               </div>
+              {/* RF-12 — solo el vínculo, de una lista cerrada; sin nombre del acompañante. */}
               {accompanied && (
-                <input
-                  type="text"
-                  value={companionName}
-                  onChange={e => setCompanionName(e.target.value)}
-                  placeholder="¿Por quién venís acompañado/a? (opcional)"
+                <select
+                  aria-label="Vínculo con quien te acompaña"
+                  value={companionRelation ?? ''}
+                  onChange={e => setCompanionRelation((e.target.value || null) as CompanionRelation | null)}
                   className="w-full px-4 py-3 rounded-xl border outline-none"
-                  style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)' }}
-                />
+                  style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)', background: 'white' }}
+                >
+                  <option value="">¿Quién te acompaña? (opcional)</option>
+                  {COMPANION_RELATIONS.map(r => (
+                    <option key={r} value={r}>{COMPANION_RELATION_LABELS[r]}</option>
+                  ))}
+                </select>
               )}
             </div>
           </>

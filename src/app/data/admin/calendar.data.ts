@@ -2,6 +2,8 @@
 // TIPOS — Calendario de turnos (admin)
 // ============================================================
 
+import type { CompanionRelation } from '@/shared/utils/companion';
+
 export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'no_show';
 export type BalancePaymentMethod = 'cash' | 'transfer' | 'card' | 'other';
 
@@ -28,8 +30,8 @@ export interface DesignPreference {
 // acompañado y el diseño que quiere hacerse (si aplica al servicio).
 export interface AppointmentDetails {
   allergies:        string | null;
-  accompanied:      boolean;
-  companionName:    string | null;
+  hasCompanion:      boolean;
+  companionRelation: CompanionRelation | null;
   designPreference: DesignPreference | null;
   hasOtherSalonPolish?:     boolean | null;
   isNailReconstruction?:    boolean | null;

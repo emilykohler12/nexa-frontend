@@ -5,6 +5,7 @@ import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
 import type { AppointmentStatus } from '@/features/client/types'
 import { PostBookingDetails, type AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
 import './AppointmentsPage.css'
+import { companionText } from '@/shared/utils/companion'
 
 interface Appointment {
   id:                string
@@ -211,7 +212,7 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
               </div>
 
               {details && (
-                details.allergies || details.accompanied || details.designPreference?.value ||
+                details.allergies || details.hasCompanion || details.designPreference?.value ||
                 details.hasOtherSalonPolish || details.isNailReconstruction || details.hairLength ||
                 details.wantsExtensions || details.skinType
               ) ? (
@@ -222,10 +223,10 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
                       <span>{details.allergies}</span>
                     </div>
                   )}
-                  {details.accompanied && (
+                  {details.hasCompanion && (
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                       <Users size={15} color={primaryColor} style={{ marginTop: '1px', flexShrink: 0 }} />
-                      <span>Viene acompañado/a{details.companionName ? ` de ${details.companionName}` : ''}</span>
+                      <span>{companionText(details)}</span>
                     </div>
                   )}
                   {details.designPreference?.value && (
