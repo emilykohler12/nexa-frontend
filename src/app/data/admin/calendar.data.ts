@@ -55,6 +55,7 @@ export interface CalendarAppointment {
   end: string;
   status: AppointmentStatus;
   cancelReason?: string | null;
+  displayStatus?: string;
   paymentStatus?: string;
   depositAmount?: number;
   depositMethod?: 'mercadopago' | 'whatsapp' | null;

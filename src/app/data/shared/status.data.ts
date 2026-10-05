@@ -11,9 +11,15 @@ export type AppointmentStatus = keyof typeof appointmentStatus;
 // Un turno "cancelado" por falta de pago nunca llegó a confirmarse de verdad —
 // mostrarlo como "Cancelado" a secas hace pensar que alguien lo canceló a
 // propósito. `cancelReason` viene del backend (releaseUnpaidAppointments.job.ts).
-export function getAppointmentStatusDisplay(status: AppointmentStatus, cancelReason?: string | null) {
+//
+// RF-02 — `displayStatus` también viene del backend: un turno confirmado cuya
+// seña todavía no se pagó llega como 'pending_deposit' ("Pendiente de seña").
+export function getAppointmentStatusDisplay(status: AppointmentStatus, cancelReason?: string | null, displayStatus?: string | null) {
   if (status === 'cancelled' && cancelReason === 'unpaid_expired') {
     return { label: 'No se pagó a tiempo', color: '#9e9e9e' };
+  }
+  if (displayStatus === 'pending_deposit') {
+    return { label: 'Pendiente de seña', color: '#d4af37' };
   }
   return appointmentStatus[status];
 }

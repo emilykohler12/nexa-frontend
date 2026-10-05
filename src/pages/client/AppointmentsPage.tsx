@@ -41,6 +41,7 @@ interface Appointment {
   depositAmount:     number
   status:            AppointmentStatus
   cancelReason?:     string | null
+  displayStatus?:    string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   // Cuándo registraste que llegaste al local. Si un turno confirmado queda sin
   // esto 20 minutos después de la hora pactada, se marca "No asistió" solo.
@@ -317,7 +318,7 @@ export function AppointmentsPage() {
               const activeLegs = legs.filter(l => l.status === 'confirmed' || l.status === 'pending')
               // Estado de la fila: si queda alguna pata activa, ese; si no, la primera.
               const rowAppt = activeLegs[0] ?? head
-              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason)
+              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus)
               const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
               const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
               const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
@@ -372,7 +373,7 @@ export function AppointmentsPage() {
             }
 
             const appt = row.appt
-            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason)
+            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason, appt.displayStatus)
             return (
               <div
                 key={appt.id}

@@ -44,12 +44,30 @@ export function RegisterForm() {
             className="field-input"
             type="text"
             placeholder="Nombre"
-            autoComplete="name"
+            autoComplete="given-name"
             disabled={registerUser.isPending}
             {...register('name')}
           />
         </div>
         {errors.name && <p style={{ color: '#c33', fontSize: 12, marginTop: -14, marginBottom: 10 }}>{errors.name.message}</p>}
+
+        {/* Apellido */}
+        <div className="field-group">
+          <span className="field-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+            </svg>
+          </span>
+          <input
+            className="field-input"
+            type="text"
+            placeholder="Apellido"
+            autoComplete="family-name"
+            disabled={registerUser.isPending}
+            {...register('lastName')}
+          />
+        </div>
+        {errors.lastName && <p style={{ color: '#c33', fontSize: 12, marginTop: -14, marginBottom: 10 }}>{errors.lastName.message}</p>}
 
         {/* Teléfono */}
         <div className="field-group">

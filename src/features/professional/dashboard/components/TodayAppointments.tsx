@@ -38,7 +38,7 @@ export function TodayAppointments({ appointments, primary, accent }: Props) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {today.map(apt => {
-            const cfg = getAppointmentStatusConfig(apt.status, apt.cancelReason)
+            const cfg = getAppointmentStatusConfig(apt.status, apt.cancelReason, apt.displayStatus)
             return (
               <div key={apt.id} style={{
                 display: 'flex', alignItems: 'center', gap: '14px',

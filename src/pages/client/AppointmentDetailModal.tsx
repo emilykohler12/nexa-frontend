@@ -18,6 +18,7 @@ interface Appointment {
   depositAmount:     number
   status:            AppointmentStatus
   cancelReason?:     string | null
+  displayStatus?:    string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   details?:          AppointmentDetailsValue | null
   selectedZones?:    { name: string; price: number; duration: number }[]
@@ -50,7 +51,7 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
   if (!business) return null
   const { primaryColor, accentColor, policies, contactInfo } = business
 
-  const status = getAppointmentStatusDisplay(appointment.status, appointment.cancelReason)
+  const status = getAppointmentStatusDisplay(appointment.status, appointment.cancelReason, appointment.displayStatus)
   const remaining = Math.max(0, appointment.price - appointment.depositAmount)
   const depositPaid = appointment.paymentStatus === 'paid' || appointment.paymentStatus === 'partial'
   const details = appointment.details

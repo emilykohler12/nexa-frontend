@@ -45,10 +45,12 @@ const STATUS_STYLES = {
 // de una cancelación real hecha por el cliente/staff.
 function statusLabelFor(appointment: Appointment): string {
   if (appointment.status === 'cancelled' && appointment.cancelReason === 'unpaid_expired') return 'No se pagó a tiempo';
+  if (appointment.displayStatus === 'pending_deposit') return 'Pendiente de seña';
   return STATUS_LABELS[appointment.status];
 }
 function statusStyleFor(appointment: Appointment) {
   if (appointment.status === 'cancelled' && appointment.cancelReason === 'unpaid_expired') return { bg: 'rgba(0,0,0,0.06)', color: '#777' };
+  if (appointment.displayStatus === 'pending_deposit') return STATUS_STYLES.pending;
   return STATUS_STYLES[appointment.status];
 }
 

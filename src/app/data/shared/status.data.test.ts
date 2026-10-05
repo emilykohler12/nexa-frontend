@@ -21,4 +21,10 @@ describe('getAppointmentStatusDisplay', () => {
     expect(getAppointmentStatusDisplay('cancelled').label).toBe('Cancelado')
     expect(getAppointmentStatusDisplay('cancelled', null).label).toBe('Cancelado')
   })
+
+  // RF-02 — confirmado con la seña sin pagar se muestra "Pendiente de seña".
+  it('con displayStatus pending_deposit muestra "Pendiente de seña"', () => {
+    expect(getAppointmentStatusDisplay('confirmed', null, 'pending_deposit').label).toBe('Pendiente de seña')
+    expect(getAppointmentStatusDisplay('confirmed', null, 'confirmed').label).toBe('Confirmado')
+  })
 })

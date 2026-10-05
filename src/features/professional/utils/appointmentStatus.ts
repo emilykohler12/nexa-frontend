@@ -12,9 +12,13 @@ export const appointmentStatusConfig: Record<AppointmentStatus, { label: string;
 
 // Un turno "cancelado" por falta de pago nunca llegó a confirmarse — mostrarlo
 // como "Cancelado" a secas hace pensar que el cliente/staff lo canceló a propósito.
-export function getAppointmentStatusConfig(status: AppointmentStatus, cancelReason?: string | null) {
+// RF-02 — 'pending_deposit' (displayStatus del backend) = confirmado con la seña sin pagar.
+export function getAppointmentStatusConfig(status: AppointmentStatus, cancelReason?: string | null, displayStatus?: string | null) {
   if (status === 'cancelled' && cancelReason === 'unpaid_expired') {
     return { label: 'No se pagó a tiempo', bg: '#f3f4f6', color: '#6b7280' }
+  }
+  if (displayStatus === 'pending_deposit') {
+    return { label: 'Pendiente de seña', bg: '#fef9c3', color: '#ca8a04' }
   }
   return appointmentStatusConfig[status]
 }

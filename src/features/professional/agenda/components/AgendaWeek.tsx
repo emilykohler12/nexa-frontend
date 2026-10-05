@@ -79,7 +79,7 @@ export function AgendaWeek({ appointments, weekStart, primary, onEventClick, get
                           <div style={{ fontSize: '9px', fontWeight: 700, color: '#8a6800', padding: '0 2px 1px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Simultáneo</div>
                         )}
                         {group.items.map(a => {
-                          const cfg = getAppointmentStatusConfig(a.status, a.cancelReason)
+                          const cfg = getAppointmentStatusConfig(a.status, a.cancelReason, a.displayStatus)
                           return (
                             <button
                               key={a.id}

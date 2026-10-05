@@ -41,6 +41,7 @@ export interface Appointment {
   time:           string
   status:         AppointmentStatus
   cancelReason?:  string | null
+  displayStatus?: string
   paymentStatus:  PaymentStatus
   // Cuándo se registró que la clienta llegó al local — la propia clienta desde su
   // app, o la profesional por ella. En null hasta 20 min después de la hora
