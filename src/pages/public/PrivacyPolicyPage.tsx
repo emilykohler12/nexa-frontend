@@ -1,9 +1,12 @@
 import { LegalDocumentPage } from './LegalDocumentPage'
+import { PRIVACY_POLICY_VERSION } from '@/app/config/legal'
 
 export function PrivacyPolicyPage() {
   return (
     <LegalDocumentPage title="Política de Privacidad">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* RF-08 — la versión que se graba al aceptar (users.terms_version) */}
+        <p style={{ margin: 0, fontSize: '13px', color: '#777' }}>Versión {PRIVACY_POLICY_VERSION}</p>
         <section>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>1. Datos que Recopilamos</h2>
           <p><strong>Registro:</strong> Nombre, email, teléfono, género (opcional), contraseña hasheada. <strong>Turnos:</strong> Servicio, profesional, fecha/hora, alergias, estado. <strong>Compras:</strong> Productos, direcciones, historial. <strong>Técnicos:</strong> IP, navegador, cookies de sesión.</p>
