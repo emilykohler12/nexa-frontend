@@ -66,7 +66,7 @@ export function PoliciesStep({ data, onChange }: Props) {
       </Field>
       <Field label="Política de cancelación">
         <Textarea value={data.cancellationPolicy} onChange={v => onChange({ cancellationPolicy: v })}
-          placeholder="Ej: Cancelaciones con al menos 24hs de anticipación..." primary={primary} />
+          placeholder="Ej: Cancelaciones con al menos 12hs de anticipación..." primary={primary} />
       </Field>
       <Field label="Política de reprogramación">
         <Textarea value={data.reschedulePolicy} onChange={v => onChange({ reschedulePolicy: v })}

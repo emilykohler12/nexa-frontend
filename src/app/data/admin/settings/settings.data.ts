@@ -8,6 +8,6 @@ import type { PaymentSettings } from './types';
 export const mockPaymentSettings: PaymentSettings = {
   depositAmount:      2000,
   depositPercent:     false,
-  cancellationHours:  24,
+  cancellationHours:  12,
   refundPolicy:       'full',
 };

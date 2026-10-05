@@ -201,7 +201,7 @@ export function GeneralSection() {
             value={policiesText}
             onChange={e => setPoliciesText(e.target.value)}
             rows={4}
-            placeholder={'Ej: Los turnos deben cancelarse con 24hs de anticipación'}
+            placeholder={'Ej: Los turnos deben cancelarse con 12hs de anticipación'}
             style={{ ...input, resize: 'vertical' }}
           />
           <span style={hint}>Cada línea aparece como un punto en la sección "Nosotros" de la página principal</span>
