@@ -77,8 +77,9 @@ export function ConfirmationStep({ selection, onConfirm }: Props) {
       // disponible" — la reserva sigue mandando el sentinel "any" al backend,
       // que vuelve a resolver quién queda asignado en el momento de crear el
       // turno (puede diferir de este preview si la carga cambió mientras tanto).
-      selection.professionalId === ANY_PROFESSIONAL_ID && selection.serviceId
-        ? api.get<{ professionalId: string; professionalName: string }>(`/api/services/${selection.serviceId}/preferred-professional`).catch(() => null)
+      // R-04: el criterio depende del día y la hora (disponibilidad y carga semanal).
+      selection.professionalId === ANY_PROFESSIONAL_ID && selection.serviceId && selection.date && selection.time
+        ? api.get<{ professionalId: string; professionalName: string }>(`/api/services/${selection.serviceId}/preferred-professional`, { params: { date: selection.date, time: selection.time } }).catch(() => null)
         : Promise.resolve(null),
     ])
       .then(([servicesRes, professionalsRes, paymentsRes, promotionsRes, preferredRes]) => {
