@@ -20,6 +20,6 @@ export const tenant = {
   ubicacion: null as string | null,
   kologic: {
     logo: "/images/logoKologic.svg",
-    email: "emilynoralikohler@gmail.com",
+    email: "kologic6@gmail.com",
   },
 };
