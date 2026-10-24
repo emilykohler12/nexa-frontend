@@ -19,6 +19,6 @@ export const authApi = {
   forgotPassword: (email: string) =>
     api.post('/api/auth/forgot-password', { email }).then(r => r.data),
 
-  resetPassword: (token: string, password: string) =>
-    api.post('/api/auth/reset-password', { token, password }).then(r => r.data),
+  resetPassword: (email: string, token: string, password: string) =>
+    api.post('/api/auth/reset-password', { email, token, password }).then(r => r.data),
 }
