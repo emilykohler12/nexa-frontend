@@ -5,7 +5,7 @@ import { SectionCard, Field } from './SettingsShared';
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 export function SecuritySection() {
-  const [passwords, setPasswords] = useState({ newPass: '', confirm: '' });
+  const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
   const [show, setShow]           = useState(false);
   const [saving, setSaving]       = useState(false);
   const [savedPw, setSavedPw]     = useState(false);
@@ -17,6 +17,10 @@ export function SecuritySection() {
   const handleChangePw = async () => {
     setError(null);
     if (!passwords.newPass) return;
+    if (!passwords.current) {
+      setError('Ingresá tu contraseña actual');
+      return;
+    }
     if (passwords.newPass.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres');
       return;
@@ -27,9 +31,9 @@ export function SecuritySection() {
     }
     setSaving(true);
     try {
-      await api.post('/api/auth/change-password', { password: passwords.newPass });
+      await api.post('/api/auth/change-password', { currentPassword: passwords.current, password: passwords.newPass });
       setSavedPw(true);
-      setPasswords({ newPass: '', confirm: '' });
+      setPasswords({ current: '', newPass: '', confirm: '' });
       setTimeout(() => setSavedPw(false), 2000);
     } catch (err: any) {
       setError(safeErrorMessage(err, 'Error al cambiar la contraseña'));
@@ -44,13 +48,14 @@ export function SecuritySection() {
       {/* Cambio de contraseña */}
       <SectionCard title="Cambiar contraseña">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '360px' }}>
-          {(['newPass', 'confirm'] as const).map(k => (
-            <Field key={k} label={k === 'newPass' ? 'Nueva contraseña' : 'Confirmar nueva contraseña'}>
+          {(['current', 'newPass', 'confirm'] as const).map(k => (
+            <Field key={k} label={{ current: 'Contraseña actual', newPass: 'Nueva contraseña', confirm: 'Confirmar nueva contraseña' }[k]}>
               <div style={{ position: 'relative' }}>
                 <input
                   type={show ? 'text' : 'password'}
                   value={passwords[k]}
                   onChange={e => setP(k, e.target.value)}
+                  autoComplete={k === 'current' ? 'current-password' : 'new-password'}
                   style={{ ...inp, paddingRight: '36px' }}
                 />
                 <button
