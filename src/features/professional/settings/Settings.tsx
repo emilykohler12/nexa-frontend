@@ -65,8 +65,10 @@ export function Settings() {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // Contraseña
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword]         = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrent, setShowCurrent]         = useState(false)
   const [showNew, setShowNew]                 = useState(false)
   const [showConfirm, setShowConfirm]         = useState(false)
   const [pwError, setPwError]                 = useState<string | null>(null)
@@ -135,6 +137,10 @@ export function Settings() {
 
     const trimmed = newPassword.trim()
 
+    if (!currentPassword) {
+      setPwError('Ingresá tu contraseña actual')
+      return
+    }
     if (!trimmed) {
       setPwError('Ingresá la nueva contraseña')
       return
@@ -150,8 +156,9 @@ export function Settings() {
 
     setPwSaving(true)
     try {
-      await api.post('/api/auth/change-password', { password: trimmed })
+      await api.post('/api/auth/change-password', { currentPassword, password: trimmed })
       setPwSaved(true)
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setTimeout(() => setPwSaved(false), 3000)
@@ -473,6 +480,30 @@ export function Settings() {
           <div className="settings-section-title">Cambiar contraseña</div>
 
           <div className="settings-grid settings-grid--single">
+            <Field label="Contraseña actual">
+              <div className="settings-password-wrap">
+                <input
+                  className="settings-input"
+                  type={showCurrent ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={e => {
+                    setCurrentPassword(e.target.value)
+                    if (pwError) setPwError(null)
+                  }}
+                  placeholder="Tu contraseña de ahora"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="settings-eye-btn"
+                  onClick={() => setShowCurrent(s => !s)}
+                  aria-label={showCurrent ? 'Ocultar' : 'Mostrar'}
+                >
+                  {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </Field>
+
             <Field label="Nueva contraseña">
               <div className="settings-password-wrap">
                 <input
@@ -537,7 +568,7 @@ export function Settings() {
             <button
               className="settings-save-btn"
               onClick={handlePasswordChange}
-              disabled={pwSaving || newPassword.length < 8}
+              disabled={pwSaving || !currentPassword || newPassword.length < 8}
             >
               {pwSaving ? 'Cambiando...' : 'Cambiar contraseña'}
             </button>
