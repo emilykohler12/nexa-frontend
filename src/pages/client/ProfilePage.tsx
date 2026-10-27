@@ -29,7 +29,7 @@ export function ProfilePage() {
       login(res.data.user)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'Error al guardar. Intentá de nuevo.'))
     }
   }

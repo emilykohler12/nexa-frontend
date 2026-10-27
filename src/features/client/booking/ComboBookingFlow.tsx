@@ -5,7 +5,7 @@ import { api } from '@/shared/utils/api'
 import { generateSlots } from '@/features/professional/onboarding/types'
 import type { Service } from './steps/ServiceStep'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 import { PostBookingDetails } from './PostBookingDetails'
 import type { CompanionRelation } from '@/shared/utils/companion'
 
@@ -346,17 +346,17 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/combo/${newGroupId}/payment`)
       window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
       setPhase('waitingPayment')
-    } catch (err: any) {
-      const code = err?.response?.data?.code
-      if (err?.response?.status === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
+    } catch (err: unknown) {
+      const code = apiErrorCode(err)
+      if (apiErrorStatus(err) === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
         setError('No hay ningún profesional disponible para uno de los servicios de "cualquiera" en el horario elegido. Probá con otro horario o elegí un profesional específico.')
-      } else if (err?.response?.status === 400 && code === 'PROFESSIONAL_NOT_ALLOWED') {
+      } else if (apiErrorStatus(err) === 400 && code === 'PROFESSIONAL_NOT_ALLOWED') {
         setError('Esa profesional ya no está habilitada para ese servicio. Elegí otra.')
         setPhase('assign')
-      } else if (err?.response?.status === 409 && code === 'SAME_PROFESSIONAL_SIMULTANEOUS') {
+      } else if (apiErrorStatus(err) === 409 && code === 'SAME_PROFESSIONAL_SIMULTANEOUS') {
         setError('No se puede hacer dos servicios en simultáneo con la misma profesional. Elegí una profesional distinta para cada uno.')
         setPhase('assign')
-      } else if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+      } else if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
         setError('Uno de los horarios elegidos ya se ocupó. Elegí otro horario e intentá de nuevo.')
         setPhase('datetime')
         setSharedTime(null)

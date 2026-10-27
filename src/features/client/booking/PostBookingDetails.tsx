@@ -126,7 +126,7 @@ export function PostBookingDetails({
     try {
       await api.patch(`/api/client/appointments/${appointmentId}/details`, { ...payload, consentAlertas: true })
       onDone(payload)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, (editMode ? 'No se pudo guardar la información.' : 'No se pudo guardar la información. Podés continuar igual.')))
       if (!editMode) onDone(payload)
     } finally {

@@ -48,7 +48,7 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
         password:  form.password || undefined,
       })
       onCreated(res.data.client)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo crear el cliente. Intentá de nuevo.'))
     } finally {
       setSaving(false)

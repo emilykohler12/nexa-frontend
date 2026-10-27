@@ -117,7 +117,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
       onSave(res.data.professional);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSaveError(safeErrorMessage(err, 'No se pudo guardar el perfil. Intentá de nuevo.'));
     } finally {
       setSaving(false);
@@ -194,7 +194,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
             <label key={key} className="prof-field">
               <span style={{ textTransform: 'capitalize' }}>{key === 'twitter' ? 'Twitter / X' : key}</span>
               <input
-                value={(form.socials as any)[key] ?? ''}
+                value={(form.socials as Record<string, string | null>)[key] ?? ''}
                 onChange={(e) => setSocial(key, e.target.value)}
                 placeholder={placeholder}
                 className={socialErrors[key] ? 'error' : ''}

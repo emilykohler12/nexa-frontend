@@ -80,7 +80,7 @@ export function Settings() {
 
   useEffect(() => {
     setLoadError(null)
-    api.get<{ profile: any }>('/api/professional/profile')
+    api.get<{ profile: Partial<Record<keyof ProfileForm, unknown>> & Partial<ProfileForm> }>('/api/professional/profile')
       .then(res => {
         const p = res.data.profile
         setForm({
@@ -106,7 +106,7 @@ export function Settings() {
           paymentMethods:       p.paymentMethods        ?? ['cash', 'transfer'],
         })
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         const msg = safeErrorMessage(err, 'No se pudo cargar el perfil')
         setLoadError(msg)
         console.error('[Settings] Error cargando perfil:', err)
@@ -123,7 +123,7 @@ export function Settings() {
       if (user) login({ ...user, name: form.name, photo: form.photo })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg = safeErrorMessage(err, 'Error al guardar los cambios')
       setSaveError(msg)
     } finally {
@@ -162,7 +162,7 @@ export function Settings() {
       setNewPassword('')
       setConfirmPassword('')
       setTimeout(() => setPwSaved(false), 3000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg = safeErrorMessage(err, 'Error al cambiar la contraseña')
       setPwError(msg)
       console.error('[Settings] Error cambiando contraseña:', err)

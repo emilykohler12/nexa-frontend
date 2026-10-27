@@ -17,7 +17,7 @@ export function PaymentsSection() {
     setLoadError(null);
     api.get<{ settings: PaymentSettings }>('/api/settings/payments')
       .then(res => setForm(res.data.settings))
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         setLoadError(safeErrorMessage(err, 'No se pudo cargar la configuración de pagos'));
       })
       .finally(() => setLoading(false));
@@ -35,7 +35,7 @@ export function PaymentsSection() {
       setForm(res.data.settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSaveError(safeErrorMessage(err, 'Error al guardar los cambios'));
     } finally {
       setSaving(false);

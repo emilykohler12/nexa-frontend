@@ -32,7 +32,7 @@ export function InfoTab({ client, onSave }: Props) {
       await onSave(form)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo guardar. Intentá de nuevo.'))
     } finally {
       setSaving(false)

@@ -63,7 +63,7 @@ export function SpecialEventsSection() {
         setItems(prev => [res.data.specialEvent, ...prev])
       }
       setEditing(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(safeErrorMessage(err, 'No se pudo guardar el evento especial'), 'error')
     }
   }

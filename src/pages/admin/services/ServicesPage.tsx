@@ -54,7 +54,7 @@ export function ServicesPage() {
         setServices(prev => [res.data.service, ...prev])
       }
       setFormKind(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFormError(safeErrorMessage(err, 'Error al guardar el servicio'))
     }
   }
@@ -66,7 +66,7 @@ export function ServicesPage() {
       const res = await api.put<{ service: AdminService }>(`/api/services/${zonesService.id}`, { ...zonesService, zones, packages })
       setServices(prev => prev.map(s => s.id === zonesService.id ? res.data.service : s))
       setZonesService(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setZonesError(safeErrorMessage(err, 'No se pudieron guardar las zonas y paquetes'))
     }
   }

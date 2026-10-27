@@ -44,7 +44,7 @@ export function PolishRemovalRulesModal({ onClose }: Props) {
     try {
       await api.patch('/api/settings/polish-removal-rules', { rules: cleaned })
       onClose()
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudieron guardar las reglas.'))
     } finally {
       setSaving(false)

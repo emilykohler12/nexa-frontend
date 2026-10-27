@@ -6,19 +6,20 @@ import { ServiceStep } from './steps/ServiceStep'
 import { ProviderStep } from './steps/ProviderStep'
 import { DateTimeStep } from './steps/DateTimeStep'
 import '@/pages/client/AppointmentsPage.css'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 
-interface Props {
+interface Props<T extends { id: string }> {
   appointmentId: string
   initialServiceId: string
   initialProfessionalId: string
   initialDate: string
   initialTime: string
   onClose: () => void
-  onSuccess: (updated: any) => void
+  // El turno actualizado que devuelve el backend, con la forma que use quien abre el modal.
+  onSuccess: (updated: T) => void
 }
 
-export function RescheduleModal({
+export function RescheduleModal<T extends { id: string }>({
   appointmentId,
   initialServiceId,
   initialProfessionalId,
@@ -26,7 +27,7 @@ export function RescheduleModal({
   initialTime,
   onClose,
   onSuccess,
-}: Props) {
+}: Props<T>) {
   const { business } = useTenant()
   const [serviceId, setServiceId]           = useState(initialServiceId)
   const [professionalId, setProfessionalId] = useState(initialProfessionalId)
@@ -58,13 +59,13 @@ export function RescheduleModal({
     setSaving(true)
     setError(null)
     try {
-      const res = await api.patch(`/api/client/appointments/${appointmentId}/reschedule`, {
+      const res = await api.patch<{ appointment: T }>(`/api/client/appointments/${appointmentId}/reschedule`, {
         serviceId, professionalId, date, time,
       })
       onSuccess(res.data.appointment)
-    } catch (err: any) {
-      const code = err?.response?.data?.code
-      if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+    } catch (err: unknown) {
+      const code = apiErrorCode(err)
+      if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
         setError('Ese horario ya se ocupó. Elegí otro horario disponible.')
         setTime(null)
         setRefreshSignal(s => s + 1)

@@ -4,6 +4,9 @@ import { api } from '@/shared/utils/api'
 import { ScheduleStep } from '@/features/professional/onboarding/steps/ScheduleStep'
 import { EMPTY_AVAILABILITY } from '@/features/professional/onboarding/types'
 import type { WeeklyAvailability } from '@/features/professional/onboarding/types'
+
+// Una franja horaria tal como la devuelve el backend (dayOfWeek: 0 = lunes ... 6 = domingo).
+interface AvailabilityRow { dayOfWeek: number; startTime: string; endTime: string }
 import './Schedule.css'
 
 export function Schedule() {
@@ -13,14 +16,14 @@ export function Schedule() {
   const [saved, setSaved]               = useState(false)
 
   useEffect(() => {
-    api.get<{ profile: any }>('/api/professional/profile')
+    api.get<{ profile: { availability?: AvailabilityRow[] } }>('/api/professional/profile')
       .then(res => {
         const avail = res.data.profile?.availability ?? []
         const DAY_KEYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
         // Un mismo día puede traer varias filas (varios rangos con un hueco
         // entre medio, ej: 08–12 y 14–20) — las agrupamos, no las pisamos.
         const parsed: WeeklyAvailability = { monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [] }
-        avail.forEach((a: any) => {
+        avail.forEach(a => {
           const key = DAY_KEYS[a.dayOfWeek] as keyof WeeklyAvailability
           if (key) parsed[key] = [...parsed[key], { start: a.startTime, end: a.endTime }]
         })

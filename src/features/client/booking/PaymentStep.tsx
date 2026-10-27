@@ -12,7 +12,7 @@ import { api } from '@/shared/utils/api'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
 import { PostBookingDetails } from './PostBookingDetails'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 import { ROUTES } from '@/app/config/routes.config'
 
 const HOLD_MINUTES = 15
@@ -149,9 +149,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/${newAppointmentId}/payment`)
         window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
         setPhase('waitingPayment')
-      } catch (err: any) {
-        const code = err?.response?.data?.code
-        if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+      } catch (err: unknown) {
+        const code = apiErrorCode(err)
+        if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
         } else {
           setPayError(safeErrorMessage(err, 'No pudimos iniciar el pago. Intentá de nuevo.'))
@@ -198,9 +198,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         }
 
         setPhase(newAppointmentId ? 'details' : 'success')
-      } catch (err: any) {
-        const code = err?.response?.data?.code
-        if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+      } catch (err: unknown) {
+        const code = apiErrorCode(err)
+        if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
         } else {
           setPayError(safeErrorMessage(err, 'No pudimos reservar el turno. Intentá de nuevo.'))

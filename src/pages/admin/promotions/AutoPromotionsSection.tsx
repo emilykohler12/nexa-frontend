@@ -78,7 +78,7 @@ export function AutoPromotionsSection() {
         setItems(prev => [res.data.autoPromotion, ...prev])
       }
       setEditing(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(safeErrorMessage(err, 'No se pudo guardar la campaña'), 'error')
     }
   }

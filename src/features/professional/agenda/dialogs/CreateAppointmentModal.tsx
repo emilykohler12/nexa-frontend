@@ -71,7 +71,7 @@ export function CreateAppointmentModal({ primary, onClose, onCreated }: Props) {
         time,
       });
       onCreated(res.data.appointment);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo crear el turno.'));
     } finally {
       setSaving(false);

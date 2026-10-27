@@ -169,7 +169,7 @@ export function AppointmentsPage() {
           : 'Servicio cancelado. Los demás servicios del combo siguen en pie.',
       })
       if (res.data.partialCombo === false && res.data.refunded) setShowRefundNotice(true)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el servicio.') })
     } finally {
       setCancellingId(null)
@@ -222,7 +222,7 @@ export function AppointmentsPage() {
         })
         if (res.data.refunded) setShowRefundNotice(true)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el turno.') })
     } finally {
       setCancellingId(null)
@@ -256,7 +256,7 @@ export function AppointmentsPage() {
       const res = await api.patch<{ appointment: Appointment }>(`/api/client/appointments/${appt.id}/arrival`)
       setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
       setToast({ type: 'success', text: '¡Listo! Avisamos que llegaste.' })
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo registrar tu llegada.') })
     } finally {
       setArrivingId(null)
@@ -469,7 +469,7 @@ export function AppointmentsPage() {
       )}
 
       {reschedulingAppt && (
-        <RescheduleModal
+        <RescheduleModal<Appointment>
           appointmentId={reschedulingAppt.id}
           initialServiceId={reschedulingAppt.serviceId}
           initialProfessionalId={reschedulingAppt.professionalId}

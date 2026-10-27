@@ -67,7 +67,7 @@ export function CartDrawer() {
       const pref = await api.post<{ checkoutUrl: string }>(`/api/client/orders/${newOrderId}/payment`)
       window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
       setPhase('waitingPayment')
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo confirmar el pedido. Intentá de nuevo.'))
     } finally {
       setSubmitting(false)
@@ -99,7 +99,7 @@ export function CartDrawer() {
       }
       clear()
       setPhase('success')
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo confirmar el pedido. Intentá de nuevo.'))
     } finally {
       setSubmitting(false)

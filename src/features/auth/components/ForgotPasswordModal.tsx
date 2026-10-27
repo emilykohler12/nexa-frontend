@@ -55,7 +55,7 @@ export function ForgotPasswordModal({ onClose, defaultEmail }: Props) {
       // otra persona podría servir).
       await api.post('/api/auth/reset-password', { email: email.trim(), token: cleanCode, password })
       setStep('done')
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'Código inválido o expirado. Solicitá uno nuevo.'))
     } finally {
       setLoading(false)

@@ -31,7 +31,7 @@ export function JoinUsSection() {
       })
       setSent(true)
       setName(''); setEmail(''); setPhone(''); setMessage('')
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo enviar tu mensaje. Intentá de nuevo.'))
     } finally {
       setSending(false)

@@ -32,7 +32,7 @@ export function ReviewPromptModal({ appointmentId, serviceName, primaryColor, ac
     try {
       await api.post('/api/client/reviews', { appointmentId, rating, message: message.trim() || null })
       onDone()
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'No se pudo enviar la reseña. Intentá de nuevo.'))
     } finally {
       setSubmitting(false)
