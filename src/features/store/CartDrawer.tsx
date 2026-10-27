@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useEffectEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Minus, Plus, Trash2, Store, Truck, Check, ExternalLink, RefreshCw, Clock, LogIn, ShoppingBag, ArrowRight, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
@@ -124,9 +124,12 @@ export function CartDrawer() {
     }
   }
 
+  // El intervalo siempre llama a la versión más reciente de checkPaymentStatus sin reiniciarse.
+  const pollPaymentStatus = useEffectEvent(() => { void checkPaymentStatus() })
+
   useEffect(() => {
     if (phase !== 'waitingPayment') return
-    const interval = setInterval(checkPaymentStatus, POLL_MS)
+    const interval = setInterval(pollPaymentStatus, POLL_MS)
     return () => clearInterval(interval)
   }, [phase, orderId])
 

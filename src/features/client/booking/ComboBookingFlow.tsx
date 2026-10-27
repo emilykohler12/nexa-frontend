@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useEffectEvent } from 'react'
 import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
@@ -122,7 +122,8 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     cancellationPolicy: string | null; reschedulePolicy: string | null; depositPolicy: string | null
   }>>({})
 
-  useEffect(() => {
+  // Carga los servicios del combo y la configuración de pagos. Se dispara solo al cambiar de combo (combo.id).
+  const loadCombo = useEffectEvent(() => {
     api.get<{ services: Service[] }>('/api/services')
       .then(res => {
         const all = res.data.services
@@ -153,6 +154,10 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     api.get<{ settings: PaymentSettings }>('/api/business/payments/public')
       .then(res => setPaymentSettings(res.data.settings))
       .catch(() => setPaymentSettings(null))
+  })
+
+  useEffect(() => {
+    loadCombo()
   }, [combo.id])
 
   // Trae los profesionales que hacen cada servicio del combo, una vez que ya sabemos cuáles son
@@ -177,9 +182,6 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [components.length])
-
-  if (!business) return null
-  const { primaryColor, accentColor, contactInfo, ubicacion, whatsapp } = business
 
   const allAssigned = components.length > 0 && components.every(c => c.professionalId)
   const assignedProfessionalIds = Array.from(new Set(components.map(c => c.professionalId).filter(Boolean))) as string[]
@@ -285,6 +287,10 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
+
+  // Después de todos los hooks: un return anticipado antes de un hook cambia el orden de los hooks entre renders.
+  if (!business) return null
+  const { primaryColor, accentColor, contactInfo, ubicacion, whatsapp } = business
 
   const handleSubmit = async (depositMethod: 'mercadopago' | 'whatsapp' = 'mercadopago') => {
     setSubmitting(true)

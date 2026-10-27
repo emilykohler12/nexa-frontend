@@ -75,9 +75,6 @@ export function Settings() {
   const [pwSaved, setPwSaved]                 = useState(false)
   const [pwSaving, setPwSaving]               = useState(false)
 
-  if (!business) return null
-  const primary = business.primaryColor
-
   useEffect(() => {
     setLoadError(null)
     api.get<{ profile: Partial<Record<keyof ProfileForm, unknown>> & Partial<ProfileForm> }>('/api/professional/profile')
@@ -113,6 +110,10 @@ export function Settings() {
       })
       .finally(() => setLoading(false))
   }, [])
+
+  // Después de todos los hooks: un return anticipado antes de un hook cambia el orden de los hooks entre renders.
+  if (!business) return null
+  const primary = business.primaryColor
 
   const handleSave = async () => {
     setSaving(true)

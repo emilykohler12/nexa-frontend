@@ -66,7 +66,7 @@ export function AutoPromotionsSection() {
     api.get<{ clients: AdminClientOption[] }>('/api/admin/clients')
       .then(res => setClients(res.data.clients ?? []))
       .catch(() => setClients([]))
-  }, [])
+  }, [showToast])
 
   const handleSave = async (values: AutoPromotionFormValues, id?: string) => {
     try {

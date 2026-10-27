@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useEffectEvent } from 'react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api }        from '@/shared/utils/api'
 import type { BookingSelection } from '../types'
@@ -65,7 +65,8 @@ export function ConfirmationStep({ selection, onConfirm }: Props) {
   const [promotion,     setPromotion]   = useState<Promotion | null>(null)
   const [loading,       setLoading]     = useState(true)
 
-  useEffect(() => {
+  // Trae el resumen de la reserva. Se dispara solo al cambiar servicio, profesional o promoción.
+  const loadSummary = useEffectEvent(() => {
     Promise.all([
       api.get<{ services: Service[] }>('/api/services'),
       api.get<{ professionals: Professional[] }>('/api/professional/public'),
@@ -105,6 +106,10 @@ export function ConfirmationStep({ selection, onConfirm }: Props) {
         setPromotion(null)
       })
       .finally(() => setLoading(false))
+  })
+
+  useEffect(() => {
+    loadSummary()
   }, [selection.serviceId, selection.professionalId, selection.promotionId])
 
   if (!business) return null

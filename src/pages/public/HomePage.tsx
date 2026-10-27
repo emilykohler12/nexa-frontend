@@ -1,6 +1,6 @@
 //src/pages/public/HomePage.tsx
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { HeroSection }        from '@/features/home/components/HeroSection';
 import { StatsSection }       from '@/features/home/components/StatsSection';
@@ -30,12 +30,16 @@ export function HomePage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const { open: openCartDrawer } = useCart();
 
-  useEffect(() => {
-    if (!openCart) return;
+  // Al llegar con ?openCart=1 se abre la tienda y el carrito, y se limpia la URL.
+  const openCartFromUrl = useEffectEvent(() => {
     setActiveSection('tienda');
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     openCartDrawer();
     setSearchParams({}, { replace: true });
+  });
+
+  useEffect(() => {
+    if (openCart) openCartFromUrl();
   }, [openCart]);
 
   const navigateTo = (section: SectionId | null) => {

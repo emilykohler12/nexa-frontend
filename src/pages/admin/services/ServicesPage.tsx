@@ -36,7 +36,7 @@ export function ServicesPage() {
       .then(res => setServices(res.data.services))
       .catch(() => showToast('No se pudieron cargar los servicios', 'error'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [showToast])
 
   const openCreateForm        = () => { setEditingService(null); setFormError(null); setFormKind('regular') }
   const openCreateSpecialForm = () => { setEditingService(null); setFormError(null); setFormKind('special') }

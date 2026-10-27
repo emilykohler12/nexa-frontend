@@ -51,7 +51,7 @@ export function OrdersTab() {
       .then(res => setOrders(res.data.orders ?? []))
       .catch(() => showToast('No se pudieron cargar los pedidos', 'error'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [showToast])
 
   const updateOrder = async (id: string, data: { status?: OrderStatus; paymentStatus?: PaymentStatus }) => {
     setSavingId(id)

@@ -52,7 +52,7 @@ export function PromotionsPage() {
       .then(res => setPromotions(res.data.promotions ?? []))
       .catch(() => showToast('No se pudieron cargar las promociones', 'error'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [showToast])
 
   // El form de "Nueva promoción" queda armado para el tab en el que se abrió
   // (servicio o producto) — si se cambia de tab con el form abierto, hay que
@@ -247,7 +247,6 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
         setOptions(available.map(item => ({ id: item.id, name: item.name, price: Number(item.price) || 0 })))
       })
       .catch(() => setOptions([]))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.type])
 
   const minItems = form.kind === 'bundle' ? 2 : 1

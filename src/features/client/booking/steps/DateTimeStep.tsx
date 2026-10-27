@@ -66,7 +66,7 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
       })
       .catch(() => { setFreeSlots([]); setHasWorkingHours(false); })
       .finally(() => setLoading(false));
-  }, [professionalId, selectedDate, refreshSignal]);
+  }, [professionalId, isAny, selectedDate, refreshSignal]);
 
   // Modo "cualquiera": unimos los horarios libres de todos los profesionales
   // que hacen el servicio — alcanza con que UNO esté libre en ese horario.
