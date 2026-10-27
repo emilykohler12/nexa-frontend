@@ -14,7 +14,6 @@ export function PaymentsSection() {
   const [saved, setSaved]     = useState(false);
 
   useEffect(() => {
-    setLoadError(null);
     api.get<{ settings: PaymentSettings }>('/api/settings/payments')
       .then(res => setForm(res.data.settings))
       .catch((err: unknown) => {

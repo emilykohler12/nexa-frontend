@@ -26,7 +26,6 @@ export function ScheduleSection() {
   const [saved, setSaved]       = useState(false);
 
   useEffect(() => {
-    setLoadError(null);
     api.get<{ schedule: ScheduleDay[]; holidays: Holiday[] }>('/api/settings/schedule')
       .then(res => {
         setSchedule(res.data.schedule ?? EMPTY_SCHEDULE);

@@ -15,16 +15,20 @@ export function ProfessionalsPage() {
   const [selected, setSelected] = useState<AdminProfessional | null>(null)
   const [showInvite, setShowInvite] = useState(false)
 
-  const fetchProfessionals = () => {
-    setLoading(true)
-    setError(null)
+  const loadProfessionals = () =>
     api.get<{ professionals: AdminProfessional[] }>('/api/professionals')
       .then(res => setProfessionals(res.data.professionals))
       .catch(() => setError('No se pudieron cargar los profesionales'))
       .finally(() => setLoading(false))
+
+  // Recarga después de invitar: muestra el estado de carga y limpia el error anterior.
+  const fetchProfessionals = () => {
+    setLoading(true)
+    setError(null)
+    loadProfessionals()
   }
 
-  useEffect(() => { fetchProfessionals() }, [])
+  useEffect(() => { loadProfessionals() }, [])
 
   const handleSave = (updated: AdminProfessional) => {
     setProfessionals(prev => prev.map(p => p.id === updated.id ? updated : p))

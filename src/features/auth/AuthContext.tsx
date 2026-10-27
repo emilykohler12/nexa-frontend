@@ -58,7 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    fetchMe().finally(() => setIsLoading(false))
+    let cancelled = false
+    api.get<{ user: User | null }>('/api/auth/me')
+      .then(res => { if (!cancelled) setUser(res.data.user) })
+      .catch(() => { if (!cancelled) setUser(null) })
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const logout = async () => {

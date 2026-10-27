@@ -32,7 +32,6 @@ export function HomePage() {
 
   // Al llegar con ?openCart=1 se abre la tienda y el carrito, y se limpia la URL.
   const openCartFromUrl = useEffectEvent(() => {
-    setActiveSection('tienda');
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     openCartDrawer();
     setSearchParams({}, { replace: true });

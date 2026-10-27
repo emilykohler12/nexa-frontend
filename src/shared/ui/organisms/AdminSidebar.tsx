@@ -23,8 +23,8 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export function AdminSidebar({ onWidthChange }: { onWidthChange?: (w: number) => void }) {
-  const [collapsed,   setCollapsed]  = useState(false)
-  const [isMobile,    setIsMobile]   = useState(false)
+  const [collapsed,   setCollapsed]  = useState(() => window.matchMedia('(max-width: 768px)').matches)
+  const [isMobile,    setIsMobile]   = useState(() => window.matchMedia('(max-width: 768px)').matches)
   const [mobileOpen,  setMobileOpen] = useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -35,8 +35,6 @@ export function AdminSidebar({ onWidthChange }: { onWidthChange?: (w: number) =>
       setIsMobile(e.matches)
       if (e.matches) { setCollapsed(true); setMobileOpen(false) }
     }
-    setIsMobile(mq.matches)
-    if (mq.matches) { setCollapsed(true); setMobileOpen(false) }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])

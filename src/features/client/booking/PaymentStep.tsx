@@ -58,12 +58,6 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     return () => clearInterval(interval)
   }, [phase, deadline])
 
-  // Si el POST no devolvió un id (contrato viejo del backend), no podemos
-  // mandar los detalles extra — saltamos directo a la confirmación.
-  useEffect(() => {
-    if (phase === 'details' && !appointmentId) setPhase('success')
-  }, [phase, appointmentId])
-
   // Si reservó con "Cualquiera" y el POST no devolvió quién quedó asignado
   // (contrato viejo del backend), lo buscamos en la lista de turnos del
   // cliente — nunca debería quedar mostrando "Cualquier profesional disponible".
@@ -154,7 +148,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           if (res.data.appointment?.professionalId)   setAssignedProfessionalId(res.data.appointment.professionalId)
         }
 
-        if (!newAppointmentId) { setPhase('details'); return }
+        // Si el POST no devolvió un id (contrato viejo del backend), no podemos mandar los
+        // detalles extra — saltamos directo a la confirmación.
+        if (!newAppointmentId) { setPhase('success'); return }
 
         const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/${newAppointmentId}/payment`)
         window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')

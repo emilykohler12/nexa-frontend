@@ -92,6 +92,33 @@ async function fetchAnySlotsFor(serviceId: string, date: string): Promise<string
   return Array.from(new Set(results.flat())).sort()
 }
 
+// Encabezado de cada paso. Fuera del componente para que no se vuelva a crear en cada render.
+function Header({ title, onBackClick, primaryColor }: { title: string; onBackClick: () => void; primaryColor: string }) {
+  return (
+    <div>
+      <button onClick={onBackClick} className="flex items-center gap-2 text-sm mb-4" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
+        <ChevronLeft size={16} /> Volver
+      </button>
+      <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>{title}</h2>
+    </div>
+  )
+}
+
+// Cuadro fijo arriba a la derecha aclarando que el combo es en simultáneo.
+function SimultaneousNote({ count, primaryColor }: { count: number; primaryColor: string }) {
+  return (
+    <div
+      className="absolute top-0 right-0 flex items-start gap-2 rounded-xl px-3 py-2 max-w-[240px]"
+      style={{ background: `${primaryColor}0d`, border: `1px solid ${primaryColor}33` }}
+    >
+      <Users2 size={16} color={primaryColor} style={{ marginTop: 2, flexShrink: 0 }} />
+      <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
+        Estos {count} servicios se hacen <strong>en simultáneo</strong>: el mismo día y hora, cada uno con una profesional distinta.
+      </p>
+    </div>
+  )
+}
+
 export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const { business } = useTenant()
   // Un combo AHORA siempre es en simultáneo: todos los servicios el mismo día
@@ -375,33 +402,11 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     }
   }
 
-  const Header = ({ title, onBackClick }: { title: string; onBackClick: () => void }) => (
-    <div>
-      <button onClick={onBackClick} className="flex items-center gap-2 text-sm mb-4" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
-        <ChevronLeft size={16} /> Volver
-      </button>
-      <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>{title}</h2>
-    </div>
-  )
-
-  // Cuadro fijo arriba a la derecha aclarando que el combo es en simultáneo.
-  const SimultaneousNote = () => (
-    <div
-      className="absolute top-0 right-0 flex items-start gap-2 rounded-xl px-3 py-2 max-w-[240px]"
-      style={{ background: `${primaryColor}0d`, border: `1px solid ${primaryColor}33` }}
-    >
-      <Users2 size={16} color={primaryColor} style={{ marginTop: 2, flexShrink: 0 }} />
-      <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
-        Estos {components.length || (combo.comboServiceIds?.length ?? 0)} servicios se hacen <strong>en simultáneo</strong>: el mismo día y hora, cada uno con una profesional distinta.
-      </p>
-    </div>
-  )
-
   if (phase === 'assign') {
     return (
       <div className="relative pt-2">
-        <SimultaneousNote />
-        <Header title="¿Quién hace cada servicio?" onBackClick={onBack} />
+        <SimultaneousNote count={components.length || (combo.comboServiceIds?.length ?? 0)} primaryColor={primaryColor} />
+        <Header title="¿Quién hace cada servicio?" onBackClick={onBack} primaryColor={primaryColor} />
         {loadingComponents ? (
           <p className="text-gray-400 text-center py-10" style={{ fontFamily: 'var(--font-lato)' }}>Cargando...</p>
         ) : (
@@ -472,8 +477,8 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   if (phase === 'datetime') {
     return (
       <div className="relative pt-2">
-        <SimultaneousNote />
-        <Header title="¿Cuándo?" onBackClick={() => setPhase('assign')} />
+        <SimultaneousNote count={components.length || (combo.comboServiceIds?.length ?? 0)} primaryColor={primaryColor} />
+        <Header title="¿Cuándo?" onBackClick={() => setPhase('assign')} primaryColor={primaryColor} />
         {error && (
           <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{error}</p>
         )}
@@ -525,7 +530,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   if (phase === 'confirm') {
     return (
       <div>
-        <Header title="Confirmá tu combo" onBackClick={() => setPhase('datetime')} />
+        <Header title="Confirmá tu combo" onBackClick={() => setPhase('datetime')} primaryColor={primaryColor} />
         <div className="bg-white rounded-2xl p-5 shadow-sm border mb-6" style={{ borderColor: '#f3f4f6' }}>
           <div className="flex flex-col gap-3 mb-4">
             {components.map(c => (

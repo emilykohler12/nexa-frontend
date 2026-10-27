@@ -76,7 +76,6 @@ export function Settings() {
   const [pwSaving, setPwSaving]               = useState(false)
 
   useEffect(() => {
-    setLoadError(null)
     api.get<{ profile: Partial<Record<keyof ProfileForm, unknown>> & Partial<ProfileForm> }>('/api/professional/profile')
       .then(res => {
         const p = res.data.profile

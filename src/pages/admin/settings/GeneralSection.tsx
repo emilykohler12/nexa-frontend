@@ -30,7 +30,6 @@ export function GeneralSection() {
   const [saved, setSaved]       = useState(false);
 
   useEffect(() => {
-    setLoadError(null);
     api.get<{ settings: BusinessSettings }>('/api/settings/business')
       .then(res => {
         const settings = res.data.settings;

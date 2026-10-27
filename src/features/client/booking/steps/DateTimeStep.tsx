@@ -51,46 +51,55 @@ function freeSlotsFor(res: AvailabilityResponse, date: string): string[] {
 
 export function DateTimeStep({ professionalId, serviceId, selectedDate, selectedTime, onSelectDate, onSelectTime, refreshSignal, dateLocked }: Props) {
   const { business } = useTenant();
-  const [freeSlots, setFreeSlots] = useState<string[]>([]);
-  const [hasWorkingHours, setHasWorkingHours] = useState(false);
-  const [loading, setLoading] = useState(true);
   const isAny = professionalId === ANY_PROFESSIONAL_ID;
 
-  useEffect(() => {
-    if (!professionalId || isAny || !selectedDate) { setFreeSlots([]); setHasWorkingHours(false); setLoading(false); return; }
-    setLoading(true);
-    api.get<AvailabilityResponse>(`/api/professional/${professionalId}/availability`, { params: { date: selectedDate } })
-      .then(res => {
-        setFreeSlots(freeSlotsFor(res.data, selectedDate));
-        setHasWorkingHours(freeSlotsFor({ availability: res.data.availability }, selectedDate).length > 0 || res.data.availability.length > 0);
-      })
-      .catch(() => { setFreeSlots([]); setHasWorkingHours(false); })
-      .finally(() => setLoading(false));
-  }, [professionalId, isAny, selectedDate, refreshSignal]);
+  // Resultado de la última consulta de disponibilidad. Los horarios y el "cargando" se derivan de
+  // si ese resultado corresponde a lo que está elegido ahora (key): así no hace falta reiniciar
+  // estado dentro del efecto al cambiar de fecha o de profesional.
+  const [loaded, setLoaded] = useState<{ key: string; slots: string[]; hasWorkingHours: boolean } | null>(null);
+  const canFetch = !!selectedDate && (isAny || !!professionalId);
+  const key = `${isAny ? `any:${serviceId ?? ''}` : professionalId}|${selectedDate}|${refreshSignal}`;
+  const current = canFetch && loaded?.key === key ? loaded : null;
+  const loading = canFetch && !current;
+  const freeSlots = current?.slots ?? [];
+  const hasWorkingHours = current?.hasWorkingHours ?? false;
 
-  // Modo "cualquiera": unimos los horarios libres de todos los profesionales
-  // que hacen el servicio — alcanza con que UNO esté libre en ese horario.
-  // El descuento de horarios ocupados se hace por profesional ANTES de unir,
-  // así un horario sigue apareciendo si otro profesional lo tiene libre.
   useEffect(() => {
-    if (!isAny || !selectedDate) { setFreeSlots([]); return; }
-    setLoading(true);
-    const query = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
-    api.get<{ professionals: { id: string }[] }>(`/api/professional/public${query}`)
-      .then(async res => {
-        const ids = res.data.professionals.map(p => p.id);
-        const results = await Promise.all(
-          ids.map(id =>
-            api.get<AvailabilityResponse>(`/api/professional/${id}/availability`, { params: { date: selectedDate } })
-              .then(r => freeSlotsFor(r.data, selectedDate))
-              .catch(() => [] as string[])
-          )
-        );
-        setFreeSlots(Array.from(new Set(results.flat())).sort());
-      })
-      .catch(() => setFreeSlots([]))
-      .finally(() => setLoading(false));
-  }, [isAny, serviceId, selectedDate, refreshSignal]);
+    if (!canFetch || !selectedDate) return;
+    let cancelled = false;
+    const done = (slots: string[], hasWorkingHours: boolean) => {
+      if (!cancelled) setLoaded({ key, slots, hasWorkingHours });
+    };
+
+    if (!isAny) {
+      api.get<AvailabilityResponse>(`/api/professional/${professionalId}/availability`, { params: { date: selectedDate } })
+        .then(res => done(
+          freeSlotsFor(res.data, selectedDate),
+          freeSlotsFor({ availability: res.data.availability }, selectedDate).length > 0 || res.data.availability.length > 0,
+        ))
+        .catch(() => done([], false));
+    } else {
+      // Modo "cualquiera": unimos los horarios libres de todos los profesionales
+      // que hacen el servicio — alcanza con que UNO esté libre en ese horario.
+      // El descuento de horarios ocupados se hace por profesional ANTES de unir,
+      // así un horario sigue apareciendo si otro profesional lo tiene libre.
+      const query = serviceId ? `?serviceId=${encodeURIComponent(serviceId)}` : '';
+      api.get<{ professionals: { id: string }[] }>(`/api/professional/public${query}`)
+        .then(async res => {
+          const ids = res.data.professionals.map(p => p.id);
+          const results = await Promise.all(
+            ids.map(id =>
+              api.get<AvailabilityResponse>(`/api/professional/${id}/availability`, { params: { date: selectedDate } })
+                .then(r => freeSlotsFor(r.data, selectedDate))
+                .catch(() => [] as string[])
+            )
+          );
+          done(Array.from(new Set(results.flat())).sort(), false);
+        })
+        .catch(() => done([], false));
+    }
+    return () => { cancelled = true; };
+  }, [key, canFetch, isAny, professionalId, serviceId, selectedDate]);
 
   if (!business) return null;
   const { primaryColor } = business;
