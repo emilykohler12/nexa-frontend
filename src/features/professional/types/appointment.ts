@@ -1,5 +1,5 @@
 import type { CompanionRelation } from '@/shared/utils/companion'
-export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'no_show'
+export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'cancelled_no_show'
 export type PaymentStatus     = 'pending' | 'partial' | 'paid' | 'refunded'
 
 export interface AppointmentClient {
@@ -46,7 +46,7 @@ export interface Appointment {
   paymentStatus:  PaymentStatus
   // Cuándo se registró que la clienta llegó al local — la propia clienta desde su
   // app, o la profesional por ella. En null hasta 20 min después de la hora
-  // pactada, el turno se marca 'no_show' solo (ver autoNoShow.job.ts en el backend).
+  // pactada, el turno se marca 'cancelled_no_show' solo (ver autoNoShow.job.ts en el backend).
   arrivedAt?:     string | null
   internalNotes:  string
   isSimultaneous: boolean

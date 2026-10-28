@@ -5,7 +5,7 @@ describe('getAppointmentStatusDisplay', () => {
   it('devuelve el label/color normal para cada estado', () => {
     expect(getAppointmentStatusDisplay('confirmed').label).toBe('Confirmado')
     expect(getAppointmentStatusDisplay('finished').label).toBe('Finalizado')
-    expect(getAppointmentStatusDisplay('noShow').label).toBe('No asistió')
+    expect(getAppointmentStatusDisplay('noShow').label).toBe('Cancelado por inasistencia')
   })
 
   it('un turno cancelado por falta de pago se muestra distinto de uno cancelado a mano', () => {

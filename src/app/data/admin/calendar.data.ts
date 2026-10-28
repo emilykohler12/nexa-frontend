@@ -4,7 +4,7 @@
 
 import type { CompanionRelation } from '@/shared/utils/companion';
 
-export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'no_show';
+export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'cancelled_no_show';
 export type BalancePaymentMethod = 'cash' | 'transfer' | 'card' | 'other';
 
 export interface BalancePayment {

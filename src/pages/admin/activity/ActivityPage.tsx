@@ -21,7 +21,7 @@ function translateStatusInDetail(detail: string): string {
     pending: 'Pendiente',
     finished: 'Finalizado',
     cancelled: 'Cancelado',
-    no_show: 'No asistió',
+    cancelled_no_show: 'Cancelado por inasistencia',
     ready: 'Listo',
     delivered: 'Entregado',
     paid: 'Pagado',

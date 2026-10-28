@@ -4,7 +4,7 @@ import { getAppointmentStatusConfig } from './appointmentStatus'
 describe('getAppointmentStatusConfig (vista de la profesional)', () => {
   it('devuelve el label normal para cada estado', () => {
     expect(getAppointmentStatusConfig('confirmed').label).toBe('Confirmado')
-    expect(getAppointmentStatusConfig('no_show').label).toBe('No asistió')
+    expect(getAppointmentStatusConfig('cancelled_no_show').label).toBe('Cancelado por inasistencia')
     expect(getAppointmentStatusConfig('finished').label).toBe('Finalizado')
   })
 

@@ -17,7 +17,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
 
-  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished','cancelled','no_show']
+  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished','cancelled','cancelled_no_show']
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={onClose}>
@@ -129,7 +129,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
               <span style={{ fontSize: '14px', color: '#000' }}>
                 {appointment.arrivedAt
                   ? `Llegó a las ${new Date(appointment.arrivedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
-                  : 'Todavía no registró la llegada — a los 20 min de la hora pactada se marca "No asistió" sola.'}
+                  : 'Todavía no registró la llegada — a los 20 min de la hora pactada se marca "Cancelado por inasistencia" sola.'}
               </span>
               {!appointment.arrivedAt && (
                 <button

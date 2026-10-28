@@ -1,5 +1,5 @@
 export type ClientGender = 'female' | 'male' | 'other' | 'prefer_not_to_say'
-export type AppointmentHistoryStatus = 'confirmed' | 'finished' | 'cancelled' | 'no_show'
+export type AppointmentHistoryStatus = 'confirmed' | 'finished' | 'cancelled' | 'cancelled_no_show'
 
 export interface ClientClinical {
   allergies: string

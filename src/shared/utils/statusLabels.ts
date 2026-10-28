@@ -5,7 +5,7 @@ export const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
   finished: 'Finalizado',
   cancelled: 'Cancelado',
-  no_show: 'No asistió',
+  cancelled_no_show: 'Cancelado por inasistencia',
 
   // Pedidos - estado de entrega
   ready: 'Listo',
