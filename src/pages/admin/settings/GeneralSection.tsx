@@ -30,7 +30,6 @@ export function GeneralSection() {
   const [saved, setSaved]       = useState(false);
 
   useEffect(() => {
-    setLoadError(null);
     api.get<{ settings: BusinessSettings }>('/api/settings/business')
       .then(res => {
         const settings = res.data.settings;
@@ -44,7 +43,7 @@ export function GeneralSection() {
         });
         setPoliciesText((settings.policies ?? []).join('\n'));
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         setLoadError(safeErrorMessage(err, 'No se pudo cargar la información del negocio'));
       })
       .finally(() => setLoading(false));
@@ -83,7 +82,7 @@ export function GeneralSection() {
       setPoliciesText((res.data.settings.policies ?? []).join('\n'));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSaveError(safeErrorMessage(err, 'Error al guardar los cambios'));
     } finally {
       setSaving(false);

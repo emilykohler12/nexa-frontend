@@ -62,6 +62,13 @@ export function AppointmentsPage() {
   const { user }               = useAuth()
   const navigate               = useNavigate()
   const [filter, setFilter]    = useState<Filter>('upcoming')
+  // "Ahora" para saber qué turnos ya pasaron: se actualiza cada minuto, así un turno pasa a
+  // Historial solo, sin recargar la página.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading]  = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
@@ -117,8 +124,8 @@ export function AppointmentsPage() {
   // un formato que no se puede parsear, no queda "atascado" como próximo para siempre.
   const isPast = (a: Appointment) => {
     const dt = new Date(`${a.date}T${a.time}`)
-    if (!isNaN(dt.getTime())) return dt.getTime() <= Date.now()
-    return a.date < new Date().toISOString().split('T')[0]
+    if (!isNaN(dt.getTime())) return dt.getTime() <= now
+    return a.date < new Date(now).toISOString().split('T')[0]
   }
 
   // Cada turno cae en un único balde: el estado manda cuando ya está resuelto
@@ -169,7 +176,7 @@ export function AppointmentsPage() {
           : 'Servicio cancelado. Los demás servicios del combo siguen en pie.',
       })
       if (res.data.partialCombo === false && res.data.refunded) setShowRefundNotice(true)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el servicio.') })
     } finally {
       setCancellingId(null)
@@ -222,7 +229,7 @@ export function AppointmentsPage() {
         })
         if (res.data.refunded) setShowRefundNotice(true)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo cancelar el turno.') })
     } finally {
       setCancellingId(null)
@@ -256,7 +263,7 @@ export function AppointmentsPage() {
       const res = await api.patch<{ appointment: Appointment }>(`/api/client/appointments/${appt.id}/arrival`)
       setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
       setToast({ type: 'success', text: '¡Listo! Avisamos que llegaste.' })
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo registrar tu llegada.') })
     } finally {
       setArrivingId(null)
@@ -469,7 +476,7 @@ export function AppointmentsPage() {
       )}
 
       {reschedulingAppt && (
-        <RescheduleModal
+        <RescheduleModal<Appointment>
           appointmentId={reschedulingAppt.id}
           initialServiceId={reschedulingAppt.serviceId}
           initialProfessionalId={reschedulingAppt.professionalId}

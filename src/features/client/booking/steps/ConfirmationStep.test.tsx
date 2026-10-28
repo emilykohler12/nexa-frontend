@@ -17,10 +17,10 @@ const PROMOTION = { id: 'promo-1', price: 6000, items: [{ id: 'svc-1' }] }
 
 function mockApiGet(promotions: typeof PROMOTION[] = []) {
   vi.mocked(api.get).mockImplementation((url: string) => {
-    if (url === '/api/services')                return Promise.resolve({ data: { services: [SERVICE] } } as any)
-    if (url === '/api/professional/public')      return Promise.resolve({ data: { professionals: [PROFESSIONAL] } } as any)
-    if (url === '/api/business/payments/public') return Promise.resolve({ data: { settings: PAYMENT_SETTINGS } } as any)
-    if (url === '/api/promotions/public')        return Promise.resolve({ data: { promotions } } as any)
+    if (url === '/api/services')                return Promise.resolve({ data: { services: [SERVICE] } } as never)
+    if (url === '/api/professional/public')      return Promise.resolve({ data: { professionals: [PROFESSIONAL] } } as never)
+    if (url === '/api/business/payments/public') return Promise.resolve({ data: { settings: PAYMENT_SETTINGS } } as never)
+    if (url === '/api/promotions/public')        return Promise.resolve({ data: { promotions } } as never)
     // /api/business/public (TenantProvider) — sin override, se queda con la base estática.
     return Promise.reject(new Error('not mocked'))
   })

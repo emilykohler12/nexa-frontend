@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useEffectEvent } from 'react'
 import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { generateSlots } from '@/features/professional/onboarding/types'
 import type { Service } from './steps/ServiceStep'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 import { PostBookingDetails } from './PostBookingDetails'
 import type { CompanionRelation } from '@/shared/utils/companion'
 
@@ -92,6 +92,33 @@ async function fetchAnySlotsFor(serviceId: string, date: string): Promise<string
   return Array.from(new Set(results.flat())).sort()
 }
 
+// Encabezado de cada paso. Fuera del componente para que no se vuelva a crear en cada render.
+function Header({ title, onBackClick, primaryColor }: { title: string; onBackClick: () => void; primaryColor: string }) {
+  return (
+    <div>
+      <button onClick={onBackClick} className="flex items-center gap-2 text-sm mb-4" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
+        <ChevronLeft size={16} /> Volver
+      </button>
+      <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>{title}</h2>
+    </div>
+  )
+}
+
+// Cuadro fijo arriba a la derecha aclarando que el combo es en simultáneo.
+function SimultaneousNote({ count, primaryColor }: { count: number; primaryColor: string }) {
+  return (
+    <div
+      className="absolute top-0 right-0 flex items-start gap-2 rounded-xl px-3 py-2 max-w-[240px]"
+      style={{ background: `${primaryColor}0d`, border: `1px solid ${primaryColor}33` }}
+    >
+      <Users2 size={16} color={primaryColor} style={{ marginTop: 2, flexShrink: 0 }} />
+      <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
+        Estos {count} servicios se hacen <strong>en simultáneo</strong>: el mismo día y hora, cada uno con una profesional distinta.
+      </p>
+    </div>
+  )
+}
+
 export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const { business } = useTenant()
   // Un combo AHORA siempre es en simultáneo: todos los servicios el mismo día
@@ -122,7 +149,8 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     cancellationPolicy: string | null; reschedulePolicy: string | null; depositPolicy: string | null
   }>>({})
 
-  useEffect(() => {
+  // Carga los servicios del combo y la configuración de pagos. Se dispara solo al cambiar de combo (combo.id).
+  const loadCombo = useEffectEvent(() => {
     api.get<{ services: Service[] }>('/api/services')
       .then(res => {
         const all = res.data.services
@@ -153,6 +181,10 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     api.get<{ settings: PaymentSettings }>('/api/business/payments/public')
       .then(res => setPaymentSettings(res.data.settings))
       .catch(() => setPaymentSettings(null))
+  })
+
+  useEffect(() => {
+    loadCombo()
   }, [combo.id])
 
   // Trae los profesionales que hacen cada servicio del combo, una vez que ya sabemos cuáles son
@@ -177,9 +209,6 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [components.length])
-
-  if (!business) return null
-  const { primaryColor, accentColor, contactInfo, ubicacion, whatsapp } = business
 
   const allAssigned = components.length > 0 && components.every(c => c.professionalId)
   const assignedProfessionalIds = Array.from(new Set(components.map(c => c.professionalId).filter(Boolean))) as string[]
@@ -286,6 +315,10 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
+  // Después de todos los hooks: un return anticipado antes de un hook cambia el orden de los hooks entre renders.
+  if (!business) return null
+  const { primaryColor, accentColor, contactInfo, ubicacion, whatsapp } = business
+
   const handleSubmit = async (depositMethod: 'mercadopago' | 'whatsapp' = 'mercadopago') => {
     setSubmitting(true)
     setError(null)
@@ -346,17 +379,17 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
       const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/combo/${newGroupId}/payment`)
       window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
       setPhase('waitingPayment')
-    } catch (err: any) {
-      const code = err?.response?.data?.code
-      if (err?.response?.status === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
+    } catch (err: unknown) {
+      const code = apiErrorCode(err)
+      if (apiErrorStatus(err) === 400 && code === 'NO_PROFESSIONAL_AVAILABLE') {
         setError('No hay ningún profesional disponible para uno de los servicios de "cualquiera" en el horario elegido. Probá con otro horario o elegí un profesional específico.')
-      } else if (err?.response?.status === 400 && code === 'PROFESSIONAL_NOT_ALLOWED') {
+      } else if (apiErrorStatus(err) === 400 && code === 'PROFESSIONAL_NOT_ALLOWED') {
         setError('Esa profesional ya no está habilitada para ese servicio. Elegí otra.')
         setPhase('assign')
-      } else if (err?.response?.status === 409 && code === 'SAME_PROFESSIONAL_SIMULTANEOUS') {
+      } else if (apiErrorStatus(err) === 409 && code === 'SAME_PROFESSIONAL_SIMULTANEOUS') {
         setError('No se puede hacer dos servicios en simultáneo con la misma profesional. Elegí una profesional distinta para cada uno.')
         setPhase('assign')
-      } else if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+      } else if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
         setError('Uno de los horarios elegidos ya se ocupó. Elegí otro horario e intentá de nuevo.')
         setPhase('datetime')
         setSharedTime(null)
@@ -369,33 +402,11 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     }
   }
 
-  const Header = ({ title, onBackClick }: { title: string; onBackClick: () => void }) => (
-    <div>
-      <button onClick={onBackClick} className="flex items-center gap-2 text-sm mb-4" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
-        <ChevronLeft size={16} /> Volver
-      </button>
-      <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>{title}</h2>
-    </div>
-  )
-
-  // Cuadro fijo arriba a la derecha aclarando que el combo es en simultáneo.
-  const SimultaneousNote = () => (
-    <div
-      className="absolute top-0 right-0 flex items-start gap-2 rounded-xl px-3 py-2 max-w-[240px]"
-      style={{ background: `${primaryColor}0d`, border: `1px solid ${primaryColor}33` }}
-    >
-      <Users2 size={16} color={primaryColor} style={{ marginTop: 2, flexShrink: 0 }} />
-      <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555', lineHeight: 1.35 }}>
-        Estos {components.length || (combo.comboServiceIds?.length ?? 0)} servicios se hacen <strong>en simultáneo</strong>: el mismo día y hora, cada uno con una profesional distinta.
-      </p>
-    </div>
-  )
-
   if (phase === 'assign') {
     return (
       <div className="relative pt-2">
-        <SimultaneousNote />
-        <Header title="¿Quién hace cada servicio?" onBackClick={onBack} />
+        <SimultaneousNote count={components.length || (combo.comboServiceIds?.length ?? 0)} primaryColor={primaryColor} />
+        <Header title="¿Quién hace cada servicio?" onBackClick={onBack} primaryColor={primaryColor} />
         {loadingComponents ? (
           <p className="text-gray-400 text-center py-10" style={{ fontFamily: 'var(--font-lato)' }}>Cargando...</p>
         ) : (
@@ -466,8 +477,8 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   if (phase === 'datetime') {
     return (
       <div className="relative pt-2">
-        <SimultaneousNote />
-        <Header title="¿Cuándo?" onBackClick={() => setPhase('assign')} />
+        <SimultaneousNote count={components.length || (combo.comboServiceIds?.length ?? 0)} primaryColor={primaryColor} />
+        <Header title="¿Cuándo?" onBackClick={() => setPhase('assign')} primaryColor={primaryColor} />
         {error && (
           <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{error}</p>
         )}
@@ -519,7 +530,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   if (phase === 'confirm') {
     return (
       <div>
-        <Header title="Confirmá tu combo" onBackClick={() => setPhase('datetime')} />
+        <Header title="Confirmá tu combo" onBackClick={() => setPhase('datetime')} primaryColor={primaryColor} />
         <div className="bg-white rounded-2xl p-5 shadow-sm border mb-6" style={{ borderColor: '#f3f4f6' }}>
           <div className="flex flex-col gap-3 mb-4">
             {components.map(c => (

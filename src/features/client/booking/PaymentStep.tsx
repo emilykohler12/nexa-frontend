@@ -4,7 +4,7 @@
 // por ahora — ver MERCADOPAGO_ACCESS_TOKEN en el backend. El turno se crea
 // con paymentStatus 'pending' y solo pasa a 'partial' (seña pagada) cuando
 // llega el webhook de Mercado Pago confirmando el pago real — nunca antes.
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useEffectEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink, RefreshCw, Check, Clock, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
@@ -12,7 +12,7 @@ import { api } from '@/shared/utils/api'
 import type { ConfirmedSummary } from './steps/ConfirmationStep'
 import { PostBookingDetails } from './PostBookingDetails'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 import { ROUTES } from '@/app/config/routes.config'
 
 const HOLD_MINUTES = 15
@@ -42,12 +42,13 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     toleranceMinutes: number | null; latePenalty: string | null
     cancellationPolicy: string | null; reschedulePolicy: string | null; depositPolicy: string | null
   } | null>(null)
-  const deadlineRef = useRef(Date.now() + HOLD_MINUTES * 60 * 1000)
+  // El vencimiento de la reserva provisoria se fija una sola vez, al montar el paso.
+  const [deadline] = useState(() => Date.now() + HOLD_MINUTES * 60 * 1000)
 
   useEffect(() => {
     if (phase !== 'paying' && phase !== 'waitingPayment') return
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.round((deadlineRef.current - Date.now()) / 1000))
+      const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000))
       setSecondsLeft(remaining)
       if (remaining <= 0) {
         clearInterval(interval)
@@ -55,19 +56,13 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
       }
     }, 1000)
     return () => clearInterval(interval)
-  }, [phase])
-
-  // Si el POST no devolvió un id (contrato viejo del backend), no podemos
-  // mandar los detalles extra — saltamos directo a la confirmación.
-  useEffect(() => {
-    if (phase === 'details' && !appointmentId) setPhase('success')
-  }, [phase, appointmentId])
+  }, [phase, deadline])
 
   // Si reservó con "Cualquiera" y el POST no devolvió quién quedó asignado
   // (contrato viejo del backend), lo buscamos en la lista de turnos del
   // cliente — nunca debería quedar mostrando "Cualquier profesional disponible".
-  useEffect(() => {
-    if (phase !== 'success' || summary.professionalId !== ANY_PROFESSIONAL_ID || assignedProfessionalName || !appointmentId) return
+  const findAssignedProfessional = useEffectEvent(() => {
+    if (summary.professionalId !== ANY_PROFESSIONAL_ID || assignedProfessionalName || !appointmentId) return
     api.get<{ appointments: { id: string; professionalId?: string; professionalName?: string }[] }>('/api/client/appointments')
       .then(res => {
         const appt = res.data.appointments.find(a => a.id === appointmentId)
@@ -75,13 +70,17 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         if (appt?.professionalId)   setAssignedProfessionalId(appt.professionalId)
       })
       .catch(() => {})
+  })
+
+  useEffect(() => {
+    if (phase !== 'success') return
+    findAssignedProfessional()
   }, [phase, appointmentId])
 
   // Al llegar a éxito, traemos las recomendaciones/cuidados y las políticas
   // que cargó el profesional, para mostrárselas al cliente junto con la
   // confirmación (ubicación, qué incluye el servicio, políticas del profesional).
-  useEffect(() => {
-    if (phase !== 'success') return
+  const loadProfessionalCare = useEffectEvent(() => {
     const proId = assignedProfessionalId ?? summary.professionalId
     if (!proId || proId === ANY_PROFESSIONAL_ID) return
     api.get<{ professionals: {
@@ -107,6 +106,11 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         }
       })
       .catch(() => {})
+  })
+
+  useEffect(() => {
+    if (phase !== 'success') return
+    loadProfessionalCare()
   }, [phase])
 
   const minutes = Math.floor(secondsLeft / 60)
@@ -144,14 +148,16 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
           if (res.data.appointment?.professionalId)   setAssignedProfessionalId(res.data.appointment.professionalId)
         }
 
-        if (!newAppointmentId) { setPhase('details'); return }
+        // Si el POST no devolvió un id (contrato viejo del backend), no podemos mandar los
+        // detalles extra — saltamos directo a la confirmación.
+        if (!newAppointmentId) { setPhase('success'); return }
 
         const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/${newAppointmentId}/payment`)
         window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
         setPhase('waitingPayment')
-      } catch (err: any) {
-        const code = err?.response?.data?.code
-        if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+      } catch (err: unknown) {
+        const code = apiErrorCode(err)
+        if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
         } else {
           setPayError(safeErrorMessage(err, 'No pudimos iniciar el pago. Intentá de nuevo.'))
@@ -198,9 +204,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         }
 
         setPhase(newAppointmentId ? 'details' : 'success')
-      } catch (err: any) {
-        const code = err?.response?.data?.code
-        if (err?.response?.status === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
+      } catch (err: unknown) {
+        const code = apiErrorCode(err)
+        if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
         } else {
           setPayError(safeErrorMessage(err, 'No pudimos reservar el turno. Intentá de nuevo.'))
@@ -229,9 +235,12 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     }
   }
 
+  // El intervalo siempre llama a la versión más reciente de checkPaymentStatus sin reiniciarse.
+  const pollPaymentStatus = useEffectEvent(() => { void checkPaymentStatus() })
+
   useEffect(() => {
     if (phase !== 'waitingPayment') return
-    const interval = setInterval(checkPaymentStatus, POLL_MS)
+    const interval = setInterval(pollPaymentStatus, POLL_MS)
     return () => clearInterval(interval)
   }, [phase, appointmentId])
 

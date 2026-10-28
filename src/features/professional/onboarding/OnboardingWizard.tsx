@@ -89,7 +89,7 @@ export function OnboardingWizard({ onComplete }: Props) {
         policies:     data.policies,
       })
       onComplete()
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'Error al guardar. Intentá de nuevo.'))
     } finally {
       setLoading(false)

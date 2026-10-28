@@ -35,7 +35,7 @@ export function SecuritySection() {
       setSavedPw(true);
       setPasswords({ current: '', newPass: '', confirm: '' });
       setTimeout(() => setSavedPw(false), 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(safeErrorMessage(err, 'Error al cambiar la contraseña'));
     } finally {
       setSaving(false);

@@ -1,5 +1,5 @@
 // src/features/client/favorites/useFavorites.ts
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useAuth } from '@/features/auth/AuthContext'
 
 export type FavoriteType = 'professional' | 'service' | 'product'
@@ -36,11 +36,15 @@ function writeStorage(userId: string, items: FavoriteItem[]) {
 // Por ahora persiste en localStorage por usuario para que sobreviva a recargas de página.
 export function useFavorites() {
   const { user } = useAuth()
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([])
+  const userId = user?.id ?? null
+  const [favorites, setFavorites] = useState<FavoriteItem[]>(() => (userId ? readStorage(userId) : []))
+  const [loadedFor, setLoadedFor] = useState<string | null>(userId)
 
-  useEffect(() => {
-    setFavorites(user ? readStorage(user.id) : [])
-  }, [user?.id])
+  // Al cambiar de usuaria se vuelven a leer sus favoritos (ajuste de estado durante el render, sin efecto).
+  if (loadedFor !== userId) {
+    setLoadedFor(userId)
+    setFavorites(userId ? readStorage(userId) : [])
+  }
 
   const toggleFavorite = useCallback((item: FavoriteItem) => {
     if (!user) return

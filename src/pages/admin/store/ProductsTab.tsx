@@ -55,7 +55,7 @@ export function ProductsTab({ products, onProductsChange }: Props) {
         showToast(`"${target.name}" se eliminó.`, 'success')
       }
       setConfirmDelete(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setDeleteError(safeErrorMessage(err, 'No se pudo eliminar el producto'))
     } finally {
       setDeleting(false)

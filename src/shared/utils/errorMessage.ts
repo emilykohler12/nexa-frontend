@@ -16,9 +16,15 @@ const UNSAFE_PATTERNS = [
   /\bsql\b/i,
 ]
 
-export function safeErrorMessage(err: any, fallback: string): string {
-  const status  = err?.response?.status
-  const message = err?.response?.data?.error
+// Forma de un error de axios de la que solo se lee el status y el mensaje del backend.
+interface ApiErrorLike {
+  response?: { status?: number; data?: { error?: unknown } }
+}
+
+export function safeErrorMessage(err: unknown, fallback: string): string {
+  const apiError = err as ApiErrorLike | null | undefined
+  const status   = apiError?.response?.status
+  const message  = apiError?.response?.data?.error
 
   if (typeof message !== 'string' || !message.trim()) return fallback
   if (status && status >= 500) return fallback
@@ -27,4 +33,16 @@ export function safeErrorMessage(err: any, fallback: string): string {
   if (UNSAFE_PATTERNS.some(p => p.test(message))) return fallback
 
   return message
+}
+
+// Código de error del backend (por ejemplo 'PROFESSIONAL_SLOT_TAKEN') y status HTTP de un error de
+// axios, para decidir qué hacer sin tipar el error como any.
+export function apiErrorCode(err: unknown): string | undefined {
+  const code = (err as { response?: { data?: { code?: unknown } } } | null | undefined)?.response?.data?.code
+  return typeof code === 'string' ? code : undefined
+}
+
+export function apiErrorStatus(err: unknown): number | undefined {
+  const status = (err as ApiErrorLike | null | undefined)?.response?.status
+  return typeof status === 'number' ? status : undefined
 }

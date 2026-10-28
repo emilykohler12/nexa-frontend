@@ -68,18 +68,14 @@ function applyOverride(base: Business, override: PublicBusinessOverride): Busine
 }
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [loading, setLoading]   = useState(true);
+  // Base estática desde app/data/tenant/: está disponible desde el primer render.
+  const [business, setBusiness] = useState<Business | null>(tenantConfig);
+  const loading                 = false;
   const [error]                 = useState<string | null>(null);
 
   useEffect(() => {
-    // Base estática desde app/data/tenant/
-    setBusiness(tenantConfig);
-
     document.documentElement.style.setProperty('--tenant-primary', tenantConfig.primaryColor);
     document.documentElement.style.setProperty('--tenant-accent',  tenantConfig.accentColor);
-
-    setLoading(false);
 
     // Overrides en vivo — lo que el admin guardó en Configuración.
     // Si el endpoint no existe todavía (404) o falla, se ignora en silencio.

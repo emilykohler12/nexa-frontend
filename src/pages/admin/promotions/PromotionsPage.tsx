@@ -27,6 +27,9 @@ function kindLabel(promo: Promotion): string {
 
 type PageTab = PromotionType | 'automatic' | 'events'
 
+// Producto o servicio tal como lo devuelve el backend, para armar las opciones de una promoción.
+interface CatalogItem { id: string; name: string; price: number | string; status: string; stock?: number }
+
 const TABS: { id: PageTab; label: string }[] = [
   { id: 'service',   label: 'Servicios' },
   { id: 'product',   label: 'Productos' },
@@ -49,7 +52,7 @@ export function PromotionsPage() {
       .then(res => setPromotions(res.data.promotions ?? []))
       .catch(() => showToast('No se pudieron cargar las promociones', 'error'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [showToast])
 
   // El form de "Nueva promoción" queda armado para el tab en el que se abrió
   // (servicio o producto) — si se cambia de tab con el form abierto, hay que
@@ -74,7 +77,7 @@ export function PromotionsPage() {
       }
       setShowForm(false)
       setEditing(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(safeErrorMessage(err, 'No se pudo guardar la promoción'), 'error')
     }
   }
@@ -232,19 +235,18 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
     const isProduct = form.type === 'product'
     const url = isProduct ? '/api/store/products' : '/api/services'
     const dataKey = isProduct ? 'products' : 'services'
-    api.get<Record<string, any[]>>(url)
+    api.get<Record<string, CatalogItem[]>>(url)
       .then(res => {
         const raw = res.data[dataKey] ?? []
         // Un producto inactivo o sin stock (o un servicio inactivo) no se
         // puede vender/reservar de verdad — no tiene sentido dejar armar una
         // promo con algo que después el checkout va a rechazar.
-        const available = raw.filter((item: any) =>
-          isProduct ? (item.status === 'active' && item.stock > 0) : item.status === 'active'
+        const available = raw.filter(item =>
+          isProduct ? (item.status === 'active' && (item.stock ?? 0) > 0) : item.status === 'active'
         )
-        setOptions(available.map((item: any) => ({ id: item.id, name: item.name, price: Number(item.price) || 0 })))
+        setOptions(available.map(item => ({ id: item.id, name: item.name, price: Number(item.price) || 0 })))
       })
       .catch(() => setOptions([]))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.type])
 
   const minItems = form.kind === 'bundle' ? 2 : 1

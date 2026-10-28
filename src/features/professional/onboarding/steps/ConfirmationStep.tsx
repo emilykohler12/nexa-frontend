@@ -8,6 +8,25 @@ const PAYMENT_LABEL: Record<string, string> = {
   cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', mp: 'Mercado Pago',
 }
 
+// Fuera de ConfirmationStep para que no se vuelvan a crear en cada render.
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: '#fafafa', border: '1px solid #eeeeee', borderRadius: '12px', padding: '16px' }}>
+      <p style={{ fontSize: '14px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>{title}</p>
+      {children}
+    </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
+      <span style={{ fontSize: '16px', color: '#666', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{label}</span>
+      <span style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{value}</span>
+    </div>
+  )
+}
+
 interface Props { data: OnboardingData }
 
 export function ConfirmationStep({ data }: Props) {
@@ -18,20 +37,6 @@ export function ConfirmationStep({ data }: Props) {
 
   const activeDays = WEEK_DAYS.filter(d => data.availability[d].length > 0)
   const getName = (id: string) => services.find(s => s.id === id)?.name ?? id
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div style={{ background: '#fafafa', border: '1px solid #eeeeee', borderRadius: '12px', padding: '16px' }}>
-      <p style={{ fontSize: '14px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>{title}</p>
-      {children}
-    </div>
-  )
-
-  const Row = ({ label, value }: { label: string; value: string }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
-      <span style={{ fontSize: '16px', color: '#666', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{label}</span>
-      <span style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{value}</span>
-    </div>
-  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

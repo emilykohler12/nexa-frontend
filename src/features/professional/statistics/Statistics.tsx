@@ -33,14 +33,17 @@ export function Statistics() {
   const { business } = useTenant()
   const [period, setPeriod] = useState<PeriodFilter>('month')
   const [data, setData] = useState<ProfessionalDashboardData>(EMPTY_DATA)
-  const [loading, setLoading] = useState(true)
+  // Período cuyos datos ya llegaron: mientras no coincida con el elegido, se está cargando.
+  const [loadedPeriod, setLoadedPeriod] = useState<PeriodFilter | null>(null)
+  const loading = loadedPeriod !== period
 
   useEffect(() => {
-    setLoading(true)
+    let cancelled = false
     api.get<{ dashboard: ProfessionalDashboardData }>('/api/professional/dashboard', { params: { period } })
-      .then(res => setData(res.data.dashboard ?? EMPTY_DATA))
-      .catch(() => setData(EMPTY_DATA))
-      .finally(() => setLoading(false))
+      .then(res => { if (!cancelled) setData(res.data.dashboard ?? EMPTY_DATA) })
+      .catch(() => { if (!cancelled) setData(EMPTY_DATA) })
+      .finally(() => { if (!cancelled) setLoadedPeriod(period) })
+    return () => { cancelled = true }
   }, [period])
 
   if (!business) return null

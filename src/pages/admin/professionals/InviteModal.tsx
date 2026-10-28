@@ -64,7 +64,7 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
       setPrevious(prev => [newLink, ...prev])
       setEmail('')
       setExpiresAt('')
-    } catch (err: any) {
+    } catch (err: unknown) {
       setApiError(safeErrorMessage(err, 'Error al generar la invitación'))
     } finally {
       setLoading(false)

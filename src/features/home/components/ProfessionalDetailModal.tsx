@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useEffectEvent } from 'react'
 import { X, ChevronLeft, Award, Star } from 'lucide-react'
 import { FaInstagram, FaFacebookF, FaTiktok, FaXTwitter } from 'react-icons/fa6'
 import { api } from '@/shared/utils/api'
@@ -39,7 +39,8 @@ interface Props {
 export function ProfessionalDetailModal({ professional, primaryColor, accentColor, onClose, onReserve }: Props) {
   const [serviceNames, setServiceNames] = useState<string[]>([])
 
-  useEffect(() => {
+  // Trae los nombres de los servicios de la profesional. Se dispara solo al cambiar de profesional.
+  const loadServiceNames = useEffectEvent(() => {
     if (!professional.services?.length) return
     api.get<{ services: ServiceOption[] }>('/api/services')
       .then(res => {
@@ -47,6 +48,10 @@ export function ProfessionalDetailModal({ professional, primaryColor, accentColo
         setServiceNames((professional.services ?? []).map(id => byId.get(id)).filter(Boolean) as string[])
       })
       .catch(() => setServiceNames([]))
+  })
+
+  useEffect(() => {
+    loadServiceNames()
   }, [professional.id])
 
   const socialLinks = SOCIAL_ICONS.filter(s => !!professional[s.key])

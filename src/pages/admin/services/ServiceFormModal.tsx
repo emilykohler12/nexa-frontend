@@ -1,6 +1,6 @@
 // src/pages/admin/services/ServiceFormModal.tsx
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X, Upload } from 'lucide-react'
@@ -58,7 +58,7 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
   }, [modalSize])
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ServiceFormSchema>({
+  const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<ServiceFormSchema>({
     resolver: zodResolver(serviceFormSchema) as Resolver<ServiceFormSchema>,
     defaultValues: service ?? {
       name: '',
@@ -86,10 +86,10 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
     onSave({ ...values, image: values.image || null })
   }
 
-  const imageValue = watch('image')
-  const isCombo = watch('isCombo')
-  const comboServiceIds = watch('comboServiceIds') ?? []
-  const comboProfessionals = watch('comboProfessionals') ?? {}
+  const imageValue = useWatch({ control, name: 'image' })
+  const isCombo = useWatch({ control, name: 'isCombo' })
+  const comboServiceIds = useWatch({ control, name: 'comboServiceIds' }) ?? []
+  const comboProfessionals = useWatch({ control, name: 'comboProfessionals' }) ?? {}
   // No tiene sentido armar un combo con un servicio inactivo — el cliente
   // no podría reservarlo igual.
   const componentOptions = allServices.filter(s => s.id !== service?.id && !s.isCombo && s.status === 'active')

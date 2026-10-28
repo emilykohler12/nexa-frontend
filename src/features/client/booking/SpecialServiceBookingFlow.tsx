@@ -11,7 +11,7 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { Service } from './steps/ServiceStep'
 import { PostBookingDetails } from './PostBookingDetails'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 
 type Phase = 'select' | 'datetime' | 'confirm' | 'details' | 'success'
 interface PaymentSettings { depositAmount: number; depositPercent: boolean }
@@ -25,6 +25,18 @@ interface Props {
 function computeDeposit(price: number, settings: PaymentSettings): number {
   if (settings.depositPercent) return Math.round((price * settings.depositAmount) / 100)
   return settings.depositAmount
+}
+
+// Encabezado de cada paso. Fuera del componente para que no se vuelva a crear en cada render.
+function Header({ title, onBackClick, primaryColor }: { title: string; onBackClick: () => void; primaryColor: string }) {
+  return (
+    <div>
+      <button onClick={onBackClick} className="flex items-center gap-2 text-sm mb-4" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
+        <ChevronLeft size={16} /> Volver
+      </button>
+      <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>{title}</h2>
+    </div>
+  )
 }
 
 export function SpecialServiceBookingFlow({ service: initialService, onBack, onSuccess }: Props) {
@@ -88,9 +100,9 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
       })
       setAppointmentId(res.data.appointment?.id ?? null)
       setPhase(res.data.appointment?.id ? 'details' : 'success')
-    } catch (err: any) {
-      const code = err?.response?.data?.code
-      if (err?.response?.status === 409 && code === 'SLOT_TAKEN') {
+    } catch (err: unknown) {
+      const code = apiErrorCode(err)
+      if (apiErrorStatus(err) === 409 && code === 'SLOT_TAKEN') {
         setError('Ese horario ya se ocupó. Elegí otro.')
         setSlotTime(null)
         setPhase('datetime')
@@ -103,19 +115,10 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
     }
   }
 
-  const Header = ({ title, onBackClick }: { title: string; onBackClick: () => void }) => (
-    <div>
-      <button onClick={onBackClick} className="flex items-center gap-2 text-sm mb-4" style={{ color: '#999', fontFamily: 'var(--font-lato)' }}>
-        <ChevronLeft size={16} /> Volver
-      </button>
-      <h2 className="text-xl mb-4" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>{title}</h2>
-    </div>
-  )
-
   if (phase === 'select') {
     return (
       <div>
-        <Header title={service.name} onBackClick={onBack} />
+        <Header title={service.name} onBackClick={onBack} primaryColor={primaryColor} />
         <p className="text-sm text-gray-500 mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
           Elegí las zonas y/o paquetes que querés — podés combinar los que quieras.
         </p>
@@ -202,7 +205,7 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
   if (phase === 'datetime') {
     return (
       <div>
-        <Header title="¿A qué hora?" onBackClick={() => setPhase('select')} />
+        <Header title="¿A qué hora?" onBackClick={() => setPhase('select')} primaryColor={primaryColor} />
         {service.specialDate && (
           <p className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'var(--font-lato)' }}>
             Este servicio solo se ofrece el{' '}
@@ -251,7 +254,7 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
   if (phase === 'confirm') {
     return (
       <div>
-        <Header title="Confirmá tu reserva" onBackClick={() => setPhase('datetime')} />
+        <Header title="Confirmá tu reserva" onBackClick={() => setPhase('datetime')} primaryColor={primaryColor} />
         <div className="bg-white rounded-2xl p-5 shadow-sm border mb-6" style={{ borderColor: '#f3f4f6' }}>
           <div className="flex flex-col gap-2 mb-4">
             {selectedZones.map(z => (

@@ -11,10 +11,10 @@ interface Props {
 const MAX_LABEL = 16
 const truncate = (name: string) => name.length > MAX_LABEL ? `${name.slice(0, MAX_LABEL - 1)}…` : name
 
-function YAxisTick({ x, y, payload }: any) {
+function YAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
   return (
     <text x={x} y={y} dy={4} textAnchor="end" fontSize={13} fontWeight={600} fill="#000">
-      {truncate(payload.value)}
+      {truncate(payload?.value ?? '')}
     </text>
   )
 }
@@ -50,7 +50,7 @@ export function TopProductsChart({ data }: Props) {
                 ) : null
               }
             />
-            <Bar dataKey="quantity" radius={[0, 6, 6, 0]} barSize={18} label={{ position: 'right', fontSize: 12, fontWeight: 700, fill: '#000', formatter: (v: any) => v }}>
+            <Bar dataKey="quantity" radius={[0, 6, 6, 0]} barSize={18} label={{ position: 'right', fontSize: 12, fontWeight: 700, fill: '#000', formatter: (v: unknown) => String(v) }}>
               {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
             </Bar>
           </BarChart>

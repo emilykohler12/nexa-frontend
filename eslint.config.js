@@ -18,5 +18,14 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Los hooks y helpers que viven junto a su provider (useAuth, useCart, useTenant, useToast,
+      // useThemeContext, buttonVariants...) son una decisión: separarlos cambiaría decenas de imports.
+      // El costo es que en desarrollo esos archivos recargan la página entera en vez de refrescar en caliente.
+      'react-refresh/only-export-components': ['error', {
+        allowConstantExport: true,
+        allowExportNames: ['useAuth', 'redirectByRole', 'isFirstVisit', 'useCart', 'useTenant', 'useToast', 'useThemeContext', 'buttonVariants'],
+      }],
+    },
   },
 ])

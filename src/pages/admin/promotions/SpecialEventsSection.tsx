@@ -51,7 +51,7 @@ export function SpecialEventsSection() {
     api.get<{ professionals: ProfessionalOption[] }>('/api/professional/public')
       .then(res => setProfessionals(res.data.professionals ?? []))
       .catch(() => setProfessionals([]))
-  }, [])
+  }, [showToast])
 
   const handleSave = async (id: string | null, values: SpecialEventFormValues) => {
     try {
@@ -63,7 +63,7 @@ export function SpecialEventsSection() {
         setItems(prev => [res.data.specialEvent, ...prev])
       }
       setEditing(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(safeErrorMessage(err, 'No se pudo guardar el evento especial'), 'error')
     }
   }

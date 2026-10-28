@@ -21,11 +21,12 @@ export function ProfessionalRegisterPage() {
   const navigate       = useNavigate()
   const token          = searchParams.get('token') ?? ''
 
-  const [state, setState] = useState<State>('loading')
+  const [loadedState, setState] = useState<State>('loading')
+  const state: State = token ? loadedState : 'invalid'
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    if (!token) { setState('invalid'); return }
+    if (!token) return
 
     api.get<{ valid: boolean; email: string }>(`/api/invitations/validate?token=${token}`)
       .then(res => { setEmail(res.data.email); setState('valid') })

@@ -66,7 +66,7 @@ export function AutoPromotionsSection() {
     api.get<{ clients: AdminClientOption[] }>('/api/admin/clients')
       .then(res => setClients(res.data.clients ?? []))
       .catch(() => setClients([]))
-  }, [])
+  }, [showToast])
 
   const handleSave = async (values: AutoPromotionFormValues, id?: string) => {
     try {
@@ -78,7 +78,7 @@ export function AutoPromotionsSection() {
         setItems(prev => [res.data.autoPromotion, ...prev])
       }
       setEditing(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast(safeErrorMessage(err, 'No se pudo guardar la campaña'), 'error')
     }
   }

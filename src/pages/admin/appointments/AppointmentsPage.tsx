@@ -98,7 +98,7 @@ export function AppointmentsPage() {
       await api.patch(`/api/admin/appointments/${id}`, { status })
       await refetchAppointments()
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       return safeErrorMessage(err, 'No se pudo actualizar el turno.')
     }
   }
@@ -122,7 +122,7 @@ export function AppointmentsPage() {
       })
       setAppointments(p => p.map(a => a.id === upd.id ? (res.data.appointment ?? upd) : a))
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       return safeErrorMessage(err, 'No se pudo guardar el turno.')
     } finally {
       // Reprogramar puede tocar el índice único de horarios de otro turno del
@@ -137,7 +137,7 @@ export function AppointmentsPage() {
       setAppointments(p => p.map(a => a.id === id ? res.data.appointment : a))
       setModalAppt(res.data.appointment)
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       return safeErrorMessage(err, 'No se pudo registrar el cobro.')
     }
   }
@@ -148,7 +148,7 @@ export function AppointmentsPage() {
       setAppointments(p => p.map(a => a.id === id ? res.data.appointment : a))
       setModalAppt(res.data.appointment)
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       return safeErrorMessage(err, 'No se pudo registrar el retiro de esmalte.')
     }
   }
@@ -161,7 +161,7 @@ export function AppointmentsPage() {
       await refetchAppointments()
       setModalAppt(res.data.appointment)
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       return safeErrorMessage(err, 'No se pudo marcar la seña como pagada.')
     }
   }

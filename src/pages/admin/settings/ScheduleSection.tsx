@@ -26,13 +26,12 @@ export function ScheduleSection() {
   const [saved, setSaved]       = useState(false);
 
   useEffect(() => {
-    setLoadError(null);
     api.get<{ schedule: ScheduleDay[]; holidays: Holiday[] }>('/api/settings/schedule')
       .then(res => {
         setSchedule(res.data.schedule ?? EMPTY_SCHEDULE);
         setHolidays(res.data.holidays ?? []);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         setLoadError(safeErrorMessage(err, 'No se pudieron cargar los horarios'));
       })
       .finally(() => setLoading(false));
@@ -67,7 +66,7 @@ export function ScheduleSection() {
       setHolidays(res.data.holidays ?? holidays);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSaveError(safeErrorMessage(err, 'Error al guardar los horarios'));
     } finally {
       setSaving(false);
