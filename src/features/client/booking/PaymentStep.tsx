@@ -18,7 +18,7 @@ import { ROUTES } from '@/app/config/routes.config'
 const HOLD_MINUTES = 15
 const POLL_MS = 5000
 
-type Phase = 'paying' | 'processing' | 'waitingPayment' | 'details' | 'success' | 'expired' | 'slotTaken'
+type Phase = 'paying' | 'processing' | 'waitingPayment' | 'details' | 'success' | 'expired' | 'slotTaken' | 'outOfHours'
 
 interface Props {
   summary:   ConfirmedSummary
@@ -159,6 +159,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         const code = apiErrorCode(err)
         if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
+        } else if (apiErrorStatus(err) === 400 && code === 'OUT_OF_HOURS') {
+          // El horario quedó fuera de la disponibilidad de la profesional: hay que elegir otro.
+          setPhase('outOfHours')
         } else {
           setPayError(safeErrorMessage(err, 'No pudimos iniciar el pago. Intentá de nuevo.'))
           setPhase('paying')
@@ -208,6 +211,9 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
         const code = apiErrorCode(err)
         if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
           setPhase('slotTaken')
+        } else if (apiErrorStatus(err) === 400 && code === 'OUT_OF_HOURS') {
+          // El horario quedó fuera de la disponibilidad de la profesional: hay que elegir otro.
+          setPhase('outOfHours')
         } else {
           setPayError(safeErrorMessage(err, 'No pudimos reservar el turno. Intentá de nuevo.'))
           setPhase('paying')
@@ -272,17 +278,19 @@ export function PaymentStep({ summary, onExpire, onSuccess }: Props) {
     )
   }
 
-  if (phase === 'slotTaken') {
+  if (phase === 'slotTaken' || phase === 'outOfHours') {
     return (
       <div className="text-center py-10">
         <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#fee2e2' }}>
           <Clock size={28} color="#e53935" />
         </div>
         <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
-          Ese horario ya se ocupó
+          {phase === 'slotTaken' ? 'Ese horario ya se ocupó' : 'Ese horario no está disponible'}
         </h2>
         <p className="text-gray-500 max-w-md mx-auto mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
-          Alguien reservó el mismo horario justo antes que vos. Elegí otro horario disponible para tu turno.
+          {phase === 'slotTaken'
+            ? 'Alguien reservó el mismo horario justo antes que vos. Elegí otro horario disponible para tu turno.'
+            : 'Ese horario está fuera de la disponibilidad de la profesional. Elegí otro horario para tu turno.'}
         </p>
         <button
           onClick={onExpire}
