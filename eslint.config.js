@@ -24,7 +24,7 @@ export default defineConfig([
       // El costo es que en desarrollo esos archivos recargan la página entera en vez de refrescar en caliente.
       'react-refresh/only-export-components': ['error', {
         allowConstantExport: true,
-        allowExportNames: ['useAuth', 'redirectByRole', 'isFirstVisit', 'useCart', 'useTenant', 'useToast', 'useThemeContext', 'buttonVariants'],
+        allowExportNames: ['useAuth', 'redirectByRole', 'isFirstVisit', 'useCart', 'useTenant', 'useToast', 'useThemeContext'],
       }],
     },
   },
