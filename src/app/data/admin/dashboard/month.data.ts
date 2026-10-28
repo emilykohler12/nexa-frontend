@@ -34,7 +34,7 @@ export const monthData: DashboardData = {
     { status: 'confirmed', label: 'Confirmados', count: 78, color: '#069494' },
     { status: 'pending',   label: 'Pendientes',  count: 10, color: '#d4af37' },
     { status: 'cancelled', label: 'Cancelados',  count: 7,  color: '#e57373' },
-    { status: 'no_show',   label: 'No asistió',  count: 3,  color: '#90a4ae' },
+    { status: 'cancelled_no_show',   label: 'Cancelado por inasistencia',  count: 3,  color: '#90a4ae' },
   ],
   paymentStats: [
     { label: 'Señas cobradas',   amount: 98000, color: '#069494' },

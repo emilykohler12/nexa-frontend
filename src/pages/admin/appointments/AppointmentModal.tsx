@@ -31,7 +31,7 @@ const STATUS_LABELS = {
   pending:   'Pendiente',
   finished:  'Realizado',
   cancelled: 'Cancelado',
-  no_show:   'No asistió',
+  cancelled_no_show:   'Cancelado por inasistencia',
 };
 
 const STATUS_STYLES = {
@@ -39,7 +39,7 @@ const STATUS_STYLES = {
   pending:   { bg: 'rgba(212,175,55,0.15)', color: '#b8960c' },
   finished:  { bg: 'rgba(76,175,80,0.12)',  color: '#4caf50' },
   cancelled: { bg: 'rgba(229,57,53,0.1)',   color: '#e53935' },
-  no_show:   { bg: 'rgba(0,0,0,0.08)',      color: '#555'    },
+  cancelled_no_show:   { bg: 'rgba(0,0,0,0.08)',      color: '#555'    },
 };
 
 // Un turno "cancelado" por falta de pago nunca llegó a confirmarse — distinto
@@ -193,13 +193,13 @@ export function AppointmentModal({
             <Section>
               <SectionTitle color={profColor}>Marcar estado</SectionTitle>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['confirmed', 'finished', 'no_show'].map(status => (
+                {['confirmed', 'finished', 'cancelled_no_show'].map(status => (
                   appointment.status !== status && (
                     <button
                       key={status}
                       onClick={async () => {
                         setSaving(true);
-                        const result = await onSave({ ...appointment, status: status as 'confirmed' | 'finished' | 'no_show' | 'cancelled' });
+                        const result = await onSave({ ...appointment, status: status as 'confirmed' | 'finished' | 'cancelled_no_show' | 'cancelled' });
                         setSaving(false);
                         if (!result) onClose();
                       }}
@@ -217,7 +217,7 @@ export function AppointmentModal({
                         opacity: saving ? 0.6 : 1,
                       }}
                     >
-                      {status === 'confirmed' ? 'Confirmar' : status === 'finished' ? 'Marcar finalizado' : 'No asistió'}
+                      {status === 'confirmed' ? 'Confirmar' : status === 'finished' ? 'Marcar finalizado' : 'Marcar cancelado por inasistencia'}
                     </button>
                   )
                 ))}
@@ -454,7 +454,7 @@ export function AppointmentModal({
             )}
           </Section>
 
-          {!editing && !['cancelled', 'no_show'].includes(appointment.status) && (
+          {!editing && !['cancelled', 'cancelled_no_show'].includes(appointment.status) && (
             <>
               <Divider />
               <SectionTitle color={profColor}>

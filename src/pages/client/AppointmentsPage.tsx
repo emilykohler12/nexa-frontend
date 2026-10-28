@@ -44,7 +44,7 @@ interface Appointment {
   displayStatus?:    string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   // Cuándo registraste que llegaste al local. Si un turno confirmado queda sin
-  // esto 20 minutos después de la hora pactada, se marca "No asistió" solo.
+  // esto 20 minutos después de la hora pactada, se marca "Cancelado por inasistencia" solo.
   arrivedAt?:        string | null
   details?:          AppointmentDetailsValue | null
   comboGroupId?:     string | null
@@ -129,7 +129,7 @@ export function AppointmentsPage() {
   }
 
   // Cada turno cae en un único balde: el estado manda cuando ya está resuelto
-  // (finished/no_show/cancelled), y solo se usa la fecha/hora para los que
+  // (finished/cancelled_no_show/cancelled), y solo se usa la fecha/hora para los que
   // todavía dependen de si ya pasaron o no. Así nunca puede aparecer duplicado.
   const isUpcomingStatus = (a: Appointment) => a.status === 'confirmed' || a.status === 'pending'
 
