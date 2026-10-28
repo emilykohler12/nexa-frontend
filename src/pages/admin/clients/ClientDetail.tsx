@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, ShieldOff, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ShieldOff, ShieldCheck, UserX } from 'lucide-react'
 import { InfoTab }    from './tabs/InfoTab'
 import { HistoryTab } from './tabs/HistoryTab'
 import { LoyaltyTab } from './tabs/LoyaltyTab'
@@ -7,6 +7,8 @@ import { GalleryTab } from './tabs/GalleryTab'
 import { ReviewsTab } from './tabs/ReviewsTab'
 import type { AdminClient } from './types'
 import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
+import { useToast } from '@/shared/ui/molecules/ToastProvider'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 type Tab = 'info' | 'history' | 'loyalty' | 'gallery' | 'reviews'
 
@@ -18,17 +20,24 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'reviews', label: 'Reseñas'      },
 ]
 
+// El backend deja el email de una clienta anonimizada como anonimo_<id>@borrado.com.
+const isAnonymized = (client: AdminClient) => client.email.endsWith('@borrado.com')
+
 interface Props {
   client: AdminClient
   onBack: () => void
   onSave: (updated: AdminClient) => Promise<void>
   onToggleBlock: (client: AdminClient) => Promise<void>
+  onAnonymize: (client: AdminClient) => Promise<void>
 }
 
-export function ClientDetail({ client, onBack, onSave, onToggleBlock }: Props) {
+export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymize }: Props) {
+  const { showToast } = useToast()
   const [activeTab, setActiveTab] = useState<Tab>('info')
   const [blocking, setBlocking] = useState(false)
   const [confirmingBlock, setConfirmingBlock] = useState(false)
+  const [anonymizing, setAnonymizing] = useState(false)
+  const [confirmingAnonymize, setConfirmingAnonymize] = useState(false)
   const displayName = client.name?.trim() || client.email || 'Cliente'
   const initials = displayName.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
@@ -39,6 +48,20 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock }: Props) {
     } finally {
       setBlocking(false)
       setConfirmingBlock(false)
+    }
+  }
+
+  // RF-09 — supresión de datos personales a pedido de la clienta.
+  const handleConfirmAnonymize = async () => {
+    setAnonymizing(true)
+    try {
+      await onAnonymize(client)
+      showToast('Los datos personales de la clienta se anonimizaron', 'success')
+    } catch (err) {
+      showToast(safeErrorMessage(err, 'No se pudieron anonimizar los datos. Probá de nuevo.'), 'error')
+    } finally {
+      setAnonymizing(false)
+      setConfirmingAnonymize(false)
     }
   }
 
@@ -92,6 +115,22 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock }: Props) {
           {client.blocked ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
           {blocking ? 'Guardando...' : client.blocked ? 'Desbloquear cliente' : 'Bloquear cliente'}
         </button>
+        {!isAnonymized(client) && (
+          <button
+            onClick={() => setConfirmingAnonymize(true)}
+            disabled={anonymizing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px',
+              border: '1px solid #e53935', borderRadius: '9px',
+              background: 'rgba(229,57,53,0.06)', color: '#e53935',
+              cursor: 'pointer', fontSize: '14px', fontWeight: 700,
+              fontFamily: "'Lato', sans-serif", flexShrink: 0,
+            }}
+          >
+            <UserX size={15} />
+            {anonymizing ? 'Anonimizando...' : 'Anonimizar datos'}
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -134,6 +173,18 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock }: Props) {
           loading={blocking}
           onConfirm={handleConfirmBlock}
           onCancel={() => setConfirmingBlock(false)}
+        />
+      )}
+      {confirmingAnonymize && (
+        <ConfirmModal
+          title="¿Anonimizar los datos de esta clienta?"
+          message={`Se van a borrar de forma permanente el nombre, el apellido, el email y el teléfono de ${displayName}, y su cuenta se va a desactivar. Los turnos y los importes se conservan. Esto no se puede deshacer.`}
+          confirmLabel="Sí, anonimizar"
+          danger
+          accentColor="#069494"
+          loading={anonymizing}
+          onConfirm={handleConfirmAnonymize}
+          onCancel={() => setConfirmingAnonymize(false)}
         />
       )}
     </div>

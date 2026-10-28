@@ -35,6 +35,12 @@ export function ClientsPage() {
     setSelected(res.data.client)
   }
 
+  const handleAnonymize = async (client: AdminClient) => {
+    const res = await api.post<{ client: AdminClient }>(`/api/admin/clients/${client.id}/anonymize`)
+    setClients(prev => prev.map(c => c.id === client.id ? res.data.client : c))
+    setSelected(res.data.client)
+  }
+
   if (selected) {
     return (
       <ClientDetail
@@ -42,6 +48,7 @@ export function ClientsPage() {
         onBack={() => setSelected(null)}
         onSave={handleSave}
         onToggleBlock={handleToggleBlock}
+        onAnonymize={handleAnonymize}
       />
     )
   }
