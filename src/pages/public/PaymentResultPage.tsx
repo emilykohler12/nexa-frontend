@@ -8,8 +8,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Check, X, Clock } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
+import { usePageMeta } from '@/shared/hooks/usePageMeta'
 
 export function PaymentResultPage() {
+  usePageMeta({ title: 'Resultado del pago', noindex: true })
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { business } = useTenant()

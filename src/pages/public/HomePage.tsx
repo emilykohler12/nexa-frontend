@@ -20,10 +20,13 @@ import { AboutSection }       from '@/features/home/components/AboutSection';
 import { CartDrawer }         from '@/features/store/CartDrawer';
 import { CartFloatingButton } from '@/features/store/CartFloatingButton';
 import { useCart }            from '@/features/store/CartContext';
+import { usePageMeta }        from '@/shared/hooks/usePageMeta';
+import { SITE_NAME }          from '@/app/config/seo.config';
 
 type SectionId = 'servicios' | 'profesionales' | 'tienda' | 'nosotros';
 
 export function HomePage() {
+  usePageMeta({ title: SITE_NAME });
   const [searchParams, setSearchParams] = useSearchParams();
   const openCart = searchParams.get('openCart') === '1';
   const [activeSection, setActiveSection] = useState<SectionId | null>(openCart ? 'tienda' : null);

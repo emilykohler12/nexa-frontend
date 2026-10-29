@@ -8,8 +8,10 @@ import { RegisterForm }         from '@/features/auth/components/RegisterForm'
 import { useAuth }             from '@/features/auth/AuthContext'
 import { destinationAfterAuth } from '@/features/auth/hooks/useAuth'
 import { ROUTES }               from '@/app/config/routes.config'
+import { usePageMeta }          from '@/shared/hooks/usePageMeta'
 
 export function LoginPage() {
+  usePageMeta({ title: 'Ingresar', noindex: true })
   const [vista, setVista]   = useState<'login' | 'registro'>('login')
   const { user, isLoading } = useAuth()
   const navigate            = useNavigate()
