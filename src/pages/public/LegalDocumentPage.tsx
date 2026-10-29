@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
+import { usePageMeta } from '@/shared/hooks/usePageMeta'
 
 interface LegalDocumentPageProps {
   title: string
@@ -11,6 +12,7 @@ interface LegalDocumentPageProps {
 export function LegalDocumentPage({ title, children }: LegalDocumentPageProps) {
   const { business } = useTenant()
   const navigate = useNavigate()
+  usePageMeta({ title })
   if (!business) return null
 
   return (
