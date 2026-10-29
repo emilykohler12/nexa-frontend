@@ -38,6 +38,7 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymiz
   const [confirmingBlock, setConfirmingBlock] = useState(false)
   const [anonymizing, setAnonymizing] = useState(false)
   const [confirmingAnonymize, setConfirmingAnonymize] = useState(false)
+  const anonymized = isAnonymized(client)
   const displayName = client.name?.trim() || client.email || 'Cliente'
   const initials = displayName.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
@@ -100,22 +101,24 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymiz
             {client.phone} · {client.email}
           </p>
         </div>
-        <button
-          onClick={() => setConfirmingBlock(true)}
-          disabled={blocking}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px',
-            border: `1px solid ${client.blocked ? '#069494' : '#e53935'}`, borderRadius: '9px',
-            background: client.blocked ? 'rgba(6,148,148,0.06)' : 'rgba(229,57,53,0.06)',
-            color: client.blocked ? '#069494' : '#e53935',
-            cursor: 'pointer', fontSize: '14px', fontWeight: 700,
-            fontFamily: "'Lato', sans-serif", flexShrink: 0,
-          }}
-        >
-          {client.blocked ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
-          {blocking ? 'Guardando...' : client.blocked ? 'Desbloquear cliente' : 'Bloquear cliente'}
-        </button>
-        {!isAnonymized(client) && (
+        {!anonymized && (
+          <button
+            onClick={() => setConfirmingBlock(true)}
+            disabled={blocking}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px',
+              border: `1px solid ${client.blocked ? '#069494' : '#e53935'}`, borderRadius: '9px',
+              background: client.blocked ? 'rgba(6,148,148,0.06)' : 'rgba(229,57,53,0.06)',
+              color: client.blocked ? '#069494' : '#e53935',
+              cursor: 'pointer', fontSize: '14px', fontWeight: 700,
+              fontFamily: "'Lato', sans-serif", flexShrink: 0,
+            }}
+          >
+            {client.blocked ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
+            {blocking ? 'Guardando...' : client.blocked ? 'Desbloquear cliente' : 'Bloquear cliente'}
+          </button>
+        )}
+        {!anonymized && (
           <button
             onClick={() => setConfirmingAnonymize(true)}
             disabled={anonymizing}
@@ -153,7 +156,16 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymiz
         ))}
       </div>
 
-      {activeTab === 'info'    && <InfoTab    client={client} onSave={onSave} />}
+      {/* Una clienta anonimizada no se edita: el formulario guarda su estado al abrirse, y volver a
+          guardarlo reescribiría el nombre, el teléfono y el email que se acaban de borrar. */}
+      {activeTab === 'info' && (anonymized
+        ? (
+          <p style={{ margin: 0, padding: '20px', background: '#fff', border: '1px solid #e5e5e5', borderRadius: '12px', fontSize: '15px', color: '#000' }}>
+            Los datos personales de esta clienta se anonimizaron y ya no se pueden editar.
+          </p>
+        )
+        : <InfoTab key={client.id} client={client} onSave={onSave} />
+      )}
       {activeTab === 'history' && <HistoryTab client={client} />}
       {activeTab === 'loyalty' && <LoyaltyTab client={client} />}
       {activeTab === 'gallery' && <GalleryTab client={client} />}
