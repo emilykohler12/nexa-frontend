@@ -47,7 +47,6 @@ export type PaymentMethod = 'cash' | 'transfer' | 'card' | 'mp'
 
 export interface PersonalData {
   name:            string
-  birthDate:       string
   gender:          Gender | ''
   phone:           string
   email:           string
@@ -92,7 +91,7 @@ export interface OnboardingData {
 }
 
 export const EMPTY_PERSONAL: PersonalData = {
-  name: '', birthDate: '', gender: '',
+  name: '', gender: '',
   phone: '', email: '', photo: null, bio: '',
   instagram: '', facebook: '', tiktok: '', twitter: '',
 }
