@@ -5,7 +5,6 @@ export const mockProfessionalProfile: ProfessionalProfile = {
   id:              'prof-1',
   firstName:       'Lucía',
   lastName:        'Martínez',
-  birthDate:       '1995-03-15',
   gender:          'female',
   phone:           '+54 376 401-1111',
   email:           'lucia@lorenestudio.com',

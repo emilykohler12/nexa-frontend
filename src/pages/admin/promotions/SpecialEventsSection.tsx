@@ -1,10 +1,9 @@
 // src/pages/admin/promotions/SpecialEventsSection.tsx
 //
 // Eventos especiales destacados en el home (ej: jornada de Depilación
-// definitiva con una profesional puntual, en una fecha fija). A diferencia
-// de las campañas automáticas, esto SÍ se muestra en la página principal —
-// el cliente que toca "Reservar" entra directo con servicio, profesional y
-// fecha ya elegidos, solo falta el horario.
+// definitiva con una profesional puntual, en una fecha fija). Se muestra en
+// la página principal — el cliente que toca "Reservar" entra directo con
+// servicio, profesional y fecha ya elegidos, solo falta el horario.
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Sparkles, Calendar } from 'lucide-react'
 import { api } from '@/shared/utils/api'

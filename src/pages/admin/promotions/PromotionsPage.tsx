@@ -4,7 +4,6 @@ import { api } from '@/shared/utils/api'
 import { uploadImage } from '@/shared/utils/uploadImage'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { Promotion, PromotionType, PromotionStatus, PromotionKind, PromotionItem } from '@/app/data/admin/promotions/types'
-import { AutoPromotionsSection } from './AutoPromotionsSection'
 import { SpecialEventsSection } from './SpecialEventsSection'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
@@ -25,7 +24,7 @@ function kindLabel(promo: Promotion): string {
   return 'Descuento'
 }
 
-type PageTab = PromotionType | 'automatic' | 'events'
+type PageTab = PromotionType | 'events'
 
 // Producto o servicio tal como lo devuelve el backend, para armar las opciones de una promoción.
 interface CatalogItem { id: string; name: string; price: number | string; status: string; stock?: number }
@@ -34,7 +33,6 @@ const TABS: { id: PageTab; label: string }[] = [
   { id: 'service',   label: 'Servicios' },
   { id: 'product',   label: 'Productos' },
   { id: 'events',    label: 'Eventos especiales' },
-  { id: 'automatic', label: 'Campañas automáticas' },
 ]
 
 export function PromotionsPage() {
@@ -102,14 +100,12 @@ export function PromotionsPage() {
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: '0 0 4px', fontFamily: "'Playfair Display', serif" }}>Promociones</h1>
           <p style={{ fontSize: '16px', color: '#000', margin: 0 }}>
-            {tab === 'automatic'
-              ? 'Reglas internas que le mandan un descuento por mail a un cliente — nunca se ven en la página principal'
-              : tab === 'events'
+            {tab === 'events'
               ? 'Jornadas puntuales (ej: Depilación definitiva) con una profesional y fecha fijas, destacadas en la página principal'
               : 'Ofertas de servicios y productos que aparecen en la página principal'}
           </p>
         </div>
-        {tab !== 'automatic' && tab !== 'events' && (
+        {tab !== 'events' && (
           <button onClick={() => { setEditing(emptyPromotion(tab)); setShowForm(true) }} style={primaryBtnStyle}>
             <Plus size={16} /> Nueva promoción
           </button>
@@ -134,9 +130,7 @@ export function PromotionsPage() {
         ))}
       </div>
 
-      {tab === 'automatic' ? (
-        <AutoPromotionsSection />
-      ) : tab === 'events' ? (
+      {tab === 'events' ? (
         <SpecialEventsSection />
       ) : (
         <>

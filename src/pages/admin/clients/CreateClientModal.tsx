@@ -12,12 +12,11 @@ interface Form {
   name:      string
   email:     string
   phone:     string
-  birthDate: string
   gender:    ClientGender | ''
   password:  string
 }
 
-const EMPTY: Form = { name: '', email: '', phone: '', birthDate: '', gender: '', password: '' }
+const EMPTY: Form = { name: '', email: '', phone: '', gender: '', password: '' }
 
 interface Props {
   onClose:   () => void
@@ -43,7 +42,6 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
         name:      form.name,
         email:     form.email,
         phone:     form.phone || undefined,
-        birthDate: form.birthDate || undefined,
         gender:    form.gender || undefined,
         password:  form.password || undefined,
       })
@@ -72,9 +70,6 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
           </Field>
           <Field label="Teléfono">
             <input value={form.phone} onChange={e => set('phone', e.target.value)} style={inp} />
-          </Field>
-          <Field label="Fecha de nacimiento">
-            <input type="date" value={form.birthDate} onChange={e => set('birthDate', e.target.value)} style={inp} />
           </Field>
           <Field label="Género">
             <select value={form.gender} onChange={e => set('gender', e.target.value)} style={inp}>

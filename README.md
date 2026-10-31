@@ -335,15 +335,15 @@ npm test
 **Esperado:**
 
 ```
-Test Files  11 passed (11)
-     Tests  39 passed (39)
+Test Files  17 passed (17)
+     Tests  80 passed (80)
 ```
 
 ---
 
 ## 8. Declaración de uso de IA
 
-En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026).
+En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026). La entrada del 31/10/2026 sobre la baja de campañas, puntos y fecha de nacimiento está al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
 
 También se usó **Claude** (chat, Anthropic) sobre documentos —el informe, los instrumentos, el libro de requisitos, el acta, el tablero y la bitácora—; ese uso está declarado en la bitácora y en el Anexo III.
 
@@ -381,6 +381,18 @@ Desde el 25/09 los commits se firmaron solo con el nombre de la autora, sin la l
 | Sin evidencia en las sesiones | 1 — `47f4a96` (autora en el README) | 1 — `087ee9b` (autora en el README) |
 
 Los commits `54933ca` y `ec976da` son los del README v1.1; `ce550a9` y `2e7734f`, los de la corrección de ese README, y `9bdc3ee` y `4bf842e`, los de la bitácora de la AE2. El commit de este README (v1.2) también se hizo con Claude Code (Claude Sonnet 5.5) y no figura en las cifras de arriba porque no puede citar su propio hash.
+
+### 8.3 Baja de campañas, puntos y fecha de nacimiento (AE4)
+
+El backend (Fase 1) eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve ahora `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. Este cambio en el frontend lo hizo **Claude Code (Claude Sonnet 5.5)**, no la autora, en la rama `refactor/quitar-campanas-puntos-nacimiento`, cortada de `integracion-ae4` (que sale de `main`). No se hizo push ni merge. Los tres commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5`:
+
+| Commit | Qué cambia |
+|---|---|
+| `dd1b050` | La ficha lee `visits` y las muestra en un resumen; se elimina la pestaña Fidelización (`LoyaltyTab.tsx`) y la fecha de nacimiento de la clienta (tipos, lista, `InfoTab`, `CreateClientModal`) |
+| `55fa408` | Se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales |
+| `1f54677` | El alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda) |
+
+Pruebas agregadas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento (`ClientDetail.test.tsx`), y `PromotionsPage` no ofrece campañas (`PromotionsPage.test.tsx`). Resultado: lint sin errores, `typecheck:all` sin errores, 80 tests en 17 archivos y build correcto. El commit con este README y la bitácora también se hizo con Claude Code (Claude Sonnet 5.5) y no puede citar su propio hash.
 
 ---
 
