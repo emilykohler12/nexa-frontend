@@ -133,7 +133,7 @@ function ClientCard({ client, onClick }: { client: AdminClient; onClick: () => v
           {client.phone}
         </p>
         <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#069494', fontWeight: 700 }}>
-          {client.loyalty?.totalVisits ?? 0} visitas · ${(client.loyalty?.totalSpent ?? 0).toLocaleString('es-AR')}
+          {client.visits?.totalVisits ?? 0} visitas · ${(client.visits?.totalSpent ?? 0).toLocaleString('es-AR')}
         </p>
       </div>
     </div>

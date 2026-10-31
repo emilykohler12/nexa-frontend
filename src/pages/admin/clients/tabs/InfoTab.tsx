@@ -53,9 +53,6 @@ export function InfoTab({ client, onSave }: Props) {
           <Field label="Email">
             <input type="email" value={form.email} onChange={e => set('email', e.target.value)} style={inp} />
           </Field>
-          <Field label="Fecha de nacimiento">
-            <input type="date" value={form.birthDate ?? ''} onChange={e => set('birthDate', e.target.value || null)} style={inp} />
-          </Field>
           <Field label="Género">
             <select value={form.gender ?? ''} onChange={e => set('gender', e.target.value || null)} style={inp}>
               <option value="">Sin especificar</option>

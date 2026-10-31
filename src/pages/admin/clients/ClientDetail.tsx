@@ -2,23 +2,49 @@ import { useState } from 'react'
 import { ArrowLeft, ShieldOff, ShieldCheck, UserX } from 'lucide-react'
 import { InfoTab }    from './tabs/InfoTab'
 import { HistoryTab } from './tabs/HistoryTab'
-import { LoyaltyTab } from './tabs/LoyaltyTab'
 import { GalleryTab } from './tabs/GalleryTab'
 import { ReviewsTab } from './tabs/ReviewsTab'
-import type { AdminClient } from './types'
+import type { AdminClient, ClientVisits } from './types'
 import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
-type Tab = 'info' | 'history' | 'loyalty' | 'gallery' | 'reviews'
+type Tab = 'info' | 'history' | 'gallery' | 'reviews'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'info',    label: 'Información'  },
-  { id: 'history', label: 'Historial'    },
-  { id: 'loyalty', label: 'Fidelización' },
-  { id: 'gallery', label: 'Galería'      },
-  { id: 'reviews', label: 'Reseñas'      },
+  { id: 'info',    label: 'Información' },
+  { id: 'history', label: 'Historial'   },
+  { id: 'gallery', label: 'Galería'     },
+  { id: 'reviews', label: 'Reseñas'     },
 ]
+
+const EMPTY_VISITS: ClientVisits = { totalVisits: 0, totalSpent: 0, lastVisit: null }
+
+// Resumen de visitas (solo turnos finalizados): lo calcula el backend.
+function VisitsSummary({ visits }: { visits: ClientVisits }) {
+  const stats = [
+    { label: 'Total de visitas', value: String(visits.totalVisits) },
+    { label: 'Total gastado',    value: `$${visits.totalSpent.toLocaleString('es-AR')}` },
+    {
+      label: 'Última visita',
+      value: visits.lastVisit
+        ? new Date(visits.lastVisit + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '—',
+    },
+  ]
+  return (
+    <section aria-label="Visitas" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+      {stats.map(({ label, value }) => (
+        <div key={label} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '12px', padding: '20px' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {label}
+          </p>
+          <p style={{ margin: 0, fontSize: '26px', fontWeight: 700, color: '#069494' }}>{value}</p>
+        </div>
+      ))}
+    </section>
+  )
+}
 
 // El backend deja el email de una clienta anonimizada como anonimo_<id>@borrado.com.
 const isAnonymized = (client: AdminClient) => client.email.endsWith('@borrado.com')
@@ -133,6 +159,8 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymiz
         )}
       </div>
 
+      <VisitsSummary visits={client.visits ?? EMPTY_VISITS} />
+
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '2px', background: '#f0f0f0', borderRadius: '10px', padding: '3px', width: 'fit-content' }}>
         {TABS.map(tab => (
@@ -155,7 +183,6 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymiz
 
       {activeTab === 'info'    && <InfoTab    client={client} onSave={onSave} />}
       {activeTab === 'history' && <HistoryTab client={client} />}
-      {activeTab === 'loyalty' && <LoyaltyTab client={client} />}
       {activeTab === 'gallery' && <GalleryTab client={client} />}
       {activeTab === 'reviews' && <ReviewsTab client={client} />}
 
