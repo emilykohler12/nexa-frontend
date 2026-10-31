@@ -6,7 +6,8 @@ const STATUS_CONFIG: Record<AppointmentHistoryStatus, { label: string; color: st
   confirmed: { label: 'Confirmado', color: '#069494' },
   finished:  { label: 'Realizado',  color: '#4caf50' },
   cancelled: { label: 'Cancelado',  color: '#e53935' },
-  cancelled_no_show:   { label: 'Cancelado por inasistencia', color: '#000'    },
+  cancelled_no_show:   { label: 'No asistió', color: '#000'    },
+  no_show_auto:        { label: 'No asistió (automático)', color: '#b45309' },
 }
 
 // Un turno "cancelado" por falta de pago nunca llegó a confirmarse — distinto

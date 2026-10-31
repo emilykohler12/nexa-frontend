@@ -239,6 +239,7 @@ export function AppointmentsPage() {
           onRegisterBalancePayment={handleRegisterBalancePayment}
           onRegisterPolishRemoval={handleRegisterPolishRemoval}
           onMarkDepositPaid={handleMarkDepositPaid}
+          onChangeStatus={patchStatus}
         />
       )}
 

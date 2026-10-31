@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Calendar, Clock, User, DollarSign, Shield, MapPin, Phone, AlertCircle, Users, Image as ImageIcon, FileText, Pencil, Tag } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
-import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay, NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
 import type { AppointmentStatus } from '@/features/client/types'
 import { PostBookingDetails, type AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
 import './AppointmentsPage.css'
@@ -20,6 +20,7 @@ interface Appointment {
   status:            AppointmentStatus
   cancelReason?:     string | null
   displayStatus?:    string
+  statusLabel?:      string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   details?:          AppointmentDetailsValue | null
   selectedZones?:    { name: string; price: number; duration: number }[]
@@ -52,7 +53,7 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
   if (!business) return null
   const { primaryColor, accentColor, policies, contactInfo } = business
 
-  const status = getAppointmentStatusDisplay(appointment.status, appointment.cancelReason, appointment.displayStatus)
+  const status = getAppointmentStatusDisplay(appointment.status, appointment.cancelReason, appointment.displayStatus, appointment.statusLabel)
   const remaining = Math.max(0, appointment.price - appointment.depositAmount)
   const depositPaid = appointment.paymentStatus === 'paid' || appointment.paymentStatus === 'partial'
   const details = appointment.details
@@ -93,6 +94,12 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
           >
             {status.label}
           </span>
+
+          {appointment.status === 'no_show_auto' && (
+            <p role="note" style={{ margin: 0, fontFamily: 'var(--font-lato)', fontSize: '14px', color: '#b45309' }}>
+              {NO_SHOW_AUTO_NOTICE}
+            </p>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: 'var(--font-lato)', fontSize: '15px', color: '#333' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

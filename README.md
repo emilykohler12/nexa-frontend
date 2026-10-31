@@ -335,15 +335,15 @@ npm test
 **Esperado:**
 
 ```
-Test Files  17 passed (17)
-     Tests  80 passed (80)
+Test Files  23 passed (23)
+     Tests  156 passed (156)
 ```
 
 ---
 
 ## 8. Declaración de uso de IA
 
-En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026). La entrada del 31/10/2026 sobre la baja de campañas, puntos y fecha de nacimiento está al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
+En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026). Las entradas de la AE4 (31/10/2026: baja de campañas, puntos y fecha de nacimiento; horarios reabiertos y estados de inasistencia) están al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
 
 También se usó **Claude** (chat, Anthropic) sobre documentos —el informe, los instrumentos, el libro de requisitos, el acta, el tablero y la bitácora—; ese uso está declarado en la bitácora y en el Anexo III.
 
@@ -382,17 +382,27 @@ Desde el 25/09 los commits se firmaron solo con el nombre de la autora, sin la l
 
 Los commits `54933ca` y `ec976da` son los del README v1.1; `ce550a9` y `2e7734f`, los de la corrección de ese README, y `9bdc3ee` y `4bf842e`, los de la bitácora de la AE2. El commit de este README (v1.2) también se hizo con Claude Code (Claude Sonnet 5.5) y no figura en las cifras de arriba porque no puede citar su propio hash.
 
-### 8.3 Baja de campañas, puntos y fecha de nacimiento (AE4)
+### 8.3 Cambios de la AE4 hechos con Claude Code (rama `integracion-ae4`)
 
-El backend (Fase 1) eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve ahora `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. Este cambio en el frontend lo hizo **Claude Code (Claude Sonnet 5.5)**, no la autora, en la rama `refactor/quitar-campanas-puntos-nacimiento`, cortada de `integracion-ae4` (que sale de `main`). No se hizo push ni merge. Los tres commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5`:
+Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella y sobre su propia rama cortada de `integracion-ae4`; la autora revisa y hace el merge. Los commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5`. Cada fila cita solo los commits de código de la fase: el último commit de cada fase (README y bitácora) no puede citar su propio hash y se identifica en la bitácora.
+
+| Fase | Rama | Commits |
+|---|---|---|
+| 1 — eliminaciones: campañas, puntos y fecha de nacimiento | `refactor/quitar-campanas-puntos-nacimiento` | `dd1b050`, `55fa408`, `1f54677` |
+| 2 — horarios reabiertos, reserva tardía y estados de inasistencia | `feat/horarios-reabiertos-y-estados` | `d40a458`, `77e6b0c`, `e67053b`, `56d4dd6` |
+
+**Fase 1.** El backend eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. `dd1b050`: la ficha lee `visits`, se elimina la pestaña Fidelización y la fecha de nacimiento de la clienta. `55fa408`: se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales. `1f54677`: el alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda). Pruebas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento, y `PromotionsPage` no ofrece campañas.
+
+**Fase 2.** El backend calcula los horarios de la clienta (`earliestStart` y `reopenedStarts` en `GET /api/professional/:id/availability?date&serviceId`), devuelve `statusLabel` y agrega los estados `no_show_auto` y los códigos de error de la reserva tardía y los horarios reabiertos. En el frontend:
 
 | Commit | Qué cambia |
 |---|---|
-| `dd1b050` | La ficha lee `visits` y las muestra en un resumen; se elimina la pestaña Fidelización (`LoyaltyTab.tsx`) y la fecha de nacimiento de la clienta (tipos, lista, `InfoTab`, `CreateClientModal`) |
-| `55fa408` | Se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales |
-| `1f54677` | El alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda) |
+| `d40a458` | `errorMessage.ts`: mensajes en español para `INVALID_STATUS_TRANSITION`, `APPOINTMENT_OVERLAP`, `SERVICE_DOES_NOT_FIT`, `REOPENED_SLOT_CLOSED`, `REOPENED_SLOT_UNAVAILABLE`, `NO_SHOW_BEFORE_START`, `NOT_CANCELLABLE` y `START_TIME_PASSED` |
+| `77e6b0c` | `DateTimeStep`, `ComboBookingFlow` y `RescheduleModal` dejan de filtrar con el reloj del navegador (fecha UTC, fallaba pasadas las 21:00) y usan los inicios del servidor; los reabiertos se muestran con la etiqueta «Horario de último momento» |
+| `e67053b` | Etiquetas y colores de las agendas de la profesional y del administrador con `statusLabel`, `no_show_auto` («No asistió (automático)») y `cancelled_no_show` («No asistió»); acciones «Marcar No asistió» (solo desde la hora de inicio) y «Corregir: la clienta vino» (a Finalizado o a Confirmado) con una confirmación que explica si se abre un horario nuevo |
+| `56d4dd6` | «Mis turnos»: muestra «No asistió», lo incluye en Historial y no ofrece cancelar ni reprogramar un turno en «No asistió (automático)» |
 
-Pruebas agregadas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento (`ClientDetail.test.tsx`), y `PromotionsPage` no ofrece campañas (`PromotionsPage.test.tsx`). Resultado: lint sin errores, `typecheck:all` sin errores, 80 tests en 17 archivos y build correcto. El commit con este README y la bitácora también se hizo con Claude Code (Claude Sonnet 5.5) y no puede citar su propio hash.
+Pruebas de componente por cada cambio. Resultado de la Fase 2: lint sin errores, `typecheck:all` sin errores, 156 tests en 23 archivos y build correcto.
 
 El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora.
 

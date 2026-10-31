@@ -8,6 +8,8 @@ import { AgendaMonth } from './components/AgendaMonth'
 import { AppointmentDialog } from './dialogs/AppointmentDialog'
 import { CreateAppointmentModal } from './dialogs/CreateAppointmentModal'
 import type { Appointment } from '@/features/professional/types/appointment'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import type { NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
 import type { SpecialAssignment } from './components/AgendaDay'
 
 type View = 'day' | 'week' | 'month'
@@ -115,6 +117,18 @@ export function Agenda() {
     }
   }
 
+  // Marcar «No asistió» o corregirlo (a Finalizado / Confirmado). Las reglas las valida el backend;
+  // si rechaza el cambio, el mensaje vuelve al diálogo y el turno queda como estaba.
+  const handleChangeStatus = async (appointment: Appointment, to: NoShowTarget): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}`, { status: to })
+      setAppointments(prev => prev.map(a => a.id === appointment.id ? res.data.appointment : a))
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo cambiar el estado del turno. Intentá de nuevo.')
+    }
+  }
+
   const handleMarkArrival = async (appointment: Appointment) => {
     try {
       const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/arrival`)
@@ -187,6 +201,7 @@ export function Agenda() {
           onClose={() => setSelected(null)}
           onSave={handleSave}
           onMarkArrival={handleMarkArrival}
+          onChangeStatus={handleChangeStatus}
         />
       )}
 

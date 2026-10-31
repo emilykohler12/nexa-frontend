@@ -5,7 +5,7 @@ import { useTenant }      from '@/features/tenant/TenantContext'
 import { useAuth, isFirstVisit } from '@/features/auth/AuthContext'
 import { api }            from '@/shared/utils/api'
 import { ROUTES }         from '@/app/config/routes.config'
-import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay, NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
 import { Calendar, Clock, User, Users, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
@@ -42,9 +42,10 @@ interface Appointment {
   status:            AppointmentStatus
   cancelReason?:     string | null
   displayStatus?:    string
+  statusLabel?:      string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   // Cuándo registraste que llegaste al local. Si un turno confirmado queda sin
-  // esto 20 minutos después de la hora pactada, se marca "Cancelado por inasistencia" solo.
+  // esto más de 30 minutos después de la hora pactada, se marca "No asistió (automático)" solo.
   arrivedAt?:        string | null
   details?:          AppointmentDetailsValue | null
   comboGroupId?:     string | null
@@ -132,10 +133,11 @@ export function AppointmentsPage() {
   // (finished/cancelled_no_show/cancelled), y solo se usa la fecha/hora para los que
   // todavía dependen de si ya pasaron o no. Así nunca puede aparecer duplicado.
   const isUpcomingStatus = (a: Appointment) => a.status === 'confirmed' || a.status === 'pending'
+  const isNoShowStatus = (status: string) => status === 'no_show_auto' || status === 'cancelled_no_show'
 
   const filtered = appointments.filter(a => {
     if (filter === 'upcoming')  return isUpcomingStatus(a) && !isPast(a)
-    if (filter === 'history')   return a.status === 'finished' || (isUpcomingStatus(a) && isPast(a))
+    if (filter === 'history')   return a.status === 'finished' || isNoShowStatus(a.status) || (isUpcomingStatus(a) && isPast(a))
     if (filter === 'cancelled') return a.status === 'cancelled'
     return true
   })
@@ -325,7 +327,7 @@ export function AppointmentsPage() {
               const activeLegs = legs.filter(l => l.status === 'confirmed' || l.status === 'pending')
               // Estado de la fila: si queda alguna pata activa, ese; si no, la primera.
               const rowAppt = activeLegs[0] ?? head
-              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus)
+              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus, rowAppt.statusLabel)
               const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
               const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
               const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
@@ -380,7 +382,7 @@ export function AppointmentsPage() {
             }
 
             const appt = row.appt
-            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason, appt.displayStatus)
+            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason, appt.displayStatus, appt.statusLabel)
             return (
               <div
                 key={appt.id}
@@ -413,8 +415,14 @@ export function AppointmentsPage() {
 
                 {canMarkArrival(appt) && (
                   <div className="appointment-meta" style={{ color: '#b45309' }}>
-                    <span>Al llegar al local, marcá tu llegada — si pasan 20 min de tu hora sin avisar, el turno se libera.</span>
+                    <span>Al llegar al local, marcá tu llegada — si pasan más de 30 min de tu hora sin avisar, el turno figura como «No asistió (automático)».</span>
                   </div>
+                )}
+
+                {appt.status === 'no_show_auto' && (
+                  <p role="note" className="appointment-meta" style={{ color: '#b45309', margin: 0 }}>
+                    {NO_SHOW_AUTO_NOTICE}
+                  </p>
                 )}
 
                 <div className="appointment-footer">

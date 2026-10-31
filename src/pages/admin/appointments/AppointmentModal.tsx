@@ -9,6 +9,7 @@ import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
 import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
 import { companionText } from '@/shared/utils/companion'
+import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
 
 interface Props {
   appointment: Appointment | null;
@@ -20,6 +21,9 @@ interface Props {
   onRegisterBalancePayment: (id: string, data: { method: BalancePaymentMethod; amount: number }) => Promise<string | null>;
   onRegisterPolishRemoval: (id: string, data: { label: string; price: number }) => Promise<string | null>;
   onMarkDepositPaid: (id: string) => Promise<string | null>;
+  // Cambia solo el estado del turno (confirmar, finalizar, marcar «No asistió» o corregirlo).
+  // Devuelve el mensaje de error, o null si salió bien.
+  onChangeStatus: (id: string, status: NoShowTarget) => Promise<string | null>;
 }
 
 const BALANCE_METHOD_LABEL: Record<BalancePaymentMethod, string> = {
@@ -31,7 +35,8 @@ const STATUS_LABELS = {
   pending:   'Pendiente',
   finished:  'Realizado',
   cancelled: 'Cancelado',
-  cancelled_no_show:   'Cancelado por inasistencia',
+  cancelled_no_show:   'No asistió',
+  no_show_auto:        'No asistió (automático)',
 };
 
 const STATUS_STYLES = {
@@ -40,6 +45,7 @@ const STATUS_STYLES = {
   finished:  { bg: 'rgba(76,175,80,0.12)',  color: '#4caf50' },
   cancelled: { bg: 'rgba(229,57,53,0.1)',   color: '#e53935' },
   cancelled_no_show:   { bg: 'rgba(0,0,0,0.08)',      color: '#555'    },
+  no_show_auto:        { bg: 'rgba(180,83,9,0.12)',   color: '#b45309' },
 };
 
 // Un turno "cancelado" por falta de pago nunca llegó a confirmarse — distinto
@@ -47,7 +53,8 @@ const STATUS_STYLES = {
 function statusLabelFor(appointment: Appointment): string {
   if (appointment.status === 'cancelled' && appointment.cancelReason === 'unpaid_expired') return 'No se pagó a tiempo';
   if (appointment.displayStatus === 'pending_deposit') return 'Pendiente de seña';
-  return STATUS_LABELS[appointment.status];
+  // La etiqueta del backend (statusLabel) manda; el mapa local es el respaldo.
+  return appointment.statusLabel || STATUS_LABELS[appointment.status] || appointment.status;
 }
 function statusStyleFor(appointment: Appointment) {
   if (appointment.status === 'cancelled' && appointment.cancelReason === 'unpaid_expired') return { bg: 'rgba(0,0,0,0.06)', color: '#777' };
@@ -56,7 +63,7 @@ function statusStyleFor(appointment: Appointment) {
 }
 
 export function AppointmentModal({
-  appointment, professionals, onClose, onCancel, onReactivate, onSave, onRegisterBalancePayment, onRegisterPolishRemoval, onMarkDepositPaid,
+  appointment, professionals, onClose, onCancel, onReactivate, onSave, onRegisterBalancePayment, onRegisterPolishRemoval, onMarkDepositPaid, onChangeStatus,
 }: Props) {
   const [editing, setEditing]             = useState(false);
   const [form, setForm]                   = useState<Appointment | null>(appointment);
@@ -192,16 +199,27 @@ export function AppointmentModal({
           {!editing && !['cancelled'].includes(appointment.status) && (
             <Section>
               <SectionTitle color={profColor}>Marcar estado</SectionTitle>
+              <NoShowActions
+                status={appointment.status}
+                date={appointment.start.slice(0, 10)}
+                time={appointment.start.slice(11, 16)}
+                accent={profColor}
+                onChangeStatus={to => onChangeStatus(appointment.id, to)}
+                onDone={onClose}
+              />
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['confirmed', 'finished', 'cancelled_no_show'].map(status => (
+                {/* Un turno «No asistió» no se pasa a otro estado a ciegas: se corrige con las acciones de arriba. */}
+                {!['cancelled_no_show', 'no_show_auto'].includes(appointment.status) && ['confirmed', 'finished'].map(status => (
                   appointment.status !== status && (
                     <button
                       key={status}
                       onClick={async () => {
                         setSaving(true);
-                        const result = await onSave({ ...appointment, status: status as 'confirmed' | 'finished' | 'cancelled_no_show' | 'cancelled' });
+                        setActionError(null);
+                        const error = await onChangeStatus(appointment.id, status as 'confirmed' | 'finished');
                         setSaving(false);
-                        if (!result) onClose();
+                        if (error) { setActionError(error); return; }
+                        onClose();
                       }}
                       disabled={saving}
                       style={{
