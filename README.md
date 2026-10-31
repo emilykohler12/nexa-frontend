@@ -394,6 +394,8 @@ El backend (Fase 1) eliminó las campañas automáticas, los puntos de fidelizac
 
 Pruebas agregadas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento (`ClientDetail.test.tsx`), y `PromotionsPage` no ofrece campañas (`PromotionsPage.test.tsx`). Resultado: lint sin errores, `typecheck:all` sin errores, 80 tests en 17 archivos y build correcto. El commit con este README y la bitácora también se hizo con Claude Code (Claude Sonnet 5.5) y no puede citar su propio hash.
 
+El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora.
+
 ---
 
 ## 9. Canal de construcción (CI)
