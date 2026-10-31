@@ -480,3 +480,16 @@ Esta bitácora consolida todo el proceso de decisiones del proyecto: arquitectur
 ## Continuación: AE2 (10/09/2026 al 06/10/2026)
 
 Esta bitácora (AE1) llega hasta el 03/09/2026. Continúa en [`20261006_BitacoraIndividual_KohlerAE2_v5.docx`](20261006_BitacoraIndividual_KohlerAE2_v5.docx), con las decisiones de septiembre y octubre de 2026.
+
+---
+
+## Continuación: AE4
+
+## Entrada — 31/10/2026
+
+1. **Qué decidí:** Acompañar en el frontend la baja que hizo el backend (Fase 1) de las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento. La ficha de la clienta pasa a leer `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. Lo hizo Claude Code (Claude Sonnet 5.5), no yo, por una instrucción mía.
+2. **Alternativas evaluadas y por qué las descarté:** Claude Code dejó el resumen de visitas siempre visible arriba de las pestañas en vez de convertirlo en una pestaña nueva, para no volver a tener una pantalla de "fidelización" con casi nada adentro. Descartó dejar el campo "Fecha de nacimiento" del alta de profesionales: el backend no la guarda en ningún modelo, así que el campo se mandaba y se perdía.
+3. **Evidencia que sostiene la decisión:** `mapAdminClient` en `nexa-backend/src/modules/admin/admin.service.ts` (rama `refactor/quitar-campanas-puntos-recordatorio-nacimiento`, leída sin editar) devuelve `visits` y ya no `loyalty` ni `birthDate`; el schema de Prisma no tiene ningún campo de nacimiento. Resultado de las pruebas en la rama: lint sin errores, `typecheck:all` sin errores, 80 tests en 17 archivos y `build` correcto. Commits en README 8.3: `dd1b050`, `55fa408` y `1f54677`.
+4. **Qué aporté yo, con remisión al repositorio:** Di la instrucción y el contexto del cambio de contrato. El código, las pruebas, el README (sección 8.3) y esta entrada los hizo Claude Code, en la rama `refactor/quitar-campanas-puntos-nacimiento`, cortada de `integracion-ae4`. Sin push ni merge: la revisión y la integración quedan de mi lado.
+5. **Desacuerdos y cómo se resolvieron:** No hubo. Un punto para que lo revise: la instrucción hablaba de la fecha de nacimiento de la clienta, y Claude Code también la quitó del alta de profesionales (`1f54677`) porque el backend tampoco la guarda; si quisiera conservarla ahí, ese commit es independiente y se puede revertir solo.
+6. **Herramienta auxiliar usada:** Claude Code (Claude Sonnet 5.5). Los commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5`.
