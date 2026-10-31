@@ -16,16 +16,34 @@ const UNSAFE_PATTERNS = [
   /\bsql\b/i,
 ]
 
-// Forma de un error de axios de la que solo se lee el status y el mensaje del backend.
+// Mensajes propios para los códigos de error de las reglas de horarios y de estados (Fase 2 del
+// backend). Tienen prioridad sobre el texto que manda el servidor: este mismo código se usa en
+// situaciones parecidas con textos distintos, y acá queda uno claro para la usuaria.
+export const ERROR_CODE_MESSAGES: Record<string, string> = {
+  INVALID_STATUS_TRANSITION: 'Ese cambio de estado no se puede hacer con este turno. Si figura como «No asistió», corregí primero su estado.',
+  APPOINTMENT_OVERLAP: 'No se puede confirmar: el turno se superpone con otro turno de la profesional.',
+  SERVICE_DOES_NOT_FIT: 'El servicio no entra en ese horario: no termina antes del siguiente turno ni dentro del horario de trabajo. Elegí otro horario.',
+  REOPENED_SLOT_CLOSED: 'Ese horario de último momento ya cerró. Elegí otro horario.',
+  REOPENED_SLOT_UNAVAILABLE: 'Ese horario de último momento ya no está disponible. Elegí uno de los que se ofrecen.',
+  NO_SHOW_BEFORE_START: 'No se puede marcar «No asistió» un turno que todavía no empezó.',
+  NOT_CANCELLABLE: 'Este turno ya no se puede cancelar.',
+  START_TIME_PASSED: 'Ese horario ya pasó. Elegí otro horario.',
+}
+
+// Forma de un error de axios de la que solo se lee el status, el código y el mensaje del backend.
 interface ApiErrorLike {
-  response?: { status?: number; data?: { error?: unknown } }
+  response?: { status?: number; data?: { error?: unknown; code?: unknown } }
 }
 
 export function safeErrorMessage(err: unknown, fallback: string): string {
   const apiError = err as ApiErrorLike | null | undefined
   const status   = apiError?.response?.status
   const message  = apiError?.response?.data?.error
+  const code     = apiError?.response?.data?.code
 
+  if (typeof code === 'string' && code in ERROR_CODE_MESSAGES && !(status && status >= 500)) {
+    return ERROR_CODE_MESSAGES[code]
+  }
   if (typeof message !== 'string' || !message.trim()) return fallback
   if (status && status >= 500) return fallback
   if (message.length > 200) return fallback
