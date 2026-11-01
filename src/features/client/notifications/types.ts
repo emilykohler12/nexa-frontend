@@ -3,8 +3,6 @@ export type ClientNotificationType =
   | 'new_product'
   | 'new_promotion'
   | 'special_service'
-  | 'appointment_reminder'
-  | 'system'
 
 export interface ClientNotification {
   id:        string
