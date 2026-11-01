@@ -126,6 +126,8 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
       setValue('categoryId', 'combo', { shouldDirty: true })
     } else {
       setValue('comboServiceIds', [], { shouldDirty: true })
+      // RF-11: la categoría "Combo" es solo de los servicios simultáneos; el backend la rechaza en un servicio común.
+      setValue('categoryId', categories.find(c => c.id !== 'combo')?.id ?? '', { shouldDirty: true })
     }
   }
 
@@ -170,7 +172,7 @@ export function ServiceFormModal({ service, categories, allServices, error, onSa
           <label className="service-form-field">
             <span>Categoría</span>
             <select {...register('categoryId')}>
-              {categories.map((cat) => (
+              {categories.filter((cat) => isCombo || cat.id !== 'combo').map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.label}</option>
               ))}
             </select>
