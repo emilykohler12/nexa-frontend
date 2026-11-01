@@ -8,6 +8,10 @@ vi.mock('@/shared/utils/api', () => ({
   api: { get: vi.fn().mockResolvedValue({ data: {} }), post: vi.fn(), patch: vi.fn() },
 }))
 
+vi.mock('@/shared/hooks/usePaymentRules', () => ({
+  usePaymentRules: () => ({ cancellationHours: 12, refundPolicy: 'full' }),
+}))
+
 // El backend manda `start` como hora de Argentina sin zona: "YYYY-MM-DDTHH:mm:00".
 const START_ART = new Date('2026-11-03T16:00:00-03:00')
 
@@ -116,5 +120,38 @@ describe('AppointmentModal (administrador): estados e inasistencia', () => {
 
     expect(onChangeStatus).toHaveBeenCalledWith('a1', 'finished')
     expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('«Cancelar turno» abre el diálogo: la clienta avisó con 13 horas, se devuelve la seña y se manda el aviso', async () => {
+    vi.setSystemTime(new Date(START_ART.getTime() - 13 * 3_600_000))
+    const { user, onCancel, onClose } = setup({ paymentStatus: 'partial' })
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar turno' }))
+    await user.click(screen.getByRole('radio', { name: /La clienta avisó/ }))
+    expect(screen.getByRole('status')).toHaveTextContent('Avisó con 13 h 0 min de anticipación: se devuelve la seña.')
+    await user.click(screen.getByRole('button', { name: 'Sí, cancelar el turno' }))
+
+    expect(onCancel).toHaveBeenCalledWith('a1', { cancelledBy: 'client', clientNoticeAt: '2026-11-03T06:00:00.000Z' })
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('un turno cancelado muestra quién cancelo, el aviso de la clienta y quién lo cargó', () => {
+    vi.setSystemTime(START_ART)
+    setup({
+      status: 'cancelled', paymentStatus: 'refunded',
+      cancellation: {
+        cancelledBy: 'client', cancelledAt: '2026-11-02T18:00:00.000Z', refunded: true,
+        noticeAt: '2026-11-02T15:00:00.000Z', noticeHours: 25, noticeChannel: 'whatsapp', noticeNote: 'Se enfermó',
+        noticeLoadedBy: { id: 'u1', name: 'Lucía' }, noticeLoadedAt: '2026-11-02T18:00:00.000Z',
+      },
+    })
+
+    const summary = screen.getByRole('region', { name: 'Cancelación' })
+    expect(summary).toHaveTextContent('La clienta')
+    expect(summary).toHaveTextContent('25 h 0 min')
+    expect(summary).toHaveTextContent('WhatsApp')
+    expect(summary).toHaveTextContent('Se enfermó')
+    expect(summary).toHaveTextContent('Lucía')
+    expect(summary).toHaveTextContent('Marcada como devuelta')
   })
 })

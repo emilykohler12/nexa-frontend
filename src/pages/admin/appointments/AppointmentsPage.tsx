@@ -9,6 +9,7 @@ import { CalendarMonth }      from './CalendarMonth'
 import { CalendarDay }        from './CalendarDay'
 import type { Appointment, Professional, BalancePaymentMethod } from './types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import type { StaffCancellation } from '@/shared/utils/cancellation'
 
 type ViewMode = 'month' | 'week' | 'day'
 
@@ -93,9 +94,9 @@ export function AppointmentsPage() {
   // una pata de un combo cancela el grupo completo del lado del backend, y si
   // solo actualizamos localmente el id que tocamos, la otra pata queda en
   // pantalla como si siguiera activa hasta recargar la página.
-  const patchStatus = async (id: string, status: Appointment['status']): Promise<string | null> => {
+  const patchStatus = async (id: string, status: Appointment['status'], extra: Partial<StaffCancellation> = {}): Promise<string | null> => {
     try {
-      await api.patch(`/api/admin/appointments/${id}`, { status })
+      await api.patch(`/api/admin/appointments/${id}`, { status, ...extra })
       await refetchAppointments()
       return null
     } catch (err: unknown) {
@@ -103,7 +104,8 @@ export function AppointmentsPage() {
     }
   }
 
-  const handleCancel     = (id: string) => patchStatus(id, 'cancelled')
+  // El backend exige cancelledBy al cancelar; si avisó la clienta, también va el aviso (hora, medio y nota).
+  const handleCancel     = (id: string, data: StaffCancellation) => patchStatus(id, 'cancelled', data)
   const handleReactivate = (id: string) => patchStatus(id, 'confirmed')
 
   const handleSave = async (upd: Appointment): Promise<string | null> => {

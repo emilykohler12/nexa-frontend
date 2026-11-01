@@ -3,6 +3,7 @@
 // ============================================================
 
 import type { CompanionRelation } from '@/shared/utils/companion';
+import type { CancellationDetail } from '@/shared/utils/cancellation';
 
 // 'no_show_auto' ("No asistió (automático)") lo asigna solo el sistema; 'cancelled_no_show' ("No asistió") lo marca el personal.
 export type AppointmentStatus = 'confirmed' | 'pending' | 'finished' | 'cancelled' | 'cancelled_no_show' | 'no_show_auto';
@@ -62,6 +63,8 @@ export interface CalendarAppointment {
   // Etiqueta del estado visible armada por el backend (ej: «No asistió (automático)»).
   statusLabel?: string;
   paymentStatus?: string;
+  // Solo en turnos cancelados: quién canceló, si la seña se marcó devuelta y el aviso de la clienta.
+  cancellation?: CancellationDetail | null;
   depositAmount?: number;
   depositMethod?: 'mercadopago' | 'whatsapp' | null;
   balancePayment?: BalancePayment | null;

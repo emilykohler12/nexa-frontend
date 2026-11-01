@@ -10,12 +10,16 @@ import type { Professional } from './types';
 import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
 import { companionText } from '@/shared/utils/companion'
 import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
+import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
+import { CancellationSummary } from '@/shared/ui/molecules/CancellationSummary'
+import type { StaffCancellation } from '@/shared/utils/cancellation'
 
 interface Props {
   appointment: Appointment | null;
   professionals: Professional[];
   onClose: () => void;
-  onCancel: (id: string) => Promise<string | null>;
+  // Cancela el turno con quién cancela y, si avisó la clienta, el aviso. Devuelve el error, o null si salió bien.
+  onCancel: (id: string, data: StaffCancellation) => Promise<string | null>;
   onReactivate: (id: string) => Promise<string | null>;
   onSave: (updated: Appointment) => Promise<string | null>;
   onRegisterBalancePayment: (id: string, data: { method: BalancePaymentMethod; amount: number }) => Promise<string | null>;
@@ -104,14 +108,6 @@ export function AppointmentModal({
     setEditing(false);
   };
   const handleDiscard = () => { setForm(appointment); setEditing(false); setActionError(null); };
-  const handleCancel = async () => {
-    setSaving(true);
-    setActionError(null);
-    const error = await onCancel(appointment.id);
-    setSaving(false);
-    if (error) { setActionError(error); setConfirmCancel(false); return; }
-    onClose();
-  };
   const handleReactivate = async () => {
     setSaving(true);
     setActionError(null);
@@ -446,7 +442,15 @@ export function AppointmentModal({
               </>
             ) : null}
 
-            {appointment.status === 'cancelled' && appointment.paymentStatus === 'refunded' && (
+            {appointment.status === 'cancelled' && appointment.cancellation && (
+              <>
+                <Divider />
+                <SectionTitle color={profColor}>Cancelación</SectionTitle>
+                <CancellationSummary cancellation={appointment.cancellation} />
+              </>
+            )}
+
+            {appointment.status === 'cancelled' && !appointment.cancellation && appointment.paymentStatus === 'refunded' && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)',
@@ -535,15 +539,7 @@ export function AppointmentModal({
           display: 'flex', gap: '8px', justifyContent: 'flex-end',
           flexWrap: 'wrap',
         }}>
-          {confirmCancel ? (
-            <>
-              <span style={{ fontSize: '13px', color: '#000', alignSelf: 'center', marginRight: 'auto' }}>
-                ¿Confirmar cancelación?
-              </span>
-              <Btn onClick={() => setConfirmCancel(false)} variant="ghost">No</Btn>
-              <Btn onClick={handleCancel} variant="danger" disabled={saving}>{saving ? 'Cancelando...' : 'Sí, cancelar'}</Btn>
-            </>
-          ) : editing ? (
+          {editing ? (
             <>
               <Btn onClick={handleDiscard} variant="ghost" disabled={saving}>Descartar</Btn>
               <Btn onClick={handleSave} variant="primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar cambios'}</Btn>
@@ -560,6 +556,20 @@ export function AppointmentModal({
           )}
         </div>
       </div>
+
+      {confirmCancel && (
+        <CancelAppointmentDialog
+          role="admin"
+          date={appointment.start.slice(0, 10)}
+          time={appointment.start.slice(11, 16)}
+          paymentStatus={appointment.paymentStatus}
+          isCombo={!!appointment.comboGroupId}
+          accent={profColor}
+          onConfirm={data => onCancel(appointment.id, data)}
+          onDone={onClose}
+          onClose={() => setConfirmCancel(false)}
+        />
+      )}
     </div>
   );
 }

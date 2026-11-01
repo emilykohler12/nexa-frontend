@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { AppointmentDialog } from './AppointmentDialog'
 import type { Appointment } from '@/features/professional/types/appointment'
 
+vi.mock('@/shared/hooks/usePaymentRules', () => ({
+  usePaymentRules: () => ({ cancellationHours: 12, refundPolicy: 'full' }),
+}))
+
 // 16:00 ART (UTC-3) del 03/11/2026.
 const START = new Date('2026-11-03T16:00:00-03:00')
 
@@ -25,6 +29,7 @@ function setup(appointment: Partial<Appointment> = {}, onChangeStatus = vi.fn().
     onSave: vi.fn(),
     onMarkArrival: vi.fn(),
     onChangeStatus,
+    onCancel: vi.fn().mockResolvedValue(null),
   }
   render(<AppointmentDialog {...props} />)
   return { ...props, user: userEvent.setup({ advanceTimers: vi.advanceTimersByTime }) }
@@ -93,6 +98,27 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
     setup({ status: 'cancelled_no_show' })
 
     expect(screen.getByText('No asistió')).toBeInTheDocument()
+  })
+
+  it('«Cancelar turno» abre el diálogo de cancelación y manda quién cancela', async () => {
+    vi.setSystemTime(new Date(START.getTime() - 20 * 3_600_000))
+    const { user, onCancel, onClose, appointment } = setup()
+
+    // «Cancelado» ya no es una opción del selector de estado.
+    expect(screen.queryByRole('button', { name: 'Cancelado' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cancelar turno' }))
+    await user.click(screen.getByRole('radio', { name: /El estudio cancela/ }))
+    await user.click(screen.getByRole('button', { name: 'Sí, cancelar el turno' }))
+
+    expect(onCancel).toHaveBeenCalledWith(appointment, { cancelledBy: 'studio' })
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('un turno finalizado o con «No asistió» no ofrece cancelar', () => {
+    vi.setSystemTime(START)
+    setup({ status: 'finished' })
+
+    expect(screen.queryByRole('button', { name: 'Cancelar turno' })).not.toBeInTheDocument()
   })
 
   it('el aviso de llegada habla de 30 minutos y de «No asistió (automático)»', () => {
