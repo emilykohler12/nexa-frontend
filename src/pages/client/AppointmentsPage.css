@@ -197,6 +197,36 @@
 }
 
 /* ── Modal de reprogramación ─────────────────────────────── */
+/* Aviso cuando el enlace del mail de recordatorio no puede abrir el turno */
+.appointments-link-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff8e6;
+  border: 1px solid #f3dfa2;
+  color: #7a5b00;
+  font-family: var(--font-lato);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.appointments-link-notice p { margin: 0; }
+.appointments-link-notice button {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .reschedule-overlay {
   position: fixed;
   inset: 0;
