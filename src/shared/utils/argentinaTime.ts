@@ -12,3 +12,20 @@ export function appointmentInstant(date: string, time: string): Date {
 export function minutesSinceStart(date: string, time: string, now: Date = new Date()): number {
   return (now.getTime() - appointmentInstant(date, time).getTime()) / MINUTE
 }
+
+// Fecha («YYYY-MM-DD») de un instante en hora de Argentina (America/Argentina/Buenos_Aires), sin importar la zona del
+// navegador. `toISOString()` da la fecha en UTC y desde las 21:00 de Argentina ya devuelve «mañana».
+const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires'
+const argentinaDateParts = new Intl.DateTimeFormat('en-US', {
+  timeZone: ARGENTINA_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+})
+
+export function argentinaDateOf(at: Date): string {
+  const parts = argentinaDateParts.formatToParts(at)
+  const pick = (type: string) => parts.find(p => p.type === type)?.value ?? ''
+  return `${pick('year')}-${pick('month')}-${pick('day')}`
+}
+
+export function todayInArgentina(now: Date = new Date()): string {
+  return argentinaDateOf(now)
+}
