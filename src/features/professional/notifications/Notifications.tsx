@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, Calendar, X, MessageSquare, DollarSign, Clock, Settings, RefreshCw } from 'lucide-react'
+import { Bell, Calendar, X, RefreshCw } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { ProfessionalNotification, NotificationType } from '@/features/professional/types/notification'
@@ -8,12 +8,10 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string }
   new_appointment:      { icon: Calendar,    color: '#069494' },
   cancelled_appointment:{ icon: X,           color: '#e53935' },
   rescheduled_appointment: { icon: RefreshCw, color: '#7986cb' },
-  new_message:          { icon: MessageSquare, color: '#4db6ac' },
-  payment_confirmed:    { icon: DollarSign,  color: '#4caf50' },
-  reminder:             { icon: Clock,       color: '#d4af37' },
-  admin_change:         { icon: Settings,    color: '#a1887f' },
-  system:               { icon: Bell,        color: '#000'    },
 }
+
+// RF-24: los tipos que nadie emitía se quitaron; un aviso viejo guardado con otro tipo se ve con el ícono genérico.
+const DEFAULT_TYPE_CONFIG = { icon: Bell, color: '#000' }
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -78,7 +76,7 @@ export function Notifications() {
             <p style={{ fontSize: '16px' }}>Sin notificaciones</p>
           </div>
         ) : notifs.map(n => {
-          const cfg  = TYPE_CONFIG[n.type]
+          const cfg  = TYPE_CONFIG[n.type] ?? DEFAULT_TYPE_CONFIG
           const Icon = cfg.icon
           return (
             <div

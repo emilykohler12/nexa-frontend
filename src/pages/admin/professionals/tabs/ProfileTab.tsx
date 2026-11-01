@@ -10,6 +10,7 @@ import type { AdminProfessional } from '../types';
 import '../professionals.css';
 import '@/shared/ui/admin/admin-controls.css';
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { phoneError } from '@/shared/utils/phone'
 
 const DAY_LABELS: Record<string, string> = {
   monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles',
@@ -95,6 +96,11 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
       return;
     }
     setSocialErrors({});
+    const invalidPhone = phoneError(form.phone ?? '');
+    if (invalidPhone) {
+      setSaveError(invalidPhone);
+      return;
+    }
     setSaveError(null);
     setSaved(false);
     setSaving(true);
@@ -113,6 +119,8 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
         commissionPct:  form.commissionPct,
         vacationFrom:   form.vacationFrom,
         vacationTo:     form.vacationTo,
+        // RF-06: solo se manda si la administradora cargó una fecha; sin fecha cargada vale la del alta de la cuenta.
+        joinedAt:       form.joinedAtIsDefault ? null : (form.joinedAt || null),
       });
       onSave(res.data.professional);
       setSaved(true);
@@ -145,6 +153,20 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
           <label className="prof-field">
             <span>Email</span>
             <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
+          </label>
+          <label className="prof-field">
+            <span>Fecha de ingreso al estudio</span>
+            <input
+              type="date"
+              value={form.joinedAt ?? ''}
+              max={new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })}
+              onChange={(e) => setForm((prev) => ({ ...prev, joinedAt: e.target.value, joinedAtIsDefault: e.target.value === '' }))}
+            />
+            <small style={{ color: '#777' }}>
+              {form.joinedAtIsDefault
+                ? 'Sin cargar: se usa la fecha de alta de la cuenta. Desempata por antigüedad al asignar «cualquier profesional».'
+                : 'Desempata por antigüedad al asignar «cualquier profesional» cuando hay igual carga semanal.'}
+            </small>
           </label>
           <label className="prof-field">
             <span>Estado</span>
