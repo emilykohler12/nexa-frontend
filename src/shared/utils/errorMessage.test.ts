@@ -60,6 +60,8 @@ describe('safeErrorMessage: códigos de las reglas de horarios y estados', () =>
     ['NO_SHOW_BEFORE_START', /todavía no empezó/],
     ['NOT_CANCELLABLE', /ya no se puede cancelar/],
     ['START_TIME_PASSED', /horario ya pasó/],
+    ['INVALID_NOTICE_TIME', /hora de aviso no puede ser futura/],
+    ['NOTICE_TOO_OLD', /más de 48 horas lo tiene que cargar la administradora/],
   ]
 
   it.each(casos)('%s tiene un mensaje claro en español', (code, pattern) => {

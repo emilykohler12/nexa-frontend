@@ -28,6 +28,9 @@ export const ERROR_CODE_MESSAGES: Record<string, string> = {
   NO_SHOW_BEFORE_START: 'No se puede marcar «No asistió» un turno que todavía no empezó.',
   NOT_CANCELLABLE: 'Este turno ya no se puede cancelar.',
   START_TIME_PASSED: 'Ese horario ya pasó. Elegí otro horario.',
+  // Fase 3: hora de aviso de la clienta al cancelar (la carga el personal).
+  INVALID_NOTICE_TIME: 'La hora de aviso no puede ser futura. Revisá el día y la hora en que avisó la clienta.',
+  NOTICE_TOO_OLD: 'Un aviso de hace más de 48 horas lo tiene que cargar la administradora.',
 }
 
 // Forma de un error de axios de la que solo se lee el status, el código y el mensaje del backend.
