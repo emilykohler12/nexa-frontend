@@ -14,6 +14,7 @@ import { AppointmentDetailModal } from './AppointmentDetailModal'
 import './AppointmentsPage.css'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ClientCancelConfirm } from './ClientCancelConfirm'
+import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
 import { appointmentInstant, todayInArgentina } from '@/shared/utils/argentinaTime'
 import { isDepositPaid } from '@/shared/utils/cancellation'
 import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
@@ -82,6 +83,8 @@ export function AppointmentsPage() {
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
   const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
   const [arrivingId, setArrivingId] = useState<string | null>(null)
+  // Cancelar UN servicio suelto de un combo (desde el detalle) también pide confirmación.
+  const [confirmCancelLegId, setConfirmCancelLegId] = useState<string | null>(null)
   // No hay reembolso automático (no hay integración de refunds con Mercado
   // Pago) — cuando corresponde devolución, se lo decimos al cliente y le
   // mostramos cómo escribirnos por WhatsApp para coordinarla a mano.
@@ -513,10 +516,46 @@ export function AppointmentsPage() {
                   .map(a => ({ id: a.id, serviceName: a.serviceName, professionalName: a.professionalName, status: a.status, price: a.price }))
               : undefined
           }
-          onCancelLeg={cancelOneComboLeg}
+          onCancelLeg={setConfirmCancelLegId}
           cancellingLegId={cancellingId}
         />
       )}
+
+      {confirmCancelLegId && (() => {
+        const leg = appointments.find(a => a.id === confirmCancelLegId)
+        if (!leg) return null
+        const group = leg.comboGroupId ? appointments.filter(a => a.comboGroupId === leg.comboGroupId) : [leg]
+        const isLastActive = group.filter(a => a.status === 'confirmed' || a.status === 'pending').length <= 1
+        const done = async () => { await cancelOneComboLeg(leg.id); setConfirmCancelLegId(null) }
+        if (!isLastActive) {
+          return (
+            <ConfirmModal
+              title="¿Cancelar este servicio?"
+              message={`${leg.serviceName} con ${leg.professionalName}. Los demás servicios del combo siguen en pie. La seña no se devuelve salvo que canceles todos.`}
+              confirmLabel="Sí, cancelar"
+              cancelLabel="Volver"
+              accentColor={primaryColor}
+              loading={cancellingId === leg.id}
+              onConfirm={done}
+              onCancel={() => setConfirmCancelLegId(null)}
+            />
+          )
+        }
+        const first = [...group].sort((a, b) => appointmentInstant(a.date, a.time).getTime() - appointmentInstant(b.date, b.time).getTime())[0]
+        return (
+          <ClientCancelConfirm
+            title="¿Cancelar este servicio?"
+            message={`${leg.serviceName} con ${leg.professionalName}. Es el último servicio del combo: al cancelarlo se cancela el turno completo.`}
+            date={first.date}
+            time={first.time}
+            paid={group.some(l => isDepositPaid(l.paymentStatus))}
+            accentColor={primaryColor}
+            loading={cancellingId === leg.id}
+            onConfirm={done}
+            onCancel={() => setConfirmCancelLegId(null)}
+          />
+        )
+      })()}
 
       {confirmCancelAppt && (() => {
         // Combo: la seña se evalúa una sola vez, con el inicio del primer servicio y si alguno tiene seña paga.
