@@ -391,6 +391,7 @@ Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**
 | 1 — eliminaciones: campañas, puntos y fecha de nacimiento | `refactor/quitar-campanas-puntos-nacimiento` | `dd1b050`, `55fa408`, `1f54677` |
 | 2 — horarios reabiertos, reserva tardía y estados de inasistencia | `feat/horarios-reabiertos-y-estados` | `d40a458`, `77e6b0c`, `e67053b`, `56d4dd6` |
 | 3 — cancelación con hora de aviso y devolución de la seña | `feat/cancelacion-con-hora-de-aviso` | `09c8df8`, `94b4f50`, `f247359`, `8891e19` |
+| 3b — enlaces del recordatorio de turno y fechas en hora de Argentina | `feat/enlaces-recordatorio-y-fechas` | `0aeb530`, `b05d8d0`, `aeaac72` |
 
 **Fase 1.** El backend eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. `dd1b050`: la ficha lee `visits`, se elimina la pestaña Fidelización y la fecha de nacimiento de la clienta. `55fa408`: se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales. `1f54677`: el alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda). Pruebas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento, y `PromotionsPage` no ofrece campañas.
 
@@ -415,6 +416,16 @@ Pruebas de componente por cada cambio. Resultado de la Fase 2: lint sin errores,
 | `8891e19` | Configuración de pagos: la política de devolución ofrece solo «Reembolso completo» y «Sin reembolso» |
 
 Pruebas: la hora de aviso por defecto, el bloqueo de horas futuras y de más de 48 horas para la profesional, el resultado con 13, 12 y 11 horas, el caso en que cancela el estudio, el aviso de la clienta con el turno empezado y los mensajes de error. Resultado de la Fase 3: lint sin errores, `typecheck:all` sin errores, 200 tests en 25 archivos y build correcto.
+
+**Fase 3b.** El backend (pull request 17) manda por mail un recordatorio del turno con tres botones que son enlaces a `FRONTEND_URL/mis-turnos?turno=<id>&accion=ver|reprogramar|cancelar`; no ejecutan nada. En el frontend:
+
+| Commit | Qué cambia |
+|---|---|
+| `0aeb530` | Las fechas de «hoy» se calculan en hora de Argentina (`argentinaDateOf` y `todayInArgentina` en `shared/utils/argentinaTime.ts`) y no con `toISOString()`, que desde las 21:00 da el día siguiente: inicio de la profesional (Turnos de hoy y próximo turno), rango de eventos especiales y «Mis turnos» (Ya llegué, Próximos e Historial) |
+| `b05d8d0` | «Mis turnos»: cancelar un servicio suelto de un combo desde el detalle pide confirmación (avisa que los demás siguen en pie y qué pasa con la seña) |
+| `aeaac72` | Ruta `/mis-turnos`, alias de `/client/appointments` que conserva `turno` y `accion`; sin sesión lleva al login y vuelve al mismo enlace (marca en `sessionStorage` que vence a la hora); «Mis turnos» abre el detalle, la reprogramación o el diálogo de cancelación según `accion`, siempre con confirmación; mensaje en español si el turno no existe o es de otra cuenta, ya empezó, está cancelado o realizado, figura como «No asistió» o «No asistió (automático)», es un combo (reprogramar) o no se pudieron cargar los turnos; una profesional o un administrador no abren el turno |
+
+Pruebas: el alias conserva los parámetros, el login y la vuelta, cada acción pide confirmación y no cancela hasta «Sí, cancelar», los casos de borde, los combos y las fechas a las 20:59, 21:00, 21:30 y 23:59 (con el código anterior fallan las de fecha). Resultado de la Fase 3b: lint sin errores, `typecheck:all` sin errores, 294 tests en 34 archivos y build correcto.
 
 El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora.
 
