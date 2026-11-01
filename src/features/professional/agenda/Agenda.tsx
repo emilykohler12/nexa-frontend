@@ -10,6 +10,7 @@ import { CreateAppointmentModal } from './dialogs/CreateAppointmentModal'
 import type { Appointment } from '@/features/professional/types/appointment'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
+import type { StaffCancellation } from '@/shared/utils/cancellation'
 import type { SpecialAssignment } from './components/AgendaDay'
 
 type View = 'day' | 'week' | 'month'
@@ -129,6 +130,20 @@ export function Agenda() {
     }
   }
 
+  // Cancelar con quién cancela y, si avisó la clienta, el aviso. Cancelar un turno de un combo cancela todo el
+  // grupo, así que se refresca la lista entera. Si el backend lo rechaza (por ejemplo NOTICE_TOO_OLD: un aviso de
+  // más de 48 horas lo carga la administradora), el mensaje vuelve al diálogo.
+  const handleCancel = async (appointment: Appointment, data: StaffCancellation): Promise<string | null> => {
+    try {
+      await api.patch(`/api/professional/appointments/${appointment.id}`, { status: 'cancelled', ...data })
+      const res = await api.get<{ appointments: Appointment[] }>('/api/professional/appointments')
+      setAppointments(res.data.appointments ?? [])
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo cancelar el turno. Intentá de nuevo.')
+    }
+  }
+
   const handleMarkArrival = async (appointment: Appointment) => {
     try {
       const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/arrival`)
@@ -202,6 +217,7 @@ export function Agenda() {
           onSave={handleSave}
           onMarkArrival={handleMarkArrival}
           onChangeStatus={handleChangeStatus}
+          onCancel={handleCancel}
         />
       )}
 

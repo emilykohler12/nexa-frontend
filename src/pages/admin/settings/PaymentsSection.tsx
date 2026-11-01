@@ -97,11 +97,13 @@ export function PaymentsSection() {
               style={inp}
             >
               <option value="full">Reembolso completo</option>
-              <option value="partial">Reembolso parcial</option>
               <option value="none">Sin reembolso</option>
             </select>
           </Field>
         </div>
+        <p style={{ margin: '10px 0 0', fontSize: '13px', color: '#444' }}>
+          El sistema solo marca la seña como devuelta: el dinero se devuelve por fuera, coordinándolo con la clienta.
+        </p>
       </SectionCard>
 
       {saveError && <div style={errorBox}>{saveError}</div>}

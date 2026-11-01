@@ -13,7 +13,9 @@ import type { AppointmentDetailsValue } from '@/features/client/booking/PostBook
 import { AppointmentDetailModal } from './AppointmentDetailModal'
 import './AppointmentsPage.css'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
-import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
+import { ClientCancelConfirm } from './ClientCancelConfirm'
+import { appointmentInstant } from '@/shared/utils/argentinaTime'
+import { isDepositPaid } from '@/shared/utils/cancellation'
 import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
 import { InfoModal } from '@/shared/ui/molecules/InfoModal'
 import { ReviewPromptModal } from '@/features/client/reviews/ReviewPromptModal'
@@ -174,7 +176,7 @@ export function AppointmentsPage() {
         text: res.data.partialCombo === false
           ? (res.data.refunded
               ? 'Cancelaste el último servicio del combo. Te corresponde la devolución de la seña.'
-              : 'Cancelaste el último servicio del combo. La seña no se reembolsa por cancelarse fuera del plazo.')
+              : 'Cancelaste el último servicio del combo. La seña queda retenida.')
           : 'Servicio cancelado. Los demás servicios del combo siguen en pie.',
       })
       if (res.data.partialCombo === false && res.data.refunded) setShowRefundNotice(true)
@@ -215,7 +217,7 @@ export function AppointmentsPage() {
           type: refunded ? 'success' : 'info',
           text: refunded
             ? 'Se canceló el combo completo. Te corresponde la devolución de la seña.'
-            : 'Se canceló el combo completo. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
+            : 'Se canceló el combo completo. La seña queda retenida.',
         })
         if (refunded) setShowRefundNotice(true)
       } else {
@@ -227,7 +229,7 @@ export function AppointmentsPage() {
           type: res.data.refunded ? 'success' : 'info',
           text: res.data.refunded
             ? 'Turno cancelado. Te corresponde la devolución de la seña.'
-            : 'Turno cancelado. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
+            : 'Turno cancelado. La seña queda retenida.',
         })
         if (res.data.refunded) setShowRefundNotice(true)
       }
@@ -330,7 +332,8 @@ export function AppointmentsPage() {
               const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus, rowAppt.statusLabel)
               const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
               const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
-              const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
+              // Se puede cancelar aunque el turno ya haya empezado (la seña queda retenida).
+              const canCancel = activeLegs.length > 0
               return (
                 <div
                   key={row.groupId}
@@ -429,7 +432,8 @@ export function AppointmentsPage() {
                   <span className="appointment-price" style={{ color: accentColor }}>
                     ${appt.price.toLocaleString('es-AR')}
                   </span>
-                  {(appt.status === 'confirmed' || appt.status === 'pending') && !isPast(appt) ? (
+                  {/* Cancelar se ofrece también con el turno ya empezado; reprogramar, solo antes de la hora. */}
+                  {(appt.status === 'confirmed' || appt.status === 'pending') ? (
                     <div className="appointment-actions">
                       {canMarkArrival(appt) && (
                         <button
@@ -441,7 +445,7 @@ export function AppointmentsPage() {
                           {arrivingId === appt.id ? 'Marcando...' : 'Ya llegué'}
                         </button>
                       )}
-                      {!appt.comboGroupId && (
+                      {!appt.comboGroupId && !isPast(appt) && (
                         <button
                           className="appointment-reschedule-btn"
                           onClick={e => { e.stopPropagation(); handleRescheduleClick(appt) }}
@@ -519,22 +523,30 @@ export function AppointmentsPage() {
         />
       )}
 
-      {confirmCancelAppt && (
-        <ConfirmModal
-          title="¿Cancelar este turno?"
-          message={
-            confirmCancelAppt.comboGroupId
-              ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date}.`
-              : `${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date} a las ${confirmCancelAppt.time}.`
-          }
-          confirmLabel="Sí, cancelar"
-          cancelLabel="Volver"
-          accentColor={primaryColor}
-          loading={cancellingId === confirmCancelAppt.id}
-          onConfirm={confirmCancel}
-          onCancel={() => setConfirmCancelAppt(null)}
-        />
-      )}
+      {confirmCancelAppt && (() => {
+        // Combo: la seña se evalúa una sola vez, con el inicio del primer servicio y si alguno tiene seña paga.
+        const groupLegs = confirmCancelAppt.comboGroupId
+          ? appointments.filter(a => a.comboGroupId === confirmCancelAppt.comboGroupId)
+          : [confirmCancelAppt]
+        const first = [...groupLegs].sort((a, b) => appointmentInstant(a.date, a.time).getTime() - appointmentInstant(b.date, b.time).getTime())[0]
+        return (
+          <ClientCancelConfirm
+            title="¿Cancelar este turno?"
+            message={
+              confirmCancelAppt.comboGroupId
+                ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date}.`
+                : `${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date} a las ${confirmCancelAppt.time}.`
+            }
+            date={first.date}
+            time={first.time}
+            paid={groupLegs.some(l => isDepositPaid(l.paymentStatus))}
+            accentColor={primaryColor}
+            loading={cancellingId === confirmCancelAppt.id}
+            onConfirm={confirmCancel}
+            onCancel={() => setConfirmCancelAppt(null)}
+          />
+        )
+      })()}
 
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 

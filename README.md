@@ -335,15 +335,15 @@ npm test
 **Esperado:**
 
 ```
-Test Files  23 passed (23)
-     Tests  156 passed (156)
+Test Files  25 passed (25)
+     Tests  200 passed (200)
 ```
 
 ---
 
 ## 8. Declaración de uso de IA
 
-En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026). Las entradas de la AE4 (31/10/2026: baja de campañas, puntos y fecha de nacimiento; horarios reabiertos y estados de inasistencia) están al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
+En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026). Las entradas de la AE4 (31/10/2026: baja de campañas, puntos y fecha de nacimiento; horarios reabiertos y estados de inasistencia; cancelación con hora de aviso) están al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
 
 También se usó **Claude** (chat, Anthropic) sobre documentos —el informe, los instrumentos, el libro de requisitos, el acta, el tablero y la bitácora—; ese uso está declarado en la bitácora y en el Anexo III.
 
@@ -390,6 +390,7 @@ Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**
 |---|---|---|
 | 1 — eliminaciones: campañas, puntos y fecha de nacimiento | `refactor/quitar-campanas-puntos-nacimiento` | `dd1b050`, `55fa408`, `1f54677` |
 | 2 — horarios reabiertos, reserva tardía y estados de inasistencia | `feat/horarios-reabiertos-y-estados` | `d40a458`, `77e6b0c`, `e67053b`, `56d4dd6` |
+| 3 — cancelación con hora de aviso y devolución de la seña | `feat/cancelacion-con-hora-de-aviso` | `09c8df8`, `94b4f50`, `f247359`, `8891e19` |
 
 **Fase 1.** El backend eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. `dd1b050`: la ficha lee `visits`, se elimina la pestaña Fidelización y la fecha de nacimiento de la clienta. `55fa408`: se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales. `1f54677`: el alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda). Pruebas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento, y `PromotionsPage` no ofrece campañas.
 
@@ -403,6 +404,17 @@ Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**
 | `56d4dd6` | «Mis turnos»: muestra «No asistió», lo incluye en Historial y no ofrece cancelar ni reprogramar un turno en «No asistió (automático)» |
 
 Pruebas de componente por cada cambio. Resultado de la Fase 2: lint sin errores, `typecheck:all` sin errores, 156 tests en 23 archivos y build correcto.
+
+**Fase 3.** El backend decide la devolución de la seña según quién cancela y cuánto aviso hubo (`cancellationRules.ts`): `PATCH /api/admin/appointments/:id` y `PATCH /api/professional/appointments/:id` con `status: 'cancelled'` exigen `cancelledBy` (`client` o `studio`) y aceptan `clientNoticeAt`, `noticeChannel` y `noticeNote`; la profesional no puede cargar un aviso de más de 48 horas; el detalle del turno trae el objeto `cancellation`; la política de devolución es solo `full` o `none`. El sistema solo marca la seña como devuelta: el dinero se devuelve por fuera. En el frontend:
+
+| Commit | Qué cambia |
+|---|---|
+| `09c8df8` | `errorMessage.ts`: mensajes en español para `INVALID_NOTICE_TIME` y `NOTICE_TOO_OLD` |
+| `94b4f50` | Diálogo de cancelación del personal (`CancelAppointmentDialog`, usado por el administrador y la profesional): «¿Quién cancela?», hora de aviso (por defecto ahora, en hora de Argentina; no futura; la profesional no puede cargar más de 48 horas atrás), medio y nota, y el resultado de la seña antes de confirmar. Reglas en `shared/utils/cancellation.ts`. El detalle del turno muestra `cancellation` (quién canceló, aviso, medio, nota y quién lo cargó) y el listado de actividad lee `appointmentId` |
+| `f247359` | «Mis turnos»: antes de cancelar, la clienta ve según las horas que faltan si la seña se devuelve o queda retenida; puede cancelar con el turno ya empezado; se aclara que el dinero se devuelve por fuera de la aplicación |
+| `8891e19` | Configuración de pagos: la política de devolución ofrece solo «Reembolso completo» y «Sin reembolso» |
+
+Pruebas: la hora de aviso por defecto, el bloqueo de horas futuras y de más de 48 horas para la profesional, el resultado con 13, 12 y 11 horas, el caso en que cancela el estudio, el aviso de la clienta con el turno empezado y los mensajes de error. Resultado de la Fase 3: lint sin errores, `typecheck:all` sin errores, 200 tests en 25 archivos y build correcto.
 
 El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora.
 

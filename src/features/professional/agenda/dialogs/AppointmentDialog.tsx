@@ -4,6 +4,9 @@ import { appointmentStatusConfig, getAppointmentStatusConfig, isNoShowStatus } f
 import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
 import { companionText } from '@/shared/utils/companion'
 import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
+import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
+import { CancellationSummary } from '@/shared/ui/molecules/CancellationSummary'
+import type { StaffCancellation } from '@/shared/utils/cancellation'
 
 interface Props {
   appointment:     Appointment
@@ -14,14 +17,19 @@ interface Props {
   onMarkArrival:   (appointment: Appointment) => void
   // Marcar «No asistió» o corregirlo. Devuelve el mensaje de error, o null si salió bien.
   onChangeStatus:  (appointment: Appointment, to: NoShowTarget) => Promise<string | null>
+  // Cancelar el turno (quién cancela y, si avisó la clienta, el aviso). Devuelve el mensaje de error, o null si salió bien.
+  onCancel:        (appointment: Appointment, data: StaffCancellation) => Promise<string | null>
 }
 
-export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus }: Props) {
+export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel }: Props) {
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
+  const [cancelling, setCancelling] = useState(false)
 
-  // «No asistió» no se elige acá: tiene su propia acción con confirmación (NoShowActions).
-  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished','cancelled']
+  // «No asistió» y «Cancelado» no se eligen acá: cada uno tiene su propia acción con confirmación
+  // (NoShowActions y CancelAppointmentDialog).
+  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished']
+  const canCancel = appointment.status === 'confirmed' || appointment.status === 'pending'
   const noShow = isNoShowStatus(appointment.status)
   const currentCfg = getAppointmentStatusConfig(appointment.status, appointment.cancelReason, appointment.displayStatus, appointment.statusLabel)
 
@@ -187,6 +195,24 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             </div>
           </div>
 
+          {appointment.status === 'cancelled' && appointment.cancellation && (
+            <Section title="Cancelación">
+              <CancellationSummary cancellation={appointment.cancellation} />
+            </Section>
+          )}
+
+          {canCancel && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setCancelling(true)}
+                style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.08)', color: '#e53935', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: "'Lato', sans-serif" }}
+              >
+                Cancelar turno
+              </button>
+            </div>
+          )}
+
           {/* Notas internas */}
           <div>
             <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px' }}>Notas internas</p>
@@ -215,6 +241,20 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
           </div>
         </div>
       </div>
+
+      {cancelling && (
+        <CancelAppointmentDialog
+          role="professional"
+          date={appointment.date}
+          time={appointment.time}
+          paymentStatus={appointment.paymentStatus}
+          isCombo={!!appointment.comboGroupId}
+          accent={primary}
+          onConfirm={data => onCancel(appointment, data)}
+          onDone={onClose}
+          onClose={() => setCancelling(false)}
+        />
+      )}
     </div>
   )
 }
