@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import type { AdminClient, ClientGender } from './types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { phoneError } from '@/shared/utils/phone'
 
 const GENDER_LABEL: Record<ClientGender, string> = {
   female: 'Femenino', male: 'Masculino', other: 'Otro', prefer_not_to_say: 'Prefiero no decirlo',
@@ -35,6 +36,8 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
       setError('Nombre y email son obligatorios')
       return
     }
+    const invalidPhone = phoneError(form.phone)
+    if (invalidPhone) { setError(invalidPhone); return }
     setSaving(true)
     setError(null)
     try {

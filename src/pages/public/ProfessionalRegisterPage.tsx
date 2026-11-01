@@ -6,6 +6,7 @@ import { api } from '@/shared/utils/api'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { isArgentineMobile, PHONE_ERROR } from '@/shared/utils/phone'
 import './ProfessionalRegisterPage.css'
 
 type State = 'loading' | 'valid' | 'invalid' | 'expired' | 'used'
@@ -100,6 +101,7 @@ function RegisterForm({ token, email, onSuccess }: RegisterFormProps) {
   const handleSubmit = async () => {
     if (!form.name.trim())              { setError('Ingresá tu nombre completo');         return }
     if (!form.phone.trim())             { setError('Ingresá tu número de teléfono');       return }
+    if (!isArgentineMobile(form.phone)) { setError(PHONE_ERROR);                           return }
     if (!form.gender)                   { setError('Seleccioná tu género');                return }
     if (form.password.length < 8)       { setError('La contraseña debe tener al menos 8 caracteres'); return }
     if (form.password !== form.confirm) { setError('Las contraseñas no coinciden');        return }
