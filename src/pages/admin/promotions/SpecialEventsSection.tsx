@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Sparkles, Calendar } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import type { SpecialEvent, SpecialEventFormValues } from '@/app/data/admin/promotions/specialEventTypes'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
@@ -90,7 +91,8 @@ export function SpecialEventsSection() {
     }
   }
 
-  const isPast = (date: string) => date < new Date().toISOString().split('T')[0]
+  // Fecha de hoy en Argentina: toISOString() da la de UTC y desde las 21:00 un evento de hoy figuraría como pasado.
+  const isPast = (date: string) => date < todayInArgentina()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -209,7 +211,7 @@ function SpecialEventForm({ id, value, services, professionals, onSave, onCancel
       </FormField>
 
       <FormField label="Fecha del evento">
-        <input type="date" min={new Date().toISOString().split('T')[0]} value={form.date} onChange={e => set({ date: e.target.value })} style={inputStyle} />
+        <input type="date" min={todayInArgentina()} value={form.date} onChange={e => set({ date: e.target.value })} style={inputStyle} />
       </FormField>
 
       <FormField label="Título para el home (opcional — si lo dejás vacío usa el nombre del servicio)">

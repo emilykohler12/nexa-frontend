@@ -6,6 +6,7 @@ import {
 import { useTenant } from '@/features/tenant/TenantContext'
 import { useAuth } from '@/features/auth/AuthContext'
 import { api } from '@/shared/utils/api'
+import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import { StatCard }           from './cards/StatCard'
 import { NextClientCard }     from './cards/NextClientCard'
 import { RevenueChart }       from './charts/RevenueChart'
@@ -54,10 +55,12 @@ export function Dashboard() {
   if (!business) return null
 
   const { primaryColor: primary, accentColor: accent } = business
-  const today = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const today = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Argentina/Buenos_Aires' })
 
+  // Los turnos están en hora de Argentina: "hoy" también (toISOString() daría la fecha en UTC, un día más desde las 21:00).
+  const todayDate = todayInArgentina()
   const nextAppt = appointments
-    .filter(a => a.date === new Date().toISOString().split('T')[0] && a.status !== 'cancelled')
+    .filter(a => a.date === todayDate && a.status !== 'cancelled')
     .sort((a, b) => a.time.localeCompare(b.time))[0]
 
   return (

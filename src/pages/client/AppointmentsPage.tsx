@@ -14,7 +14,7 @@ import { AppointmentDetailModal } from './AppointmentDetailModal'
 import './AppointmentsPage.css'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ClientCancelConfirm } from './ClientCancelConfirm'
-import { appointmentInstant } from '@/shared/utils/argentinaTime'
+import { appointmentInstant, todayInArgentina } from '@/shared/utils/argentinaTime'
 import { isDepositPaid } from '@/shared/utils/cancellation'
 import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
 import { InfoModal } from '@/shared/ui/molecules/InfoModal'
@@ -126,9 +126,9 @@ export function AppointmentsPage() {
   // que ya pasó debe verse como historial, no como próximo. Si la hora viene en
   // un formato que no se puede parsear, no queda "atascado" como próximo para siempre.
   const isPast = (a: Appointment) => {
-    const dt = new Date(`${a.date}T${a.time}`)
+    const dt = appointmentInstant(a.date, a.time)
     if (!isNaN(dt.getTime())) return dt.getTime() <= now
-    return a.date < new Date(now).toISOString().split('T')[0]
+    return a.date < todayInArgentina(new Date(now))
   }
 
   // Cada turno cae en un único balde: el estado manda cuando ya está resuelto
@@ -253,13 +253,8 @@ export function AppointmentsPage() {
     navigate(ROUTES.CLIENT_BOOK, { state: { serviceId: appt.serviceId, professionalId: appt.professionalId } })
   }
 
-  // Nunca usar toISOString() acá — convierte a UTC y puede correr la fecha (mismo motivo que en Agenda.tsx del profesional).
-  const todayLocal = () => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
-  const canMarkArrival = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && a.date === todayLocal()
+  // Los turnos están en hora de Argentina: "hoy" también (toISOString() da la fecha en UTC y después de las 21:00 ya es mañana).
+  const canMarkArrival = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && a.date === todayInArgentina()
 
   const markArrival = async (appt: Appointment) => {
     setArrivingId(appt.id)

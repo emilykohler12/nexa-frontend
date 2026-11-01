@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/config/routes.config'
 import { getAppointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
 import type { Appointment } from '@/features/professional/types/appointment'
+import { todayInArgentina } from '@/shared/utils/argentinaTime'
 
 interface Props {
   appointments: Appointment[]
@@ -11,7 +12,9 @@ interface Props {
 
 export function TodayAppointments({ appointments, primary, accent }: Props) {
   const navigate = useNavigate()
-  const today    = appointments.filter(a => a.date === new Date().toISOString().split('T')[0])
+  // Hora de Argentina, no UTC: desde las 21:00 toISOString() ya daría la fecha de mañana.
+  const todayDate = todayInArgentina()
+  const today    = appointments.filter(a => a.date === todayDate)
 
   return (
     <div style={{
