@@ -1,6 +1,11 @@
 import { LegalDocumentPage } from './LegalDocumentPage'
 import { PRIVACY_POLICY_VERSION } from '@/app/config/legal'
 
+// Para qué se usa el correo: lo que el sistema manda por su cuenta (recordatorio del turno, avisos de cancelación o
+// reprogramación, verificación y recuperación de contraseña).
+const EMAIL_USE =
+  'Usamos tu correo electrónico para enviarte recordatorios de tus turnos (unas 5 horas antes), avisos cuando tu turno se cancela o se reprograma, y los mensajes de tu cuenta (verificación de correo y recuperación de contraseña). No lo usamos para campañas ni publicidad.'
+
 export function PrivacyPolicyPage() {
   return (
     <LegalDocumentPage title="Política de Privacidad">
@@ -14,6 +19,7 @@ export function PrivacyPolicyPage() {
         <section>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>2. Propósitos</h2>
           <p>Gestionar turnos, procesar pagos, enviar notificaciones, mejorar el servicio, detectar fraude, cumplir obligaciones fiscales.</p>
+          <p style={{ marginTop: '8px' }}>{EMAIL_USE}</p>
         </section>
         <section>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#000', marginBottom: '12px' }}>3. Retención</h2>
