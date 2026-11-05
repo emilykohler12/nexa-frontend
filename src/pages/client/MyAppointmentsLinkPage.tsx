@@ -11,8 +11,11 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { parseReminderLink, reminderLinkSearch } from '@/features/client/appointments/reminderLink'
 import { setPendingReminderLink } from '@/features/client/appointments/pendingReminderLink'
+import { usePageMeta } from '@/shared/hooks/usePageMeta'
 
 export function MyAppointmentsLinkPage() {
+  // Es un enlace de uso personal (llega por mail con el id de un turno): no se indexa. Mismo criterio que /login.
+  usePageMeta({ title: 'Mis turnos', noindex: true })
   const { user, isLoading } = useAuth()
   const { business }        = useTenant()
   const navigate            = useNavigate()

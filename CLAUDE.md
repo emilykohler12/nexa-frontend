@@ -10,7 +10,7 @@ SPA de Nexa (gestión de turnos de Loren Estudio de Belleza). Es el Proyecto Fin
 - `src/layouts/`: `Public`, `Client`, `Professional`, `Admin`; cada uno trae su CSS y la protección por rol.
 - `src/shared/`: `ui/{atoms,molecules,organisms,dashboard,admin}`, `hooks/`, `types/`, `utils/` (cliente `api`, `errorMessage`, formateo).
 - Alias `@/*` → `src/*` (en `tsconfig.app.json` y `vite.config.ts`). Usar siempre `@/...` para cruzar carpetas.
-- `00-gestion/` y `01-relevamiento/` son documentación académica de la entrega: no editarlas salvo pedido expreso. La bitácora es `00-gestion/BITACORA.md`: anotar ahí los cambios de código/configuración/GitHub cuando Emily lo pida.
+- `01-relevamiento/` es documentación académica de la entrega: no editarla salvo pedido expreso. **El frontend no tiene bitácora ni carpeta `00-gestion/`**: las bitácoras viven solo en `../nexa-backend/00-gestion/` (`BITACORA.md` hasta el 03/09/2026, `20261006_BitacoraIndividual_KohlerAE2_v5.docx` del 10/09 al 06/10/2026 y `20261028_BitacoraIndividual_KohlerAE3_v1.md` desde el 23/10/2026, con lo de noviembre y diciembre de 2026). Los cambios de código/configuración/GitHub del frontend se anotan como una entrada nueva al final de ese último archivo (formato de tabla de 6 elementos, numeración siguiente), cuando Emily lo pida; es la única excepción a «el backend no se edita desde acá».
 
 ## Comandos
 

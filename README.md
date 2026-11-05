@@ -57,7 +57,7 @@ La disponibilidad se garantiza en el **backend**, no solo en la interfaz:
 
 ### 1.5 Dónde está la documentación
 
-Vive en el repositorio **nexa-backend**:
+Vive en el repositorio **nexa-backend** (el frontend no guarda bitácoras: las tres, incluida la del frontend, están allá):
 
 | Documento | Ubicación |
 |---|---|
@@ -67,7 +67,7 @@ Vive en el repositorio **nexa-backend**:
 | ADR-003: JWT para autenticación | `04-diseno/adr-003-jwt-auth.md` |
 | Bitácora de decisiones, AE1 (hasta el 03/09/2026) | `00-gestion/BITACORA.md` |
 | Bitácora de decisiones, AE2 (10/09 al 06/10/2026; continúa la anterior) | `00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx` |
-| Bitácora de decisiones, AE3 (desde el 23/10/2026; continúa la anterior) | `00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md` |
+| Bitácora de decisiones, AE3 (desde el 23/10/2026 hasta hoy, con los cambios del frontend y los que se hagan en noviembre y diciembre; continúa la anterior) | `00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md` |
 | Backup y restauración, RUNBOOK y SOP | `00-gestion/` |
 
 ---
@@ -336,7 +336,7 @@ npm test
 
 ```
 Test Files  37 passed (37)
-     Tests  332 passed (332)
+     Tests  333 passed (333)
 ```
 
 ---
@@ -397,7 +397,7 @@ Los commits `54933ca` y `ec976da` son los del README v1.1; `ce550a9` y `2e7734f`
 
 ### 8.3 Cambios de la AE4 hechos con Claude Code (rama `integracion-ae4`)
 
-Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella y sobre su propia rama cortada de `integracion-ae4`; la autora revisa y hace el merge. Los commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5`. Cada fila cita solo los commits de código de la fase: el último commit de cada fase (README y bitácora) no puede citar su propio hash y se identifica en la bitácora.
+Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella y sobre su propia rama cortada de `integracion-ae4`; la autora revisa y hace el merge. Los commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5` (salvo los de la Fase 6, que no la llevan). Cada fila cita solo los commits de código de la fase: el último commit de cada fase (README y bitácora) no puede citar su propio hash y se identifica en la bitácora de la AE3, que vive solo en **nexa-backend** (`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`); el frontend no guarda bitácora propia.
 
 | Fase | Rama | Commits |
 |---|---|---|
@@ -405,6 +405,7 @@ Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**
 | 2 — horarios reabiertos, reserva tardía y estados de inasistencia | `feat/horarios-reabiertos-y-estados` | `d40a458`, `77e6b0c`, `e67053b`, `56d4dd6` |
 | 3 — cancelación con hora de aviso y devolución de la seña | `feat/cancelacion-con-hora-de-aviso` | `09c8df8`, `94b4f50`, `f247359`, `8891e19` |
 | 3b — enlaces del recordatorio de turno y fechas en hora de Argentina | `feat/enlaces-recordatorio-y-fechas` | `0aeb530`, `b05d8d0`, `aeaac72`, `f78f8aa` |
+| 6 — brechas de requisitos: celular argentino, seña del servicio especial, fecha de ingreso, categoría «Combo» y avisos sin emisor | `fix/brechas-requisitos` | `2f15ec1`, `88cfa58`, `6cd805d`, `a1f092b`, `6d46fbb` |
 | Sincronización — `main` traído a `integracion-ae4` para que se pueda mergear sin conflictos (Claude Opus 5.5) | `chore/sincronizar-main-en-integracion` | `88896ee` (merge de `origin/main`) |
 
 **Fase 1.** El backend eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. `dd1b050`: la ficha lee `visits`, se elimina la pestaña Fidelización y la fecha de nacimiento de la clienta. `55fa408`: se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales. `1f54677`: el alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda). Pruebas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento, y `PromotionsPage` no ofrece campañas.
@@ -442,6 +443,18 @@ Pruebas: la hora de aviso por defecto, el bloqueo de horas futuras y de más de 
 
 Pruebas: el alias conserva los parámetros, el login y la vuelta, cada acción pide confirmación y no cancela hasta «Sí, cancelar», los casos de borde, los combos y las fechas a las 20:59, 21:00, 21:30 y 23:59 (con el código anterior fallan las de fecha). Resultado de la Fase 3b: lint sin errores, `typecheck:all` sin errores, 296 tests en 34 archivos y build correcto.
 
+**Fase 6.** Cierra siete brechas de requisitos que el backend resolvió en la misma rama (`fix/brechas-requisitos`, pull request 16). Los commits de esta fase están a nombre de la autora y **no llevan la línea `Co-Authored-By`**; la bitácora de la AE3 (entrada 82) dice que los hizo Claude Code (Sonnet 5.5). En el frontend:
+
+| Commit | Qué cambia |
+|---|---|
+| `2f15ec1` | RF-02: `shared/utils/phone.ts` valida el celular argentino con la misma regla del backend y se usa en el registro de la clienta, el de la profesional por invitación, el perfil de la clienta y el alta y la ficha de la clienta del administrador; en el perfil y en las ediciones del personal el teléfono vacío sigue valiendo |
+| `88cfa58` | RF-03 y RF-17: el servicio especial cobra la seña con Mercado Pago (`POST /api/client/appointments/:id/payment`, abre Mercado Pago y espera `verify-payment`). **Backend y frontend tienen que salir juntos**: con el backend nuevo y el frontend viejo, el turno especial queda `pending` y se libera a los 20 minutos sin que la clienta pueda pagar |
+| `6cd805d` | RF-06: el administrador carga la fecha de ingreso de la profesional (`joinedAt` y `joinedAtIsDefault`; el `PATCH` acepta `joinedAt` o `null`) |
+| `a1f092b` | RF-11: la categoría «Combo» solo se ofrece en los servicios simultáneos (el backend responde `400 VALIDATION_ERROR` si no) |
+| `6d46fbb` | RF-24 y RNF-07: se quitan los tipos de aviso que nadie emite (las filas viejas se ven con un ícono genérico) y el script de Google de `index.html` |
+
+Pruebas nuevas: `phone.test.ts` y 4 en `SpecialServiceBookingFlow.test.tsx`. Resultado de la Fase 6: `typecheck:all` sin errores, 326 tests en 36 archivos y build correcto. Las fases 4 (tienda) y 5 (anonimización) del backend no tienen fila porque no hay commits de frontend de esas fases; la entrada 78 de la bitácora del backend deja pendiente la adaptación del frontend a la Fase 4 (lista pública de la tienda).
+
 **Sincronización con `main`.** GitHub no podía mergear `integracion-ae4` en `main` porque `main` tenía cambios que la AE4 no: la indexación para Google (pull request 9) y el arreglo de la clienta anonimizada (pull request 8). La hizo Claude Code (Claude Opus 5.5), no la autora, a pedido de ella: el commit `88896ee` mergea `origin/main` en una rama cortada de `integracion-ae4` y resuelve tres conflictos conservando el comportamiento de la AE4:
 
 | Archivo | Cómo quedó |
@@ -452,7 +465,7 @@ Pruebas: el alias conserva los parámetros, el login y la vuelta, cada acción p
 
 El resto de lo que trae `main` (`index.html`, `vercel.json`, `robots.txt`, `sitemap.xml`, `seo.config.ts`, `usePageMeta` y `ClientDetail.tsx`) entró sin conflicto; el script de Google que quitó la Fase 6 no vuelve. Resultado: lint sin errores, `typecheck:all` sin errores, 332 tests en 37 archivos y build correcto.
 
-El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora.
+El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora de la AE3 del backend (entradas 89 a 94, que cubren el frontend de la AE4).
 
 ---
 
@@ -487,7 +500,7 @@ El frontend se publica en Vercel (https://lorenestudiodebelleza.vercel.app) y tr
 | Etiqueta de verificación de Google Search Console (no se debe quitar) | `index.html` |
 | `robots.txt`: permite el sitio y bloquea los paneles `/admin`, `/client` y `/professional` | `public/robots.txt` |
 | `sitemap.xml` con la home y las dos páginas legales | `public/sitemap.xml` |
-| `X-Robots-Tag: noindex` en `/login`, `/registro-profesional` y `/pago/*` | `vercel.json` |
+| `X-Robots-Tag: noindex` en `/login`, `/registro-profesional`, `/pago/*` y `/mis-turnos` | `vercel.json` |
 | Título, descripción y canonical por página (y `noindex` en las privadas) | `src/shared/hooks/usePageMeta.ts` |
 | Dominio y nombre del sitio | `src/app/config/seo.config.ts` |
 

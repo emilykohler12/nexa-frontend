@@ -54,6 +54,12 @@ describe('/mis-turnos: alias del enlace del mail de recordatorio', () => {
     authState.isLoading = false
   })
 
+  it('no se indexa: pone robots noindex mientras la página está en pantalla', () => {
+    authState.user = as('professional') // la profesional se queda en la página (no se redirige)
+    render(tree('/mis-turnos?turno=t1&accion=ver'))
+    expect(document.head.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow')
+  })
+
   describe('con sesión de clienta', () => {
     beforeEach(() => { authState.user = as('client') })
 
