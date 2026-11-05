@@ -106,7 +106,7 @@ function GalleryCard({ pair }: { pair: GalleryPair }) {
       {pair.before && (
         <img
           src={pair.before}
-          alt="Antes"
+          alt="Trabajo realizado en el estudio: antes"
           draggable={false}
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
           style={{ opacity: hasBoth && showingAfter ? 0 : 1 }}
@@ -115,7 +115,7 @@ function GalleryCard({ pair }: { pair: GalleryPair }) {
       {pair.after && (
         <img
           src={pair.after}
-          alt="Después"
+          alt="Trabajo realizado en el estudio: después"
           draggable={false}
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
           style={{ opacity: hasBoth ? (showingAfter ? 1 : 0) : 1 }}

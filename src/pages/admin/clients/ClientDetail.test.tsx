@@ -5,6 +5,10 @@ import { ClientDetail } from './ClientDetail'
 import { ToastProvider } from '@/shared/ui/molecules/ToastProvider'
 import type { AdminClient } from './types'
 
+// InfoTab no se mockea: las pruebas de visitas revisan el formulario real (sin fecha de nacimiento),
+// y las de anonimizar lo reconocen por su sección «Datos personales».
+const INFO_FORM = 'Datos personales'
+
 vi.mock('./tabs/HistoryTab', () => ({ HistoryTab: () => null }))
 vi.mock('./tabs/GalleryTab', () => ({ GalleryTab: () => null }))
 vi.mock('./tabs/ReviewsTab', () => ({ ReviewsTab: () => null }))
@@ -75,6 +79,24 @@ describe('ClientDetail: visitas de la clienta', () => {
   })
 })
 
+// Igual que setup, pero devuelve una función para pasarle al componente la clienta ya anonimizada
+// (lo que hace ClientsPage cuando llega la respuesta del servidor).
+function setupRerender() {
+  const ui = (c: AdminClient) => (
+    <ToastProvider>
+      <ClientDetail
+        client={c}
+        onBack={vi.fn()}
+        onSave={vi.fn()}
+        onToggleBlock={vi.fn()}
+        onAnonymize={vi.fn().mockResolvedValue(undefined)}
+      />
+    </ToastProvider>
+  )
+  const { rerender } = render(ui(client))
+  return { rerenderWith: (c: AdminClient) => rerender(ui(c)) }
+}
+
 // RF-09 — la propietaria anonimiza los datos de una clienta desde el panel.
 describe('ClientDetail: anonimizar datos de la clienta', () => {
   it('pide confirmación y no anonimiza hasta que se confirma', async () => {
@@ -116,5 +138,31 @@ describe('ClientDetail: anonimizar datos de la clienta', () => {
   it('no ofrece anonimizar a una clienta que ya está anonimizada', () => {
     setup({ client: { ...client, name: 'Cliente eliminado', email: 'anonimo_c1@borrado.com' } })
     expect(screen.queryByRole('button', { name: 'Anonimizar datos' })).not.toBeInTheDocument()
+  })
+
+  it('una clienta anonimizada no muestra el formulario con los datos viejos ni se puede bloquear', () => {
+    setup({ client: { ...client, name: 'Cliente eliminado', email: 'anonimo_c1@borrado.com' } })
+    expect(screen.queryByText(INFO_FORM)).not.toBeInTheDocument()
+    expect(screen.getByText(/ya no se pueden editar/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Bloquear cliente/ })).not.toBeInTheDocument()
+  })
+
+  it('al anonimizar, el formulario de información desaparece sin recargar la página', async () => {
+    const user = userEvent.setup()
+    const { rerenderWith } = setupRerender()
+    expect(screen.getByText(INFO_FORM)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Anonimizar datos' }))
+    await user.click(screen.getByRole('button', { name: 'Sí, anonimizar' }))
+    rerenderWith({ ...client, name: 'Cliente eliminado', email: 'anonimo_c1@borrado.com' })
+
+    expect(screen.queryByText(INFO_FORM)).not.toBeInTheDocument()
+    expect(screen.getByText(/ya no se pueden editar/)).toBeInTheDocument()
+  })
+
+  it('una clienta que no está anonimizada conserva el formulario y el botón de bloquear', () => {
+    setup()
+    expect(screen.getByText(INFO_FORM)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Bloquear cliente/ })).toBeInTheDocument()
   })
 })

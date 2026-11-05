@@ -1,4 +1,4 @@
-# Nexa — Sistema de Gestión de Turnos para Estudio de Belleza (Prototipo v1.2)
+# Nexa — Sistema de Gestión de Turnos para Estudio de Belleza (Prototipo v1.3)
 
 Creado por: Emily Noralí Kohler
 
@@ -18,10 +18,9 @@ El sistema está dividido en dos repositorios que se clonan uno al lado del otro
 | Proyecto | Nexa — Sistema de Gestión de Turnos para Estudio de Belleza (cliente real: Loren Estudio de Belleza) |
 | Autora | Kohler, Emily Noralí — DNI 45.555.841 |
 | Comisión | A |
-| Instancia | Proyecto Final de Grado — AE2 |
+| Instancia | Proyecto Final de Grado — AE3 |
 | Docente | PosDr. Darío Ezequiel Díaz |
-| Grupo de encuadre | Geneyro, Lautaro, y Leal, Thiago |
-| Versión | v1.2 (etiqueta anotada `v1.2` en ambos repos; `v1` y `v1.1` se conservan) |
+| Versión | v1.3 (etiqueta anotada `v1.3` en ambos repos; `v1`, `v1.1` y `v1.2` se conservan) |
 
 ### 1.2 Versiones exactas del entorno
 
@@ -49,7 +48,7 @@ Una clienta se registra, elige un servicio, una profesional, una fecha y un hora
 La disponibilidad se garantiza en el **backend**, no solo en la interfaz:
 
 - El frontend no ofrece los horarios ya ocupados (`GET /api/professional/:id/availability`).
-- La fuente de verdad es un **índice único parcial** en PostgreSQL sobre `(professional_id, date, time)` que excluye los turnos `cancelled` y `no_show`. Es atómico: aunque dos reservas lleguen a la vez o alguien salte la interfaz, solo una se guarda y la otra recibe **HTTP 409** (`PROFESSIONAL_SLOT_TAKEN`). No hay consulta previa.
+- La fuente de verdad es un **índice único parcial** en PostgreSQL sobre `(professional_id, date, time)` que excluye los turnos `cancelled` y `cancelled_no_show`. Es atómico: aunque dos reservas lleguen a la vez o alguien salte la interfaz, solo una se guarda y la otra recibe **HTTP 409** (`PROFESSIONAL_SLOT_TAKEN`). No hay consulta previa.
 - La reserva de la clienta (simple, combo y reprogramación) además exige que la hora caiga dentro de las franjas que definió la profesional: si no, **HTTP 400** (`OUT_OF_HOURS`). Los turnos manuales del admin no se validan contra la franja.
 - Pruebas automatizadas: `tests/integration/appointments.booking.test.ts` y `tests/integration/appointments.out-of-hours.test.ts`.
 - Alternativas evaluadas y motivo de la elección: `04-diseno/adr-002-validacion-antes-persistencia.md`.
@@ -68,6 +67,7 @@ Vive en el repositorio **nexa-backend**:
 | ADR-003: JWT para autenticación | `04-diseno/adr-003-jwt-auth.md` |
 | Bitácora de decisiones, AE1 (hasta el 03/09/2026) | `00-gestion/BITACORA.md` |
 | Bitácora de decisiones, AE2 (10/09 al 06/10/2026; continúa la anterior) | `00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx` |
+| Bitácora de decisiones, AE3 (desde el 23/10/2026; continúa la anterior) | `00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md` |
 | Backup y restauración, RUNBOOK y SOP | `00-gestion/` |
 
 ---
@@ -110,7 +110,7 @@ Además, un usuario y contraseña de PostgreSQL con permiso para crear bases (en
 
 Todos los comandos se escriben en una terminal. En Windows sirve Git Bash o PowerShell.
 
-### 4.1 Clonar los dos repositorios en la etiqueta v1.2
+### 4.1 Clonar los dos repositorios en la etiqueta v1.3
 
 Crear una carpeta vacía, entrar y clonar ambos repos **uno al lado del otro**:
 
@@ -120,8 +120,8 @@ mkdir nexa && cd nexa
 git clone https://github.com/emilykohler12/nexa-backend.git
 git clone https://github.com/emilykohler12/nexa-frontend.git
 
-cd nexa-backend  && git checkout v1.2 && cd ..
-cd nexa-frontend && git checkout v1.2 && cd ..
+cd nexa-backend  && git checkout v1.3 && cd ..
+cd nexa-frontend && git checkout v1.3 && cd ..
 ```
 
 Queda así:
@@ -132,7 +132,7 @@ nexa/
 └── nexa-frontend/
 ```
 
-> `git checkout v1.2` muestra un aviso de *"detached HEAD"*: es normal, significa que estás parado en la versión etiquetada.
+> `git checkout v1.3` muestra un aviso de *"detached HEAD"*: es normal, significa que estás parado en la versión etiquetada.
 
 ### 4.2 Instalar dependencias
 
@@ -335,52 +335,65 @@ npm test
 **Esperado:**
 
 ```
-Test Files  36 passed (36)
-     Tests  326 passed (326)
+Test Files  37 passed (37)
+     Tests  332 passed (332)
 ```
 
 ---
 
 ## 8. Declaración de uso de IA
 
-En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026). Las entradas de la AE4 (31/10/2026: baja de campañas, puntos y fecha de nacimiento; horarios reabiertos y estados de inasistencia; cancelación con hora de aviso) están al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
+En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026) y [`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`](00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md) (AE3, desde el 23/10/2026). Las entradas de la AE4 (31/10/2026: baja de campañas, puntos y fecha de nacimiento; horarios reabiertos y estados de inasistencia; cancelación con hora de aviso) están al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
 
 También se usó **Claude** (chat, Anthropic) sobre documentos —el informe, los instrumentos, el libro de requisitos, el acta, el tablero y la bitácora—; ese uso está declarado en la bitácora y en el Anexo III.
 
 ### 8.1 Cifras (calculadas con `git log`)
 
-Corte: commit `9bdc3ee` en nexa-backend y `4bf842e` en nexa-frontend (2026-10-06), antes de la corrección de este README.
+Corte: commit `6e7d8c0` en nexa-backend y `3090b89` en nexa-frontend (2026-10-28, los merges de los pull requests #12 y #9 en `main`), el último de cada repositorio al escribir esto. No cuentan el commit de este README ni los que se hagan después: un commit no puede citar su propio hash.
 
 | | nexa-backend | nexa-frontend |
 |---|---|---|
-| Commits totales | 68 | 57 |
-| Con `Co-Authored-By: Claude Sonnet 5` | 24 | 29 |
-| Con `Co-Authored-By: Claude Haiku 4.5` | 4 | 3 |
-| Con `Co-Authored-By: Claude Opus 5.5` | 0 | 0 |
-| **Total con la línea de coautoría** (01/09 al 25/09) | **28** | **32** |
-| Desde el 25/09, **sin** la línea | 34 | 20 |
+| Commits totales | 119 | 84 |
+| Merges de pull requests (botón de GitHub, los hace la autora) | 12 | 9 |
+| Ediciones del README desde la web de GitHub (la autora) | 1 — `47f4a96` | 1 — `087ee9b` |
+| Primeros commits del 25 al 28/08, antes de la línea de coautoría (sin registro de Claude Code) | 6 | 5 |
+| **Commits hechos con Claude Code** | **100** | **69** |
+| de ellos, con la línea `Co-Authored-By: Claude …` | 36 | 36 |
+| de ellos, sin la línea | 64 | 33 |
+
+La línea de coautoría, por modelo:
+
+| | nexa-backend | nexa-frontend |
+|---|---|---|
+| `Co-Authored-By: Claude Sonnet 5` | 24 | 29 |
+| `Co-Authored-By: Claude Sonnet 5.5` | 8 | 4 |
+| `Co-Authored-By: Claude Haiku 4.5` | 4 | 3 |
+| `Co-Authored-By: Claude Opus 5.5` | 0 | 0 |
 
 Comandos usados:
 
 ```bash
 git rev-list --count HEAD
+git rev-list --merges --count HEAD
+git log --no-merges --format='%h %cn %ad %s' --date=short | grep ' GitHub '
 git log --format='%B' | grep -i "^Co-Authored-By: Claude" | sort | uniq -c
-git log --since='2026-09-25T00:00:00-03:00' -i --invert-grep --grep='^Co-Authored-By: Claude' --oneline
+git log --no-merges -i --invert-grep --grep='^Co-Authored-By: Claude' --oneline | wc -l
 ```
 
 ### 8.2 Commits sin la línea, hechos con Claude Code
 
-Desde el 25/09 los commits se firmaron solo con el nombre de la autora, sin la línea `Co-Authored-By`. Para no subdeclarar, se cruzó cada uno con el registro de sesiones de Claude Code (el comando `git commit` ejecutado por el asistente y el modelo de esa sesión):
+Todos los commits que no son merges, ediciones web ni los primeros de agosto los hizo Claude Code, a pedido de la autora y con el nombre de ella como autor del commit. Desde el 25/09 se dejó de agregar la línea `Co-Authored-By`. Para no subdeclarar, cada commit sin la línea se cruzó con el registro de sesiones de Claude Code (el comando `git commit` ejecutado por el asistente y el modelo de esa sesión), y los posteriores al 06/10 con la bitácora de la AE3 ([`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`](00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md)):
 
 | Modelo | nexa-backend | nexa-frontend |
 |---|---|---|
 | Claude Opus 5.5 | 11 — `a44fddb`, `294b0f9`, `8a195de`, `9d97c8f`, `3aa5b7b`, `42321bd`, `8c9b778`, `c12671b`, `90e8874`, `631db61`, `54933ca` | 8 — `a986ca9`, `c6bd2d9`, `72b3a6c`, `53817d9`, `90a2391`, `1dd6936`, `4107356`, `ec976da` |
-| Claude Sonnet 5.5 | 4 — `92cd761`, `2836e1d`, `ce550a9`, `9bdc3ee` | 2 — `2e7734f`, `4bf842e` |
+| Claude Sonnet 5.5 (hasta el 06/10) | 4 — `92cd761`, `2836e1d`, `ce550a9`, `9bdc3ee` | 2 — `2e7734f`, `4bf842e` |
 | Claude Sonnet 5 | 9 — `adfe572`, `f4e40cb`, `342b59f`, `f2c9d9f`, `c413f0f`, `f8d0455`, `984862f`, `d7ac9fc`, `3ebba2b` | 5 — `0bede0a`, `174ed11`, `dc7f5df`, `858e2be`, `5b74e37` |
 | Claude Haiku 4.5 | 9 — `f5d2eb4`, `9a8651b`, `57d1928`, `f4ba7e4`, `c6241b9`, `6d76104`, `edb0bc4`, `4a0fecb`, `8fa18f7` | 4 — `245dcc0`, `8aed419`, `40d4d08`, `7bde3e7` |
-| Sin evidencia en las sesiones | 1 — `47f4a96` (autora en el README) | 1 — `087ee9b` (autora en el README) |
+| Claude Code, modelo Sonnet 5.5 según la bitácora de la AE3 (después del 06/10) | 31 | 14 |
+| **Total sin la línea** | **64** | **33** |
 
-Los commits `54933ca` y `ec976da` son los del README v1.1; `ce550a9` y `2e7734f`, los de la corrección de ese README, y `9bdc3ee` y `4bf842e`, los de la bitácora de la AE2. El commit de este README (v1.2) también se hizo con Claude Code (Claude Sonnet 5.5) y no figura en las cifras de arriba porque no puede citar su propio hash.
+Los commits `54933ca` y `ec976da` son los del README v1.1; `ce550a9` y `2e7734f`, los de la corrección de ese README, y `9bdc3ee` y `4bf842e`, los de la bitácora de la AE2. La última fila reúne los commits sin la línea (sin contar merges) entre `9bdc3ee..6e7d8c0` en el backend y `4bf842e..3090b89` en el frontend; la bitácora de la AE3 describe el trabajo desde el 23/10.
 
 ### 8.3 Cambios de la AE4 hechos con Claude Code (rama `integracion-ae4`)
 
@@ -392,6 +405,7 @@ Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**
 | 2 — horarios reabiertos, reserva tardía y estados de inasistencia | `feat/horarios-reabiertos-y-estados` | `d40a458`, `77e6b0c`, `e67053b`, `56d4dd6` |
 | 3 — cancelación con hora de aviso y devolución de la seña | `feat/cancelacion-con-hora-de-aviso` | `09c8df8`, `94b4f50`, `f247359`, `8891e19` |
 | 3b — enlaces del recordatorio de turno y fechas en hora de Argentina | `feat/enlaces-recordatorio-y-fechas` | `0aeb530`, `b05d8d0`, `aeaac72`, `f78f8aa` |
+| Sincronización — `main` traído a `integracion-ae4` para que se pueda mergear sin conflictos (Claude Opus 5.5) | `chore/sincronizar-main-en-integracion` | `88896ee` (merge de `origin/main`) |
 
 **Fase 1.** El backend eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. `dd1b050`: la ficha lee `visits`, se elimina la pestaña Fidelización y la fecha de nacimiento de la clienta. `55fa408`: se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales. `1f54677`: el alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda). Pruebas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento, y `PromotionsPage` no ofrece campañas.
 
@@ -424,10 +438,19 @@ Pruebas: la hora de aviso por defecto, el bloqueo de horas futuras y de más de 
 | `0aeb530` | Las fechas de «hoy» se calculan en hora de Argentina (`argentinaDateOf` y `todayInArgentina` en `shared/utils/argentinaTime.ts`) y no con `toISOString()`, que desde las 21:00 da el día siguiente: inicio de la profesional (Turnos de hoy y próximo turno), rango de eventos especiales y «Mis turnos» (Ya llegué, Próximos e Historial) |
 | `b05d8d0` | «Mis turnos»: cancelar un servicio suelto de un combo desde el detalle pide confirmación (avisa que los demás siguen en pie y qué pasa con la seña) |
 | `aeaac72` | Ruta `/mis-turnos`, alias de `/client/appointments` que conserva `turno` y `accion`; sin sesión lleva al login y vuelve al mismo enlace (marca en `sessionStorage` que vence a la hora); «Mis turnos» abre el detalle, la reprogramación o el diálogo de cancelación según `accion`, siempre con confirmación; mensaje en español si el turno no existe o es de otra cuenta, ya empezó, está cancelado o realizado, figura como «No asistió» o «No asistió (automático)», es un combo (reprogramar) o no se pudieron cargar los turnos; una profesional o un administrador no abren el turno |
-
 | `f78f8aa` | Política de privacidad: «Propósitos» explica que el correo se usa para los recordatorios del turno (unas 5 horas antes), los avisos de cancelación o reprogramación y los mensajes de la cuenta, y no para campañas ni publicidad; `PRIVACY_POLICY_VERSION` pasa a `2026-11` (debe coincidir con la del backend) |
 
 Pruebas: el alias conserva los parámetros, el login y la vuelta, cada acción pide confirmación y no cancela hasta «Sí, cancelar», los casos de borde, los combos y las fechas a las 20:59, 21:00, 21:30 y 23:59 (con el código anterior fallan las de fecha). Resultado de la Fase 3b: lint sin errores, `typecheck:all` sin errores, 296 tests en 34 archivos y build correcto.
+
+**Sincronización con `main`.** GitHub no podía mergear `integracion-ae4` en `main` porque `main` tenía cambios que la AE4 no: la indexación para Google (pull request 9) y el arreglo de la clienta anonimizada (pull request 8). La hizo Claude Code (Claude Opus 5.5), no la autora, a pedido de ella: el commit `88896ee` mergea `origin/main` en una rama cortada de `integracion-ae4` y resuelve tres conflictos conservando el comportamiento de la AE4:
+
+| Archivo | Cómo quedó |
+|---|---|
+| `README.md` | Las cifras de pruebas de la AE4 (las de `main` eran anteriores) y, en la sección 8, las bitácoras de la AE3 (de `main`) y de la AE4 |
+| `ProfessionalRegisterPage.tsx` | Los dos imports: la validación del teléfono (AE4) y `usePageMeta` (`main`) |
+| `ClientDetail.test.tsx` | Las pruebas de visitas (AE4) y las de anonimizar (`main`); `InfoTab` ya no se mockea, porque la AE4 revisa el formulario real, y las pruebas de `main` lo reconocen por «Datos personales» |
+
+El resto de lo que trae `main` (`index.html`, `vercel.json`, `robots.txt`, `sitemap.xml`, `seo.config.ts`, `usePageMeta` y `ClientDetail.tsx`) entró sin conflicto; el script de Google que quitó la Fase 6 no vuelve. Resultado: lint sin errores, `typecheck:all` sin errores, 332 tests en 37 archivos y build correcto.
 
 El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora.
 
@@ -453,6 +476,22 @@ Cada push a `main` corre GitHub Actions en los dos repos. El registro de corrida
 cd nexa-backend  && npm run build   # genera dist/
 cd nexa-frontend && npm run build   # genera dist/
 ```
+
+### 10.1 Indexación en Google (SEO)
+
+El frontend se publica en Vercel (https://lorenestudiodebelleza.vercel.app) y trae lo necesario para que Google lo indexe. Todo está en `nexa-frontend`; el backend no interviene.
+
+| Qué | Dónde |
+|---|---|
+| Título, descripción, canonical, Open Graph y Twitter de la home | `index.html` |
+| Etiqueta de verificación de Google Search Console (no se debe quitar) | `index.html` |
+| `robots.txt`: permite el sitio y bloquea los paneles `/admin`, `/client` y `/professional` | `public/robots.txt` |
+| `sitemap.xml` con la home y las dos páginas legales | `public/sitemap.xml` |
+| `X-Robots-Tag: noindex` en `/login`, `/registro-profesional` y `/pago/*` | `vercel.json` |
+| Título, descripción y canonical por página (y `noindex` en las privadas) | `src/shared/hooks/usePageMeta.ts` |
+| Dominio y nombre del sitio | `src/app/config/seo.config.ts` |
+
+Para un estudio nuevo hay que cambiar el dominio y el nombre en `seo.config.ts`, `index.html`, `public/robots.txt` y `public/sitemap.xml` (los tres últimos lo llevan escrito a mano). Después de desplegar: verificar la propiedad en Search Console, enviar `sitemap.xml` y pedir la indexación de la home con «Inspección de URL».
 
 ---
 
