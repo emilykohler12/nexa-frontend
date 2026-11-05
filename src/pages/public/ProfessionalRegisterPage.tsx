@@ -7,6 +7,7 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { isArgentineMobile, PHONE_ERROR } from '@/shared/utils/phone'
+import { usePageMeta } from '@/shared/hooks/usePageMeta'
 import './ProfessionalRegisterPage.css'
 
 type State = 'loading' | 'valid' | 'invalid' | 'expired' | 'used'
@@ -18,6 +19,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 export function ProfessionalRegisterPage() {
+  usePageMeta({ title: 'Registro de profesional', noindex: true })
   const [searchParams] = useSearchParams()
   const navigate       = useNavigate()
   const token          = searchParams.get('token') ?? ''

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+# Paneles privados (detrás del login): no tienen nada para indexar.
+Disallow: /admin
+Disallow: /client
+Disallow: /professional
+
+# /login, /registro-profesional y /pago/ quedan rastreables a propósito:
+# llevan "noindex" (vercel.json y usePageMeta) y Google solo lo ve si puede entrar.
+
+Sitemap: https://lorenestudiodebelleza.vercel.app/sitemap.xml

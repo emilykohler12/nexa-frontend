@@ -1,5 +1,6 @@
 import { useTenant } from '@/features/tenant/TenantContext'
 import { useNavigate } from 'react-router-dom'
+import { SITE_NAME } from '@/app/config/seo.config'
 
 type SectionId = 'servicios' | 'profesionales' | 'tienda' | 'nosotros'
 
@@ -68,6 +69,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           style={{ color: business.accentColor, fontFamily: 'var(--font-playfair)' }}
         >
           {business.heroTitle}
+          <span className="sr-only"> a {SITE_NAME}</span>
         </h1>
         <p
           className="text-white text-2xl mb-4"
