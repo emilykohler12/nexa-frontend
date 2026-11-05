@@ -1,11 +1,11 @@
 // src/pages/client/AppointmentsPage.tsx
-import { useState, useEffect } from 'react'
-import { useNavigate }    from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTenant }      from '@/features/tenant/TenantContext'
 import { useAuth, isFirstVisit } from '@/features/auth/AuthContext'
 import { api }            from '@/shared/utils/api'
 import { ROUTES }         from '@/app/config/routes.config'
-import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay, NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
 import { Calendar, Clock, User, Users, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
@@ -13,7 +13,11 @@ import type { AppointmentDetailsValue } from '@/features/client/booking/PostBook
 import { AppointmentDetailModal } from './AppointmentDetailModal'
 import './AppointmentsPage.css'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { ClientCancelConfirm } from './ClientCancelConfirm'
+import { appointmentInstant, todayInArgentina } from '@/shared/utils/argentinaTime'
+import { parseReminderLink, resolveReminderLink, REMINDER_LINK_MESSAGES } from '@/features/client/appointments/reminderLink'
 import { ConfirmModal } from '@/shared/ui/molecules/ConfirmModal'
+import { isDepositPaid } from '@/shared/utils/cancellation'
 import { Toast, type ToastType } from '@/shared/ui/molecules/Toast'
 import { InfoModal } from '@/shared/ui/molecules/InfoModal'
 import { ReviewPromptModal } from '@/features/client/reviews/ReviewPromptModal'
@@ -42,9 +46,10 @@ interface Appointment {
   status:            AppointmentStatus
   cancelReason?:     string | null
   displayStatus?:    string
+  statusLabel?:      string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
   // Cuándo registraste que llegaste al local. Si un turno confirmado queda sin
-  // esto 20 minutos después de la hora pactada, se marca "Cancelado por inasistencia" solo.
+  // esto más de 30 minutos después de la hora pactada, se marca "No asistió (automático)" solo.
   arrivedAt?:        string | null
   details?:          AppointmentDetailsValue | null
   comboGroupId?:     string | null
@@ -79,6 +84,15 @@ export function AppointmentsPage() {
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
   const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
   const [arrivingId, setArrivingId] = useState<string | null>(null)
+  // Cancelar UN servicio suelto de un combo (desde el detalle) también pide confirmación.
+  const [confirmCancelLegId, setConfirmCancelLegId] = useState<string | null>(null)
+  // Enlace del mail de recordatorio (?turno=<id>&accion=…): se resuelve una sola vez, cuando ya cargaron los turnos.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const reminderLink = useMemo(() => parseReminderLink(searchParams), [searchParams])
+  const [reminderLinkHandled, setReminderLinkHandled] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reviewsReady, setReviewsReady] = useState(false)
+  const [linkNotice, setLinkNotice] = useState<string | null>(null)
   // No hay reembolso automático (no hay integración de refunds con Mercado
   // Pago) — cuando corresponde devolución, se lo decimos al cliente y le
   // mostramos cómo escribirnos por WhatsApp para coordinarla a mano.
@@ -96,7 +110,7 @@ export function AppointmentsPage() {
         setAppointments(list)
         setRescheduleNoticeQueue(list.filter(a => a.rescheduleNoticePending))
       })
-      .catch(() => setAppointments([]))
+      .catch(() => { setAppointments([]); setLoadFailed(true) })
       .finally(() => setLoading(false))
 
     // Turnos ya finalizados que todavía no tienen reseña — se pregunta una
@@ -104,7 +118,18 @@ export function AppointmentsPage() {
     api.get<{ pending: { appointmentId: string; serviceName: string }[] }>('/api/client/reviews/pending')
       .then(res => setReviewQueue(res.data.pending ?? []))
       .catch(() => setReviewQueue([]))
+      .finally(() => setReviewsReady(true))
   }, [])
+
+  // Una vez resuelto el enlace del mail, se saca de la URL para que recargar no vuelva a abrir el diálogo.
+  useEffect(() => {
+    if (!reminderLinkHandled) return
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.delete('turno'); next.delete('accion')
+      return next
+    }, { replace: true })
+  }, [reminderLinkHandled, setSearchParams])
 
   const dismissRescheduleNotice = () => {
     const appt = rescheduleNoticeQueue[0]
@@ -114,6 +139,21 @@ export function AppointmentsPage() {
   }
 
   if (!business || !user) return null
+
+  // El enlace del mail solo abre una pantalla; la cancelación y la reprogramación se confirman ahí adentro. Se resuelve
+  // una sola vez, cuando ya cargaron los turnos y se cerraron los avisos que salen al entrar (turno reprogramado,
+  // reseña pendiente), para no apilar diálogos.
+  if (reminderLink && !reminderLinkHandled && !loading && reviewsReady
+      && rescheduleNoticeQueue.length === 0 && reviewQueue.length === 0) {
+    setReminderLinkHandled(true)
+    const outcome = loadFailed
+      ? { kind: 'message' as const, text: REMINDER_LINK_MESSAGES.loadFailed }
+      : resolveReminderLink(reminderLink, appointments, now)
+    if (outcome.kind === 'message') setLinkNotice(outcome.text)
+    else if (outcome.accion === 'reprogramar') setReschedulingAppt(outcome.target)
+    else if (outcome.accion === 'cancelar') setConfirmCancelAppt(outcome.target)
+    else setDetailAppt(outcome.target)
+  }
   const { primaryColor, accentColor, whatsapp } = business
 
   const firstName = user.name.split(' ')[0]
@@ -123,19 +163,20 @@ export function AppointmentsPage() {
   // que ya pasó debe verse como historial, no como próximo. Si la hora viene en
   // un formato que no se puede parsear, no queda "atascado" como próximo para siempre.
   const isPast = (a: Appointment) => {
-    const dt = new Date(`${a.date}T${a.time}`)
+    const dt = appointmentInstant(a.date, a.time)
     if (!isNaN(dt.getTime())) return dt.getTime() <= now
-    return a.date < new Date(now).toISOString().split('T')[0]
+    return a.date < todayInArgentina(new Date(now))
   }
 
   // Cada turno cae en un único balde: el estado manda cuando ya está resuelto
   // (finished/cancelled_no_show/cancelled), y solo se usa la fecha/hora para los que
   // todavía dependen de si ya pasaron o no. Así nunca puede aparecer duplicado.
   const isUpcomingStatus = (a: Appointment) => a.status === 'confirmed' || a.status === 'pending'
+  const isNoShowStatus = (status: string) => status === 'no_show_auto' || status === 'cancelled_no_show'
 
   const filtered = appointments.filter(a => {
     if (filter === 'upcoming')  return isUpcomingStatus(a) && !isPast(a)
-    if (filter === 'history')   return a.status === 'finished' || (isUpcomingStatus(a) && isPast(a))
+    if (filter === 'history')   return a.status === 'finished' || isNoShowStatus(a.status) || (isUpcomingStatus(a) && isPast(a))
     if (filter === 'cancelled') return a.status === 'cancelled'
     return true
   })
@@ -172,7 +213,7 @@ export function AppointmentsPage() {
         text: res.data.partialCombo === false
           ? (res.data.refunded
               ? 'Cancelaste el último servicio del combo. Te corresponde la devolución de la seña.'
-              : 'Cancelaste el último servicio del combo. La seña no se reembolsa por cancelarse fuera del plazo.')
+              : 'Cancelaste el último servicio del combo. La seña queda retenida.')
           : 'Servicio cancelado. Los demás servicios del combo siguen en pie.',
       })
       if (res.data.partialCombo === false && res.data.refunded) setShowRefundNotice(true)
@@ -213,7 +254,7 @@ export function AppointmentsPage() {
           type: refunded ? 'success' : 'info',
           text: refunded
             ? 'Se canceló el combo completo. Te corresponde la devolución de la seña.'
-            : 'Se canceló el combo completo. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
+            : 'Se canceló el combo completo. La seña queda retenida.',
         })
         if (refunded) setShowRefundNotice(true)
       } else {
@@ -225,7 +266,7 @@ export function AppointmentsPage() {
           type: res.data.refunded ? 'success' : 'info',
           text: res.data.refunded
             ? 'Turno cancelado. Te corresponde la devolución de la seña.'
-            : 'Turno cancelado. La seña no se reembolsa por cancelarse fuera del plazo permitido.',
+            : 'Turno cancelado. La seña queda retenida.',
         })
         if (res.data.refunded) setShowRefundNotice(true)
       }
@@ -249,13 +290,8 @@ export function AppointmentsPage() {
     navigate(ROUTES.CLIENT_BOOK, { state: { serviceId: appt.serviceId, professionalId: appt.professionalId } })
   }
 
-  // Nunca usar toISOString() acá — convierte a UTC y puede correr la fecha (mismo motivo que en Agenda.tsx del profesional).
-  const todayLocal = () => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
-  const canMarkArrival = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && a.date === todayLocal()
+  // Los turnos están en hora de Argentina: "hoy" también (toISOString() da la fecha en UTC y después de las 21:00 ya es mañana).
+  const canMarkArrival = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && a.date === todayInArgentina()
 
   const markArrival = async (appt: Appointment) => {
     setArrivingId(appt.id)
@@ -280,6 +316,15 @@ export function AppointmentsPage() {
         </h1>
         <p>{firstTime ? 'Un gusto que nos hayas elegido.' : 'Gestioná tus reservas.'}</p>
       </div>
+
+      {linkNotice && (
+        <div role="status" className="appointments-link-notice">
+          <p>{linkNotice}</p>
+          <button type="button" onClick={() => setLinkNotice(null)} aria-label="Cerrar aviso">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       <button
         onClick={() => navigate(ROUTES.CLIENT_BOOK)}
@@ -325,10 +370,11 @@ export function AppointmentsPage() {
               const activeLegs = legs.filter(l => l.status === 'confirmed' || l.status === 'pending')
               // Estado de la fila: si queda alguna pata activa, ese; si no, la primera.
               const rowAppt = activeLegs[0] ?? head
-              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus)
+              const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus, rowAppt.statusLabel)
               const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
               const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
-              const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
+              // Se puede cancelar aunque el turno ya haya empezado (la seña queda retenida).
+              const canCancel = activeLegs.length > 0
               return (
                 <div
                   key={row.groupId}
@@ -380,7 +426,7 @@ export function AppointmentsPage() {
             }
 
             const appt = row.appt
-            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason, appt.displayStatus)
+            const status = getAppointmentStatusDisplay(appt.status, appt.cancelReason, appt.displayStatus, appt.statusLabel)
             return (
               <div
                 key={appt.id}
@@ -413,15 +459,22 @@ export function AppointmentsPage() {
 
                 {canMarkArrival(appt) && (
                   <div className="appointment-meta" style={{ color: '#b45309' }}>
-                    <span>Al llegar al local, marcá tu llegada — si pasan 20 min de tu hora sin avisar, el turno se libera.</span>
+                    <span>Al llegar al local, marcá tu llegada — si pasan más de 30 min de tu hora sin avisar, el turno figura como «No asistió (automático)».</span>
                   </div>
+                )}
+
+                {appt.status === 'no_show_auto' && (
+                  <p role="note" className="appointment-meta" style={{ color: '#b45309', margin: 0 }}>
+                    {NO_SHOW_AUTO_NOTICE}
+                  </p>
                 )}
 
                 <div className="appointment-footer">
                   <span className="appointment-price" style={{ color: accentColor }}>
                     ${appt.price.toLocaleString('es-AR')}
                   </span>
-                  {(appt.status === 'confirmed' || appt.status === 'pending') && !isPast(appt) ? (
+                  {/* Cancelar se ofrece también con el turno ya empezado; reprogramar, solo antes de la hora. */}
+                  {(appt.status === 'confirmed' || appt.status === 'pending') ? (
                     <div className="appointment-actions">
                       {canMarkArrival(appt) && (
                         <button
@@ -433,7 +486,7 @@ export function AppointmentsPage() {
                           {arrivingId === appt.id ? 'Marcando...' : 'Ya llegué'}
                         </button>
                       )}
-                      {!appt.comboGroupId && (
+                      {!appt.comboGroupId && !isPast(appt) && (
                         <button
                           className="appointment-reschedule-btn"
                           onClick={e => { e.stopPropagation(); handleRescheduleClick(appt) }}
@@ -506,27 +559,71 @@ export function AppointmentsPage() {
                   .map(a => ({ id: a.id, serviceName: a.serviceName, professionalName: a.professionalName, status: a.status, price: a.price }))
               : undefined
           }
-          onCancelLeg={cancelOneComboLeg}
+          onCancelLeg={setConfirmCancelLegId}
           cancellingLegId={cancellingId}
         />
       )}
 
-      {confirmCancelAppt && (
-        <ConfirmModal
-          title="¿Cancelar este turno?"
-          message={
-            confirmCancelAppt.comboGroupId
-              ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date}.`
-              : `${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date} a las ${confirmCancelAppt.time}.`
-          }
-          confirmLabel="Sí, cancelar"
-          cancelLabel="Volver"
-          accentColor={primaryColor}
-          loading={cancellingId === confirmCancelAppt.id}
-          onConfirm={confirmCancel}
-          onCancel={() => setConfirmCancelAppt(null)}
-        />
-      )}
+      {confirmCancelLegId && (() => {
+        const leg = appointments.find(a => a.id === confirmCancelLegId)
+        if (!leg) return null
+        const group = leg.comboGroupId ? appointments.filter(a => a.comboGroupId === leg.comboGroupId) : [leg]
+        const isLastActive = group.filter(a => a.status === 'confirmed' || a.status === 'pending').length <= 1
+        const done = async () => { await cancelOneComboLeg(leg.id); setConfirmCancelLegId(null) }
+        if (!isLastActive) {
+          return (
+            <ConfirmModal
+              title="¿Cancelar este servicio?"
+              message={`${leg.serviceName} con ${leg.professionalName}. Los demás servicios del combo siguen en pie. La seña no se devuelve salvo que canceles todos.`}
+              confirmLabel="Sí, cancelar"
+              cancelLabel="Volver"
+              accentColor={primaryColor}
+              loading={cancellingId === leg.id}
+              onConfirm={done}
+              onCancel={() => setConfirmCancelLegId(null)}
+            />
+          )
+        }
+        const first = [...group].sort((a, b) => appointmentInstant(a.date, a.time).getTime() - appointmentInstant(b.date, b.time).getTime())[0]
+        return (
+          <ClientCancelConfirm
+            title="¿Cancelar este servicio?"
+            message={`${leg.serviceName} con ${leg.professionalName}. Es el último servicio del combo: al cancelarlo se cancela el turno completo.`}
+            date={first.date}
+            time={first.time}
+            paid={group.some(l => isDepositPaid(l.paymentStatus))}
+            accentColor={primaryColor}
+            loading={cancellingId === leg.id}
+            onConfirm={done}
+            onCancel={() => setConfirmCancelLegId(null)}
+          />
+        )
+      })()}
+
+      {confirmCancelAppt && (() => {
+        // Combo: la seña se evalúa una sola vez, con el inicio del primer servicio y si alguno tiene seña paga.
+        const groupLegs = confirmCancelAppt.comboGroupId
+          ? appointments.filter(a => a.comboGroupId === confirmCancelAppt.comboGroupId)
+          : [confirmCancelAppt]
+        const first = [...groupLegs].sort((a, b) => appointmentInstant(a.date, a.time).getTime() - appointmentInstant(b.date, b.time).getTime())[0]
+        return (
+          <ClientCancelConfirm
+            title="¿Cancelar este turno?"
+            message={
+              confirmCancelAppt.comboGroupId
+                ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date}.`
+                : `${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date} a las ${confirmCancelAppt.time}.`
+            }
+            date={first.date}
+            time={first.time}
+            paid={groupLegs.some(l => isDepositPaid(l.paymentStatus))}
+            accentColor={primaryColor}
+            loading={cancellingId === confirmCancelAppt.id}
+            onConfirm={confirmCancel}
+            onCancel={() => setConfirmCancelAppt(null)}
+          />
+        )
+      })()}
 
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 

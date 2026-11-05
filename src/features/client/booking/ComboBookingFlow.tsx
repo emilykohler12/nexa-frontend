@@ -2,7 +2,11 @@ import { useState, useEffect, useEffectEvent } from 'react'
 import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
-import { generateSlots } from '@/features/professional/onboarding/types'
+import {
+  type AvailabilityResponse, type DaySlots,
+  EMPTY_DAY, intersectSlots, localTodayISO, slotsFromAvailability, unionSlots,
+} from './availability'
+import { TimeSlotPicker } from './TimeSlotPicker'
 import type { Service } from './steps/ServiceStep'
 import { ANY_PROFESSIONAL_ID } from './steps/ProviderStep'
 import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
@@ -12,9 +16,6 @@ import type { CompanionRelation } from '@/shared/utils/companion'
 // Mismas categorías que en PostBookingDetails.tsx — ahí vive la lógica de
 // qué preguntas mostrar según la categoría del servicio.
 const DETAILS_CATEGORIES = ['unas', 'cabello', 'rostro']
-
-// El backend usa 0=lunes...6=domingo; Date#getDay() usa 0=domingo...6=sábado
-const JS_DAY_TO_BACKEND_DAY = [6, 0, 1, 2, 3, 4, 5]
 
 interface Professional {
   id: string
@@ -39,8 +40,6 @@ interface ComponentAssignment {
   loadingTimes: boolean
 }
 
-interface AvailabilityRow { dayOfWeek: number; startTime: string; endTime: string }
-interface AvailabilityResponse { availability: AvailabilityRow[]; bookedTimes?: string[] }
 interface PaymentSettings { depositAmount: number; depositPercent: boolean }
 
 type Phase = 'assign' | 'datetime' | 'confirm' | 'waitingPayment' | 'shared-details' | 'details' | 'success'
@@ -62,34 +61,19 @@ function computeDeposit(price: number, settings: PaymentSettings): number {
   return Math.min(amount, price)
 }
 
-function filterPastToday(slots: string[], date: string): string[] {
-  const now = new Date()
-  const isToday = date === now.toISOString().split('T')[0]
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
-  return slots.filter(t => {
-    if (!isToday) return true
-    const [h, m] = t.split(':').map(Number)
-    return h * 60 + m > nowMinutes
-  })
-}
-
-// Horarios libres de UN profesional puntual (descuenta bookedTimes que ya vienen del backend).
-async function fetchSlotsFor(professionalId: string, date: string): Promise<string[]> {
-  const res = await api.get<AvailabilityResponse>(`/api/professional/${professionalId}/availability`, { params: { date } })
-  const backendDay = JS_DAY_TO_BACKEND_DAY[new Date(`${date}T00:00:00`).getDay()]
-  const dayRows = res.data.availability.filter(a => a.dayOfWeek === backendDay)
-  if (dayRows.length === 0) return []
-  const booked = new Set(res.data.bookedTimes ?? [])
-  const slots = dayRows.flatMap(row => generateSlots({ start: row.startTime, end: row.endTime })).filter(t => !booked.has(t))
-  return filterPastToday(slots, date)
+// Horarios libres de UN profesional puntual. Qué horarios se ofrecen hoy (reserva tardía y horarios
+// reabiertos) lo decide el servidor: no se filtra con el reloj del navegador.
+async function fetchSlotsFor(professionalId: string, serviceId: string, date: string): Promise<DaySlots> {
+  const res = await api.get<AvailabilityResponse>(`/api/professional/${professionalId}/availability`, { params: { date, serviceId } })
+  return slotsFromAvailability(res.data, date)
 }
 
 // Horarios libres para "cualquiera" en un servicio del combo: unión de los horarios
 // libres de todos los profesionales que hacen ese servicio (alcanza con que uno esté libre).
-async function fetchAnySlotsFor(serviceId: string, date: string): Promise<string[]> {
+async function fetchAnySlotsFor(serviceId: string, date: string): Promise<DaySlots> {
   const res = await api.get<{ professionals: { id: string }[] }>(`/api/professional/public?serviceId=${encodeURIComponent(serviceId)}`)
-  const results = await Promise.all(res.data.professionals.map(p => fetchSlotsFor(p.id, date).catch((): string[] => [])))
-  return Array.from(new Set(results.flat())).sort()
+  const results = await Promise.all(res.data.professionals.map(p => fetchSlotsFor(p.id, serviceId, date).catch(() => EMPTY_DAY)))
+  return unionSlots(results)
 }
 
 // Encabezado de cada paso. Fuera del componente para que no se vuelva a crear en cada render.
@@ -130,7 +114,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
 
   // Solo para modo simultáneo: una fecha y hora compartidas por todos
   const [sharedDate, setSharedDate] = useState<string | null>(null)
-  const [sharedTimes, setSharedTimes] = useState<string[]>([])
+  const [sharedSlots, setSharedSlots] = useState<DaySlots>(EMPTY_DAY)
   const [loadingSharedTimes, setLoadingSharedTimes] = useState(false)
   const [sharedTime, setSharedTime] = useState<string | null>(null)
 
@@ -239,7 +223,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const handleSharedDateChange = async (d: string) => {
     setSharedDate(d)
     setSharedTime(null)
-    setSharedTimes([])
+    setSharedSlots(EMPTY_DAY)
     if (components.length === 0) return
     setLoadingSharedTimes(true)
     try {
@@ -248,12 +232,12 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
           (c.professionalId === ANY_PROFESSIONAL_ID
             ? fetchAnySlotsFor(c.serviceId, d)
             : c.professionalId
-            ? fetchSlotsFor(c.professionalId, d)
-            : Promise.resolve([] as string[])
-          ).catch((): string[] => [])
+            ? fetchSlotsFor(c.professionalId, c.serviceId, d)
+            : Promise.resolve(EMPTY_DAY)
+          ).catch(() => EMPTY_DAY)
         )
       )
-      setSharedTimes(slotLists.reduce((acc, list) => acc.filter(t => list.includes(t))))
+      setSharedSlots(intersectSlots(slotLists))
     } finally {
       setLoadingSharedTimes(false)
     }
@@ -394,6 +378,12 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         setPhase('datetime')
         setSharedTime(null)
         if (sharedDate) handleSharedDateChange(sharedDate)
+      } else if (code && ['REOPENED_SLOT_CLOSED', 'REOPENED_SLOT_UNAVAILABLE', 'SERVICE_DOES_NOT_FIT', 'START_TIME_PASSED'].includes(code)) {
+        // El horario dejó de servir: se vuelven a pedir los horarios al servidor.
+        setError(safeErrorMessage(err, 'Ese horario ya no está disponible. Elegí otro horario.'))
+        setPhase('datetime')
+        setSharedTime(null)
+        if (sharedDate) handleSharedDateChange(sharedDate)
       } else {
         setError(safeErrorMessage(err, 'No pudimos confirmar el combo. Intentá de nuevo.'))
       }
@@ -485,7 +475,7 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         <input
           type="date"
           value={sharedDate ?? ''}
-          min={new Date().toISOString().split('T')[0]}
+          min={localTodayISO()}
           onChange={e => handleSharedDateChange(e.target.value)}
           className="w-full border rounded-xl p-3 mb-6 outline-none"
           style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)', color: primaryColor }}
@@ -493,25 +483,22 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
         {sharedDate && (
           loadingSharedTimes ? (
             <p className="text-gray-400 text-center py-6" style={{ fontFamily: 'var(--font-lato)' }}>Buscando un horario que le sirva a todos...</p>
-          ) : sharedTimes.length === 0 ? (
+          ) : sharedSlots.regular.length === 0 && sharedSlots.reopened.length === 0 ? (
             <p className="text-gray-400 text-sm" style={{ fontFamily: 'var(--font-lato)' }}>
-              No encontramos un horario donde los {assignedProfessionalIds.length} profesionales elegidos estén libres a la vez este día. Probá con otra fecha.
+              {sharedSlots.dayKind === 'past'
+                ? 'Esa fecha ya pasó. Elegí otra fecha.'
+                : `No encontramos un horario donde los ${assignedProfessionalIds.length} profesionales elegidos estén libres a la vez este día. Probá con otra fecha.`}
             </p>
           ) : (
             <>
               <p className="text-sm text-gray-500 mb-3" style={{ fontFamily: 'var(--font-lato)' }}>Horarios donde todos están libres</p>
-              <div className="grid grid-cols-4 gap-2">
-                {sharedTimes.map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setSharedTime(t)}
-                    className="py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{ backgroundColor: sharedTime === t ? primaryColor : '#f3f4f6', color: sharedTime === t ? 'white' : '#555', fontFamily: 'var(--font-lato)' }}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <TimeSlotPicker
+                regular={sharedSlots.regular}
+                reopened={sharedSlots.reopened}
+                selectedTime={sharedTime}
+                onSelect={setSharedTime}
+                primaryColor={primaryColor}
+              />
             </>
           )
         )}

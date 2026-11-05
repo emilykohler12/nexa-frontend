@@ -33,12 +33,6 @@ export function PersonalStep({ data, onChange }: Props) {
               onFocus={e => e.currentTarget.style.borderColor = primary}
               onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
           </Field>
-          <Field label="Fecha de nacimiento">
-            <input className="ps-input" type="date" value={data.birthDate}
-              onChange={e => onChange({ birthDate: e.target.value })}
-              onFocus={e => e.currentTarget.style.borderColor = primary}
-              onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'} />
-          </Field>
           <Field label="Género">
             <select
               className="ps-input"

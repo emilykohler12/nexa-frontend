@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DateTimeStep } from './DateTimeStep'
 import { ANY_PROFESSIONAL_ID } from './ProviderStep'
@@ -141,6 +141,115 @@ describe('DateTimeStep', () => {
 
     expect(await screen.findByRole('button', { name: SLOTS[1] })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: SLOTS[0] })).not.toBeInTheDocument()
+  })
+
+  // Fase 2 del backend: qué horarios se ofrecen lo decide el servidor, no el reloj del navegador.
+  describe('horarios del servidor (earliestStart y reopenedStarts)', () => {
+    afterEach(() => { vi.useRealTimers() })
+
+    it('pide los horarios con el servicio, para que el servidor calcule los reabiertos', async () => {
+      vi.mocked(api.get).mockResolvedValue({ data: { availability: availability() } } as never)
+      renderStep({ serviceId: 'serv-1' })
+
+      await screen.findByRole('button', { name: SLOTS[0] })
+      expect(api.get).toHaveBeenCalledWith('/api/professional/pro-1/availability', { params: { date: DATE, serviceId: 'serv-1' } })
+    })
+
+    it('oculta los horarios anteriores a earliestStart', async () => {
+      vi.mocked(api.get).mockResolvedValue({ data: { availability: availability(), earliestStart: '14:00' } } as never)
+      renderStep()
+
+      expect(await screen.findByRole('button', { name: '14:00' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '16:00' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '12:00' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '08:00' })).not.toBeInTheDocument()
+    })
+
+    it('no filtra con el reloj del navegador: a las 23:30 UTC un día futuro conserva todos sus horarios', async () => {
+      // Con el reloj del navegador, "hoy" en UTC ya sería el 10/03/2099 y se ocultarían todos los horarios.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2099-03-10T23:30:00Z'))
+      vi.mocked(api.get).mockResolvedValue({ data: { availability: availability(), earliestStart: '00:00' } } as never)
+      renderStep()
+
+      for (const slot of SLOTS) expect(await screen.findByRole('button', { name: slot })).toBeInTheDocument()
+    })
+
+    it('muestra los horarios reabiertos aparte, con la etiqueta «Horario de último momento»', async () => {
+      vi.mocked(api.get).mockResolvedValue({
+        data: { availability: availability(), earliestStart: '00:00', reopenedStarts: ['16:45', '16:50'] },
+      } as never)
+      const { onSelectTime } = renderStep()
+
+      const group = await screen.findByRole('group', { name: 'Horario de último momento' })
+      expect(within(group).getByRole('button', { name: '16:45' })).toBeInTheDocument()
+      expect(within(group).getByRole('button', { name: '16:50' })).toBeInTheDocument()
+      // Los horarios comunes siguen en su grilla, fuera del grupo.
+      expect(within(group).queryByRole('button', { name: SLOTS[0] })).not.toBeInTheDocument()
+
+      await userEvent.setup().click(within(group).getByRole('button', { name: '16:50' }))
+      expect(onSelectTime).toHaveBeenCalledWith('16:50')
+    })
+
+    it('sin horarios reabiertos no muestra la etiqueta', async () => {
+      vi.mocked(api.get).mockResolvedValue({ data: { availability: availability(), earliestStart: '00:00', reopenedStarts: [] } } as never)
+      renderStep()
+
+      await screen.findByRole('button', { name: SLOTS[0] })
+      expect(screen.queryByText('Horario de último momento')).not.toBeInTheDocument()
+    })
+
+    it('si solo quedan horarios de último momento, igual los ofrece', async () => {
+      vi.mocked(api.get).mockResolvedValue({
+        data: { availability: availability(), earliestStart: '23:00', reopenedStarts: ['23:05'] },
+      } as never)
+      renderStep()
+
+      expect(await screen.findByRole('button', { name: '23:05' })).toBeInTheDocument()
+      expect(screen.getByText('Horario de último momento')).toBeInTheDocument()
+      expect(screen.queryByText(/No quedan horarios/)).not.toBeInTheDocument()
+    })
+
+    it('un horario reabierto no se repite entre los comunes', async () => {
+      vi.mocked(api.get).mockResolvedValue({
+        data: { availability: availability(), earliestStart: '00:00', reopenedStarts: [SLOTS[1]] },
+      } as never)
+      renderStep()
+
+      const group = await screen.findByRole('group', { name: 'Horario de último momento' })
+      expect(within(group).getByRole('button', { name: SLOTS[1] })).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: SLOTS[1] })).toHaveLength(1)
+    })
+
+    it('si el servidor dice que hoy ya no quedan horarios lo avisa', async () => {
+      vi.mocked(api.get).mockResolvedValue({ data: { availability: availability(), earliestStart: '21:30' } } as never)
+      renderStep()
+
+      expect(await screen.findByText('No quedan horarios disponibles por hoy. Probá con otra fecha.')).toBeInTheDocument()
+    })
+
+    it('si la fecha ya pasó (earliestStart null) no ofrece horarios y lo dice', async () => {
+      vi.mocked(api.get).mockResolvedValue({ data: { availability: availability(), earliestStart: null } } as never)
+      renderStep()
+
+      expect(await screen.findByText('Esa fecha ya pasó. Elegí otra fecha.')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: SLOTS[0] })).not.toBeInTheDocument()
+    })
+
+    it('con "Cualquiera" suma los horarios de último momento de todas las profesionales', async () => {
+      vi.mocked(api.get).mockImplementation((url: string) => {
+        if (url.startsWith('/api/professional/public')) {
+          return Promise.resolve({ data: { professionals: [{ id: 'a' }, { id: 'b' }] } }) as never
+        }
+        const reopened = url.includes('/a/') ? ['16:45'] : ['16:50']
+        return Promise.resolve({ data: { availability: availability(), earliestStart: '00:00', reopenedStarts: reopened } }) as never
+      })
+      renderStep({ professionalId: ANY_PROFESSIONAL_ID, serviceId: 'serv-1' })
+
+      const group = await screen.findByRole('group', { name: 'Horario de último momento' })
+      expect(within(group).getByRole('button', { name: '16:45' })).toBeInTheDocument()
+      expect(within(group).getByRole('button', { name: '16:50' })).toBeInTheDocument()
+    })
   })
 
   it('con "Cualquiera" y sin ninguna profesional con horarios lo dice', async () => {

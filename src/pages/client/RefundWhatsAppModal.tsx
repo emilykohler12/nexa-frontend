@@ -37,7 +37,7 @@ export function RefundWhatsAppModal({ whatsapp, accentColor, onClose }: Props) {
           Te corresponde la devolución de la seña
         </h3>
         <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-          Cancelaste dentro del plazo permitido. Escribinos por WhatsApp para coordinar cómo te devolvemos la seña.
+          Cancelaste dentro del plazo permitido. La devolución se hace por fuera de la aplicación: escribinos por WhatsApp para coordinar cómo te devolvemos la seña.
         </p>
         <a
           href={waLink}

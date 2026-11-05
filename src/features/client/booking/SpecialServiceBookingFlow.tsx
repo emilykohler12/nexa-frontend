@@ -5,16 +5,21 @@
 // uno de los horarios puntuales que el admin dejó configurados para el único
 // día que existe este servicio — no hay paso de "elegir profesional", ya
 // viene asignado por horario.
-import { useState, useEffect } from 'react'
-import { ChevronLeft, Check, Clock } from 'lucide-react'
+import { useState, useEffect, useEffectEvent } from 'react'
+import { ChevronLeft, Check, Clock, RefreshCw, ExternalLink } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import type { Service } from './steps/ServiceStep'
 import { PostBookingDetails } from './PostBookingDetails'
 import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 
-type Phase = 'select' | 'datetime' | 'confirm' | 'details' | 'success'
+type Phase = 'select' | 'datetime' | 'confirm' | 'waitingPayment' | 'expired' | 'details' | 'success'
 interface PaymentSettings { depositAmount: number; depositPercent: boolean }
+
+// Igual que PaymentStep: la clienta tiene 15 minutos para pagar la seña; el backend libera el turno (y el horario del
+// día) a los 20 si sigue impago.
+const HOLD_MINUTES = 15
+const POLL_MS = 5000
 
 interface Props {
   service: Service
@@ -50,12 +55,55 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]           = useState<string | null>(null)
   const [appointmentId, setAppointmentId] = useState<string | null>(null)
+  const [checkingPayment, setCheckingPayment] = useState(false)
+  const [payError, setPayError]     = useState<string | null>(null)
+  const [deadline, setDeadline]     = useState<number | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState(HOLD_MINUTES * 60)
 
   useEffect(() => {
     api.get<{ settings: PaymentSettings }>('/api/business/payments/public')
       .then(res => setPaymentSettings(res.data.settings))
       .catch(() => setPaymentSettings(null))
   }, [])
+
+  // RF-03 y RF-17: el turno nace con la seña SIN pagar y recién pasa a pagada cuando Mercado Pago confirma el pago.
+  // Pide el checkout de la seña de un turno ya creado y lo abre en otra pestaña.
+  const openCheckout = async (id: string) => {
+    setPayError(null)
+    try {
+      const pref = await api.post<{ checkoutUrl: string }>(`/api/client/appointments/${id}/payment`)
+      window.open(pref.data.checkoutUrl, '_blank', 'noopener,noreferrer')
+    } catch (err: unknown) {
+      setPayError(safeErrorMessage(err, 'No pudimos abrir el pago. Probá de nuevo.'))
+    }
+  }
+
+  // El pago se confirma por webhook en el backend: preguntamos cada unos segundos si ya se acreditó
+  // (el backend le consulta a Mercado Pago, no depende de que el webhook haya llegado).
+  const checkPaymentStatus = async () => {
+    if (!appointmentId) return
+    setCheckingPayment(true)
+    try {
+      const res = await api.post<{ paymentStatus: string }>(`/api/client/appointments/${appointmentId}/verify-payment`)
+      if (res.data.paymentStatus === 'partial') setPhase('details')
+    } catch {
+      // silencioso: es un chequeo de fondo, no tapamos la pantalla de espera con un error
+    } finally {
+      setCheckingPayment(false)
+    }
+  }
+  const pollPaymentStatus = useEffectEvent(() => { void checkPaymentStatus() })
+
+  useEffect(() => {
+    if (phase !== 'waitingPayment' || deadline === null) return
+    const poll = setInterval(pollPaymentStatus, POLL_MS)
+    const tick = setInterval(() => {
+      const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000))
+      setSecondsLeft(remaining)
+      if (remaining <= 0) setPhase('expired')
+    }, 1000)
+    return () => { clearInterval(poll); clearInterval(tick) }
+  }, [phase, deadline])
 
   // Refresca los horarios (por si alguien reservó uno justo antes) al entrar
   // al paso de elegir horario.
@@ -92,14 +140,24 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
     setSubmitting(true)
     setError(null)
     try {
-      const res = await api.post<{ appointment: { id: string } }>('/api/client/appointments/special', {
+      const res = await api.post<{ appointment: { id: string; depositAmount?: number } }>('/api/client/appointments/special', {
         serviceId: service.id,
         time: slotTime,
         zoneIds,
         packageIds,
       })
-      setAppointmentId(res.data.appointment?.id ?? null)
-      setPhase(res.data.appointment?.id ? 'details' : 'success')
+      const newId = res.data.appointment?.id ?? null
+      setAppointmentId(newId)
+      if (!newId) { setPhase('success'); return }
+      // Sin seña que pagar, sigue directo; con seña, abre Mercado Pago y espera la confirmación.
+      if ((res.data.appointment?.depositAmount ?? deposit) > 0) {
+        setDeadline(Date.now() + HOLD_MINUTES * 60 * 1000)
+        setSecondsLeft(HOLD_MINUTES * 60)
+        setPhase('waitingPayment')
+        await openCheckout(newId)
+      } else {
+        setPhase('details')
+      }
     } catch (err: unknown) {
       const code = apiErrorCode(err)
       if (apiErrorStatus(err) === 409 && code === 'SLOT_TAKEN') {
@@ -296,6 +354,76 @@ export function SpecialServiceBookingFlow({ service: initialService, onBack, onS
           style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
         >
           {submitting ? 'Confirmando...' : `Pagar seña · $${deposit.toLocaleString('es-AR')}`}
+        </button>
+      </div>
+    )
+  }
+
+  if (phase === 'waitingPayment') {
+    const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0')
+    const ss = String(secondsLeft % 60).padStart(2, '0')
+    const urgent = secondsLeft <= 120
+    return (
+      <div className="text-center py-10">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#f3f4f6' }}>
+          <Clock size={28} color="#666" />
+        </div>
+        <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>
+          Esperando la confirmación del pago
+        </h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-2" style={{ fontFamily: 'var(--font-lato)' }}>
+          Se abrió una pestaña nueva con el checkout de Mercado Pago. Completá el pago ahí — apenas se confirme, esta pantalla avanza sola.
+        </p>
+        <div
+          className="flex items-center gap-3 rounded-xl px-4 py-3 my-6 max-w-md mx-auto"
+          style={{ background: urgent ? '#fee2e2' : '#f3f4f6' }}
+        >
+          <Clock size={18} color={urgent ? '#e53935' : '#666'} />
+          <p className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: urgent ? '#c33' : '#555' }}>
+            Tenés <strong>{mm}:{ss}</strong> para completarlo antes de que se libere el horario.
+          </p>
+        </div>
+        {payError && (
+          <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-lato)' }}>{payError}</p>
+        )}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            onClick={checkPaymentStatus}
+            disabled={checkingPayment}
+            className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-2"
+            style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+          >
+            <RefreshCw size={16} className={checkingPayment ? 'animate-spin' : ''} />
+            {checkingPayment ? 'Verificando...' : 'Ya pagué, verificar'}
+          </button>
+          <button
+            onClick={() => appointmentId && openCheckout(appointmentId)}
+            className="text-sm inline-flex items-center gap-2"
+            style={{ color: '#666', fontFamily: 'var(--font-lato)' }}
+          >
+            <ExternalLink size={14} /> Abrir Mercado Pago de nuevo
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === 'expired') {
+    return (
+      <div className="text-center py-10">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#fee2e2' }}>
+          <Clock size={28} color="#e53935" />
+        </div>
+        <h2 className="text-xl mb-2" style={{ fontFamily: 'var(--font-playfair)', color: primaryColor }}>Se acabó el tiempo</h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-6" style={{ fontFamily: 'var(--font-lato)' }}>
+          Pasaron los {HOLD_MINUTES} minutos para pagar la seña, así que liberamos el horario y tu turno no quedó reservado. Si ya pagaste, tu turno figura en «Mis turnos». Si no, podés elegir otro horario y volver a intentar.
+        </p>
+        <button
+          onClick={onSuccess}
+          className="px-6 py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90"
+          style={{ backgroundColor: primaryColor, fontFamily: 'var(--font-lato)' }}
+        >
+          Ver mis turnos
         </button>
       </div>
     )

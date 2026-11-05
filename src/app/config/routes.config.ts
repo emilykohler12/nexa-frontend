@@ -8,6 +8,8 @@ export const ROUTES = {
   PRIVACY_POLICY: '/politica-privacidad',
   TERMS_CONDITIONS: '/terminos-condiciones',
   PAYMENT_RESULT: '/pago/resultado',
+  // Dirección que llevan los botones del mail de recordatorio (?turno=<id>&accion=ver|reprogramar|cancelar).
+  MY_APPOINTMENTS_LINK: '/mis-turnos',
 
   CLIENT:               '/client',
   CLIENT_APPOINTMENTS:  '/client/appointments',

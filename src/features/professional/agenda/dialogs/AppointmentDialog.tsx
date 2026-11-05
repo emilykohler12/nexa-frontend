@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
-import { appointmentStatusConfig } from '@/features/professional/utils/appointmentStatus'
+import { appointmentStatusConfig, getAppointmentStatusConfig, isNoShowStatus } from '@/features/professional/utils/appointmentStatus'
 import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
 import { companionText } from '@/shared/utils/companion'
+import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
+import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
+import { CancellationSummary } from '@/shared/ui/molecules/CancellationSummary'
+import type { StaffCancellation } from '@/shared/utils/cancellation'
 
 interface Props {
   appointment:     Appointment
@@ -11,13 +15,23 @@ interface Props {
   onClose:         () => void
   onSave:          (updated: Appointment) => void
   onMarkArrival:   (appointment: Appointment) => void
+  // Marcar «No asistió» o corregirlo. Devuelve el mensaje de error, o null si salió bien.
+  onChangeStatus:  (appointment: Appointment, to: NoShowTarget) => Promise<string | null>
+  // Cancelar el turno (quién cancela y, si avisó la clienta, el aviso). Devuelve el mensaje de error, o null si salió bien.
+  onCancel:        (appointment: Appointment, data: StaffCancellation) => Promise<string | null>
 }
 
-export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival }: Props) {
+export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel }: Props) {
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
+  const [cancelling, setCancelling] = useState(false)
 
-  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished','cancelled','cancelled_no_show']
+  // «No asistió» y «Cancelado» no se eligen acá: cada uno tiene su propia acción con confirmación
+  // (NoShowActions y CancelAppointmentDialog).
+  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished']
+  const canCancel = appointment.status === 'confirmed' || appointment.status === 'pending'
+  const noShow = isNoShowStatus(appointment.status)
+  const currentCfg = getAppointmentStatusConfig(appointment.status, appointment.cancelReason, appointment.displayStatus, appointment.statusLabel)
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={onClose}>
@@ -129,7 +143,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
               <span style={{ fontSize: '14px', color: '#000' }}>
                 {appointment.arrivedAt
                   ? `Llegó a las ${new Date(appointment.arrivedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
-                  : 'Todavía no registró la llegada — a los 20 min de la hora pactada se marca "Cancelado por inasistencia" sola.'}
+                  : 'Todavía no registró la llegada — pasados 30 min de la hora pactada se marca "No asistió (automático)" sola.'}
               </span>
               {!appointment.arrivedAt && (
                 <button
@@ -145,7 +159,20 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
           {/* Estado */}
           <div>
             <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px' }}>Estado</p>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {noShow && (
+              <span style={{ display: 'inline-block', marginBottom: '8px', padding: '5px 12px', borderRadius: '20px', background: currentCfg.bg, color: currentCfg.color, fontWeight: 700, fontSize: '13px' }}>
+                {currentCfg.label}
+              </span>
+            )}
+            <NoShowActions
+              status={appointment.status}
+              date={appointment.date}
+              time={appointment.time}
+              accent={primary}
+              onChangeStatus={to => onChangeStatus(appointment, to)}
+              onDone={onClose}
+            />
+            <div style={{ display: noShow ? 'none' : 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
               {STATUS_OPTIONS.map(s => {
                 const cfg = appointmentStatusConfig[s]
                 return (
@@ -167,6 +194,24 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
               })}
             </div>
           </div>
+
+          {appointment.status === 'cancelled' && appointment.cancellation && (
+            <Section title="Cancelación">
+              <CancellationSummary cancellation={appointment.cancellation} />
+            </Section>
+          )}
+
+          {canCancel && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setCancelling(true)}
+                style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.08)', color: '#e53935', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: "'Lato', sans-serif" }}
+              >
+                Cancelar turno
+              </button>
+            </div>
+          )}
 
           {/* Notas internas */}
           <div>
@@ -196,6 +241,20 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
           </div>
         </div>
       </div>
+
+      {cancelling && (
+        <CancelAppointmentDialog
+          role="professional"
+          date={appointment.date}
+          time={appointment.time}
+          paymentStatus={appointment.paymentStatus}
+          isCombo={!!appointment.comboGroupId}
+          accent={primary}
+          onConfirm={data => onCancel(appointment, data)}
+          onDone={onClose}
+          onClose={() => setCancelling(false)}
+        />
+      )}
     </div>
   )
 }

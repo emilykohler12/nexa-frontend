@@ -8,6 +8,9 @@ import { DateTimeStep } from './steps/DateTimeStep'
 import '@/pages/client/AppointmentsPage.css'
 import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
 
+// Códigos del servidor por los que el horario elegido dejó de servir: hay que elegir otro.
+const SLOT_NO_LONGER_VALID = ['REOPENED_SLOT_CLOSED', 'REOPENED_SLOT_UNAVAILABLE', 'SERVICE_DOES_NOT_FIT', 'START_TIME_PASSED']
+
 interface Props<T extends { id: string }> {
   appointmentId: string
   initialServiceId: string
@@ -67,6 +70,12 @@ export function RescheduleModal<T extends { id: string }>({
       const code = apiErrorCode(err)
       if (apiErrorStatus(err) === 409 && code === 'PROFESSIONAL_SLOT_TAKEN') {
         setError('Ese horario ya se ocupó. Elegí otro horario disponible.')
+        setTime(null)
+        setRefreshSignal(s => s + 1)
+      } else if (code && SLOT_NO_LONGER_VALID.includes(code)) {
+        // Horario reabierto que cerró o servicio que no entra: el mensaje sale de safeErrorMessage y se
+        // vuelven a pedir los horarios al servidor.
+        setError(safeErrorMessage(err, 'Ese horario ya no está disponible. Elegí otro horario.'))
         setTime(null)
         setRefreshSignal(s => s + 1)
       } else {

@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
 
 interface Props {
   title:         string
   message:       string
+  // Contenido extra debajo del mensaje (por ejemplo, el resultado de la devolución de la seña).
+  children?:     ReactNode
   confirmLabel?: string
   cancelLabel?:  string
   danger?:       boolean
@@ -13,7 +16,7 @@ interface Props {
 }
 
 export function ConfirmModal({
-  title, message, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar',
+  title, message, children, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar',
   danger = true, accentColor, loading = false, onConfirm, onCancel,
 }: Props) {
   const color = danger ? '#e53935' : accentColor
@@ -36,7 +39,8 @@ export function ConfirmModal({
           <AlertTriangle size={24} color={color} />
         </div>
         <h3 className="text-lg font-semibold mb-2" style={{ color: '#1a1a1a' }}>{title}</h3>
-        <p className="text-sm text-gray-500 mb-6 leading-relaxed">{message}</p>
+        <p className={`text-sm text-gray-500 leading-relaxed ${children ? 'mb-3' : 'mb-6'}`}>{message}</p>
+        {children && <div className="mb-6">{children}</div>}
         <div className="flex gap-3">
           <button
             onClick={onCancel}

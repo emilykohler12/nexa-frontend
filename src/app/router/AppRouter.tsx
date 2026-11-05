@@ -15,6 +15,7 @@ import { TermsConditionsPage } from '@/pages/public/TermsConditionsPage'
 import { PaymentResultPage } from '@/pages/public/PaymentResultPage'
 
 import { AppointmentsPage as ClientAppointmentsPage } from '@/pages/client/AppointmentsPage'
+import { MyAppointmentsLinkPage } from '@/pages/client/MyAppointmentsLinkPage'
 import { BookPage }      from '@/pages/client/BookPage'
 import { ProfilePage }   from '@/pages/client/ProfilePage'
 import { FavoritesPage } from '@/pages/client/FavoritesPage'
@@ -59,6 +60,7 @@ export function AppRouter() {
           <Route path="/politica-cancelacion" element={<Navigate to={ROUTES.TERMS_CONDITIONS} replace />} />
           <Route path="/derechos-arco" element={<Navigate to={ROUTES.PRIVACY_POLICY} replace />} />
           <Route path={ROUTES.PAYMENT_RESULT} element={<PaymentResultPage />} />
+          <Route path={ROUTES.MY_APPOINTMENTS_LINK} element={<MyAppointmentsLinkPage />} />
         </Route>
 
         {/* Cliente */}

@@ -7,6 +7,7 @@ import { api }        from '@/shared/utils/api'
 import { ForgotPasswordModal } from '@/features/auth/components/ForgotPasswordModal'
 import './ProfilePage.css'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { phoneError } from '@/shared/utils/phone'
 
 export function ProfilePage() {
   const { business }  = useTenant()
@@ -24,8 +25,10 @@ export function ProfilePage() {
 
   const handleSave = async () => {
     setError('')
+    const invalidPhone = phoneError(phone)
+    if (invalidPhone) { setError(invalidPhone); return }
     try {
-      const res = await api.patch<{ user: typeof user }>('/api/client/profile', { name, phone })
+      const res = await api.patch<{ user: typeof user }>('/api/client/profile', { name, phone: phone.trim() })
       login(res.data.user)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)

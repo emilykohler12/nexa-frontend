@@ -119,7 +119,7 @@ export function SpecialServiceFormModal({ service, categories, error, onSave, on
           <label className="service-form-field">
             <span>Categoría</span>
             <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
-              {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
+              {categories.filter(cat => cat.id !== 'combo').map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
             </select>
           </label>
 

@@ -40,6 +40,10 @@ export interface AdminProfessional {
   vacationFrom:  string | null;
   vacationTo:    string | null;
   createdAt:     string;       // ISO — para calcular métricas "desde el inicio"
+  // RF-06: fecha de ingreso al estudio (YYYY-MM-DD). Si la administradora no cargó ninguna, el backend manda la de
+  // alta de la cuenta con `joinedAtIsDefault: true`. Desempata por antigüedad al asignar "cualquier profesional".
+  joinedAt?:          string;
+  joinedAtIsDefault?: boolean;
   metrics: {
     totalAppointments: number; // total desde createdAt
     totalClients:      number;

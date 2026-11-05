@@ -5,6 +5,8 @@ import { useAuth } from '../AuthContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { consumePendingCartCheckout } from '@/shared/utils/pendingCheckout'
 import { consumePendingBookingPreselect } from '@/shared/utils/pendingBookingPreselect'
+import { consumePendingReminderLink } from '@/features/client/appointments/pendingReminderLink'
+import { reminderLinkSearch } from '@/features/client/appointments/reminderLink'
 import { useCart } from '@/features/store/CartContext'
 import type { UserRole } from '../AuthContext'
 
@@ -31,7 +33,11 @@ export interface AuthDestination {
 // efecto de LoginPage — por eso useLogin/useRegister ya no navegan acá, para no
 // competir con ese efecto ni consumir la marca dos veces.
 export function destinationAfterAuth(role: UserRole): AuthDestination {
+  // El enlace del mail de recordatorio se consume siempre, pero solo una clienta vuelve a él: a una
+  // profesional o a un administrador no se les abre un turno ajeno.
+  const reminderLink = consumePendingReminderLink()
   if (role === 'client') {
+    if (reminderLink) return { pathname: `${ROUTES.MY_APPOINTMENTS_LINK}${reminderLinkSearch(reminderLink)}` }
     if (consumePendingCartCheckout()) return { pathname: `${ROUTES.HOME}?openCart=1` }
     const preselect = consumePendingBookingPreselect()
     if (preselect) return { pathname: ROUTES.CLIENT_BOOK, state: preselect }

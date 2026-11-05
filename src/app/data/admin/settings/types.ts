@@ -33,5 +33,6 @@ export interface PaymentSettings {
   depositAmount: number;
   depositPercent: boolean;
   cancellationHours: number;
-  refundPolicy: 'full' | 'partial' | 'none';
+  // El sistema solo marca la seña como devuelta; con 'none' la seña de una cancelación de la clienta queda retenida.
+  refundPolicy: 'full' | 'none';
 }

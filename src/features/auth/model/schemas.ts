@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isArgentineMobile, PHONE_ERROR } from '@/shared/utils/phone'
 
 export const loginSchema = z.object({
   email:    z.string().email('Email inválido'),
@@ -9,7 +10,7 @@ export const registerSchema = z.object({
   // RF-02 — nombre y apellido por separado, teléfono celular obligatorio.
   name:     z.string().trim().min(2, 'Ingresá tu nombre'),
   lastName: z.string().trim().min(2, 'Ingresá tu apellido'),
-  phone:    z.string().trim().min(6, 'Ingresá un teléfono válido'),
+  phone:    z.string().trim().refine(isArgentineMobile, PHONE_ERROR),
   email:    z.string().email('Email inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
   gender:   z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),

@@ -1,14 +1,20 @@
 // ============================================================
 // DateTimeStep — selección de fecha y horario
-// Horarios reales según la disponibilidad registrada por el profesional,
-// menos los horarios que ya están ocupados por otro turno (bookedTimes).
+// Horarios reales según la disponibilidad registrada por el profesional, menos los que ya están
+// ocupados (bookedTimes). Qué horarios se ofrecen hoy lo decide el SERVIDOR (earliestStart y
+// reopenedStarts): el navegador no filtra con su reloj. Los horarios reabiertos se muestran aparte,
+// con la etiqueta «Horario de último momento».
 // ============================================================
 
 import { useState, useEffect } from 'react';
 import { useTenant } from '@/features/tenant/TenantContext';
 import { api } from '@/shared/utils/api';
-import { generateSlots } from '@/features/professional/onboarding/types';
 import { ANY_PROFESSIONAL_ID } from './ProviderStep';
+import {
+  type AvailabilityResponse, type DaySlots,
+  EMPTY_DAY, hasWorkingHoursOn, localTodayISO, slotsFromAvailability, unionSlots,
+} from '../availability';
+import { TimeSlotPicker } from '../TimeSlotPicker';
 
 interface Props {
   professionalId: string | null;
@@ -25,30 +31,6 @@ interface Props {
   dateLocked?: boolean;
 }
 
-interface AvailabilityRow {
-  dayOfWeek: number;
-  startTime: string;
-  endTime:   string;
-}
-
-interface AvailabilityResponse {
-  availability: AvailabilityRow[];
-  bookedTimes?: string[];
-}
-
-// El backend usa 0=lunes...6=domingo; Date#getDay() usa 0=domingo...6=sábado
-const JS_DAY_TO_BACKEND_DAY = [6, 0, 1, 2, 3, 4, 5];
-
-function freeSlotsFor(res: AvailabilityResponse, date: string): string[] {
-  const backendDay = JS_DAY_TO_BACKEND_DAY[new Date(`${date}T00:00:00`).getDay()];
-  // Un mismo día puede tener varias filas (varios rangos con un hueco entre
-  // medio, ej: 08–12 y 14–20) — hay que juntar los turnos de todas, no solo la primera.
-  const dayRows = res.availability.filter(a => a.dayOfWeek === backendDay);
-  if (dayRows.length === 0) return [];
-  const booked = new Set(res.bookedTimes ?? []);
-  return dayRows.flatMap(row => generateSlots({ start: row.startTime, end: row.endTime })).filter(t => !booked.has(t));
-}
-
 export function DateTimeStep({ professionalId, serviceId, selectedDate, selectedTime, onSelectDate, onSelectTime, refreshSignal, dateLocked }: Props) {
   const { business } = useTenant();
   const isAny = professionalId === ANY_PROFESSIONAL_ID;
@@ -56,28 +38,27 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
   // Resultado de la última consulta de disponibilidad. Los horarios y el "cargando" se derivan de
   // si ese resultado corresponde a lo que está elegido ahora (key): así no hace falta reiniciar
   // estado dentro del efecto al cambiar de fecha o de profesional.
-  const [loaded, setLoaded] = useState<{ key: string; slots: string[]; hasWorkingHours: boolean } | null>(null);
+  const [loaded, setLoaded] = useState<{ key: string; slots: DaySlots; hasWorkingHours: boolean } | null>(null);
   const canFetch = !!selectedDate && (isAny || !!professionalId);
   const key = `${isAny ? `any:${serviceId ?? ''}` : professionalId}|${selectedDate}|${refreshSignal}`;
   const current = canFetch && loaded?.key === key ? loaded : null;
   const loading = canFetch && !current;
-  const freeSlots = current?.slots ?? [];
+  const slots = current?.slots ?? EMPTY_DAY;
   const hasWorkingHours = current?.hasWorkingHours ?? false;
 
   useEffect(() => {
     if (!canFetch || !selectedDate) return;
     let cancelled = false;
-    const done = (slots: string[], hasWorkingHours: boolean) => {
+    const done = (slots: DaySlots, hasWorkingHours: boolean) => {
       if (!cancelled) setLoaded({ key, slots, hasWorkingHours });
     };
+    // serviceId: el servidor calcula los horarios reabiertos según lo que dura el servicio.
+    const params = { date: selectedDate, ...(serviceId ? { serviceId } : {}) };
 
     if (!isAny) {
-      api.get<AvailabilityResponse>(`/api/professional/${professionalId}/availability`, { params: { date: selectedDate } })
-        .then(res => done(
-          freeSlotsFor(res.data, selectedDate),
-          freeSlotsFor({ availability: res.data.availability }, selectedDate).length > 0 || res.data.availability.length > 0,
-        ))
-        .catch(() => done([], false));
+      api.get<AvailabilityResponse>(`/api/professional/${professionalId}/availability`, { params })
+        .then(res => done(slotsFromAvailability(res.data, selectedDate), hasWorkingHoursOn(res.data)))
+        .catch(() => done(EMPTY_DAY, false));
     } else {
       // Modo "cualquiera": unimos los horarios libres de todos los profesionales
       // que hacen el servicio — alcanza con que UNO esté libre en ese horario.
@@ -89,14 +70,14 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
           const ids = res.data.professionals.map(p => p.id);
           const results = await Promise.all(
             ids.map(id =>
-              api.get<AvailabilityResponse>(`/api/professional/${id}/availability`, { params: { date: selectedDate } })
-                .then(r => freeSlotsFor(r.data, selectedDate))
-                .catch(() => [] as string[])
+              api.get<AvailabilityResponse>(`/api/professional/${id}/availability`, { params })
+                .then(r => slotsFromAvailability(r.data, selectedDate))
+                .catch(() => EMPTY_DAY)
             )
           );
-          done(Array.from(new Set(results.flat())).sort(), false);
+          done(unionSlots(results), false);
         })
-        .catch(() => done([], false));
+        .catch(() => done(EMPTY_DAY, false));
     }
     return () => { cancelled = true; };
   }, [key, canFetch, isAny, professionalId, serviceId, selectedDate]);
@@ -104,15 +85,7 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
   if (!business) return null;
   const { primaryColor } = business;
 
-  const now = new Date();
-  const isToday = selectedDate === now.toISOString().split('T')[0];
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const availableTimes = freeSlots.filter(time => {
-    if (!isToday) return true;
-    const [h, m] = time.split(':').map(Number);
-    return h * 60 + m > nowMinutes;
-  });
+  const noTimes = slots.regular.length === 0 && slots.reopened.length === 0;
 
   return (
     <div>
@@ -131,7 +104,7 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
         <input
           type="date"
           value={selectedDate ?? ''}
-          min={new Date().toISOString().split('T')[0]}
+          min={localTodayISO()}
           onChange={e => onSelectDate(e.target.value)}
           className="w-full border rounded-xl p-3 mb-6 outline-none"
           style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-lato)', color: primaryColor }}
@@ -149,31 +122,24 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
           <p className="text-sm text-gray-500 mb-3" style={{ fontFamily: 'var(--font-lato)' }}>
             Horarios disponibles
           </p>
-          {availableTimes.length === 0 ? (
+          {noTimes ? (
             <p className="text-gray-400 text-sm" style={{ fontFamily: 'var(--font-lato)' }}>
-              {(isAny || hasWorkingHours) && isToday
+              {slots.dayKind === 'past'
+                ? 'Esa fecha ya pasó. Elegí otra fecha.'
+                : (isAny || hasWorkingHours) && slots.dayKind === 'today'
                 ? 'No quedan horarios disponibles por hoy. Probá con otra fecha.'
                 : isAny
                 ? 'Ningún profesional tiene horarios disponibles este día.'
                 : 'El profesional no tiene horarios disponibles este día.'}
             </p>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
-              {availableTimes.map(time => (
-                <button
-                  key={time}
-                  onClick={() => onSelectTime(time)}
-                  className="py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: selectedTime === time ? primaryColor : '#f3f4f6',
-                    color: selectedTime === time ? 'white' : '#555',
-                    fontFamily: 'var(--font-lato)',
-                  }}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+            <TimeSlotPicker
+              regular={slots.regular}
+              reopened={slots.reopened}
+              selectedTime={selectedTime}
+              onSelect={onSelectTime}
+              primaryColor={primaryColor}
+            />
           )}
         </>
       )}

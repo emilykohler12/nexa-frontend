@@ -1,4 +1,4 @@
-export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'finished'
+export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'finished' | 'cancelled_no_show' | 'no_show_auto'
 
 export interface Appointment {
   id: string

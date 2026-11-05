@@ -1,5 +1,5 @@
 export type ClientGender = 'female' | 'male' | 'other' | 'prefer_not_to_say'
-export type AppointmentHistoryStatus = 'confirmed' | 'finished' | 'cancelled' | 'cancelled_no_show'
+export type AppointmentHistoryStatus = 'confirmed' | 'finished' | 'cancelled' | 'cancelled_no_show' | 'no_show_auto'
 
 export interface ClientClinical {
   allergies: string
@@ -7,12 +7,11 @@ export interface ClientClinical {
   observations: string
 }
 
-export interface ClientLoyalty {
+// Solo cuenta los turnos finalizados (lo calcula el backend).
+export interface ClientVisits {
   totalVisits: number
   totalSpent: number
   lastVisit: string | null
-  points: number
-  availablePromos: string[]
 }
 
 export interface AdminClient {
@@ -21,10 +20,9 @@ export interface AdminClient {
   photo: string | null
   phone: string
   email: string
-  birthDate: string | null
   gender: ClientGender | null
   clinical: ClientClinical
-  loyalty: ClientLoyalty
+  visits: ClientVisits
   createdAt: string
   blocked?: boolean
 }

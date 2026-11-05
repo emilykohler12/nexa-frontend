@@ -9,6 +9,8 @@ export interface ActivityLog {
   module:    ActivityModule
   level:     ActivityLevel
   detail?:   string        // info adicional opcional
+  // Turno al que se refiere la entrada (todas las que tocan un turno lo traen).
+  appointmentId?: string
   // Solo para module: 'reviews' — permite aceptar/rechazar el comentario
   // desde acá mismo para que se muestre (o no) en "Opiniones de clientes".
   reviewId?:     string

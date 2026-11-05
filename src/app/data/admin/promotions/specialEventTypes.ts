@@ -1,8 +1,7 @@
 // src/app/data/admin/promotions/specialEventTypes.ts
 //
 // Evento especial destacado en el home (ej: jornada de Depilación definitiva
-// con una profesional puntual) — a diferencia de las campañas automáticas,
-// esto SÍ se muestra en la página principal.
+// con una profesional puntual) que se muestra en la página principal.
 
 export interface SpecialEvent {
   id:          string

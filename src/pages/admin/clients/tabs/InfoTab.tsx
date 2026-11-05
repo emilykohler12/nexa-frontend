@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { AdminClient } from '../types'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { phoneError } from '@/shared/utils/phone'
 
 const GENDER_LABEL: Record<string, string> = {
   female:          'Femenino',
@@ -26,6 +27,8 @@ export function InfoTab({ client, onSave }: Props) {
     setForm(f => ({ ...f, [key]: value }))
 
   const handleSave = async () => {
+    const invalidPhone = phoneError(form.phone ?? '')
+    if (invalidPhone) { setError(invalidPhone); return }
     setSaving(true)
     setError(null)
     try {
@@ -52,9 +55,6 @@ export function InfoTab({ client, onSave }: Props) {
           </Field>
           <Field label="Email">
             <input type="email" value={form.email} onChange={e => set('email', e.target.value)} style={inp} />
-          </Field>
-          <Field label="Fecha de nacimiento">
-            <input type="date" value={form.birthDate ?? ''} onChange={e => set('birthDate', e.target.value || null)} style={inp} />
           </Field>
           <Field label="Género">
             <select value={form.gender ?? ''} onChange={e => set('gender', e.target.value || null)} style={inp}>

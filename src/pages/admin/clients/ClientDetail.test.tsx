@@ -1,21 +1,23 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ClientDetail } from './ClientDetail'
 import { ToastProvider } from '@/shared/ui/molecules/ToastProvider'
 import type { AdminClient } from './types'
 
-vi.mock('./tabs/InfoTab',    () => ({ InfoTab:    () => <div>formulario-info</div> }))
+// InfoTab no se mockea: las pruebas de visitas revisan el formulario real (sin fecha de nacimiento),
+// y las de anonimizar lo reconocen por su sección «Datos personales».
+const INFO_FORM = 'Datos personales'
+
 vi.mock('./tabs/HistoryTab', () => ({ HistoryTab: () => null }))
-vi.mock('./tabs/LoyaltyTab', () => ({ LoyaltyTab: () => null }))
 vi.mock('./tabs/GalleryTab', () => ({ GalleryTab: () => null }))
 vi.mock('./tabs/ReviewsTab', () => ({ ReviewsTab: () => null }))
 
 const client: AdminClient = {
   id: 'c1', name: 'Ana Pérez', photo: null, phone: '3764000000', email: 'ana@test.local',
-  birthDate: null, gender: null,
+  gender: null,
   clinical: { allergies: '', preferences: '', observations: '' },
-  loyalty: { totalVisits: 0, totalSpent: 0, lastVisit: null, points: 0, availablePromos: [] },
+  visits: { totalVisits: 0, totalSpent: 0, lastVisit: null },
   createdAt: '2026-01-01T00:00:00.000Z',
 }
 
@@ -34,6 +36,48 @@ function setup(props: { onAnonymize?: (c: AdminClient) => Promise<void>; client?
   )
   return { onAnonymize }
 }
+
+// El backend devuelve `visits` (solo turnos finalizados); ya no hay puntos ni fecha de nacimiento.
+describe('ClientDetail: visitas de la clienta', () => {
+  const withVisits: AdminClient = {
+    ...client,
+    visits: { totalVisits: 7, totalSpent: 84500, lastVisit: '2026-10-15' },
+  }
+
+  it('muestra las visitas, lo gastado y la última visita', () => {
+    setup({ client: withVisits })
+
+    const visits = screen.getByRole('region', { name: 'Visitas' })
+    expect(within(visits).getByText('Total de visitas')).toBeInTheDocument()
+    expect(within(visits).getByText('7')).toBeInTheDocument()
+    expect(within(visits).getByText(`$${(84500).toLocaleString('es-AR')}`)).toBeInTheDocument()
+    expect(within(visits).getByText(/15 de octubre de 2026/)).toBeInTheDocument()
+  })
+
+  it('sin turnos finalizados muestra ceros y la última visita vacía', () => {
+    setup()
+
+    const visits = screen.getByRole('region', { name: 'Visitas' })
+    expect(within(visits).getByText('0')).toBeInTheDocument()
+    expect(within(visits).getByText('—')).toBeInTheDocument()
+  })
+
+  it('no muestra puntos, fidelización ni fecha de nacimiento', async () => {
+    const user = userEvent.setup()
+    setup({ client: withVisits })
+
+    // Pestaña de datos personales (la que abre por defecto) y el resto de las pestañas.
+    expect(screen.getByText('Datos personales')).toBeInTheDocument()
+    expect(screen.queryByText(/fecha de nacimiento/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Fidelización' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/puntos|fidelizaci|campañas?/i)).not.toBeInTheDocument()
+
+    for (const name of ['Historial', 'Galería', 'Reseñas']) {
+      await user.click(screen.getByRole('button', { name }))
+      expect(screen.queryByText(/puntos|fidelizaci|campañas?|fecha de nacimiento/i)).not.toBeInTheDocument()
+    }
+  })
+})
 
 // Igual que setup, pero devuelve una función para pasarle al componente la clienta ya anonimizada
 // (lo que hace ClientsPage cuando llega la respuesta del servidor).
@@ -98,7 +142,7 @@ describe('ClientDetail: anonimizar datos de la clienta', () => {
 
   it('una clienta anonimizada no muestra el formulario con los datos viejos ni se puede bloquear', () => {
     setup({ client: { ...client, name: 'Cliente eliminado', email: 'anonimo_c1@borrado.com' } })
-    expect(screen.queryByText('formulario-info')).not.toBeInTheDocument()
+    expect(screen.queryByText(INFO_FORM)).not.toBeInTheDocument()
     expect(screen.getByText(/ya no se pueden editar/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Bloquear cliente/ })).not.toBeInTheDocument()
   })
@@ -106,19 +150,19 @@ describe('ClientDetail: anonimizar datos de la clienta', () => {
   it('al anonimizar, el formulario de información desaparece sin recargar la página', async () => {
     const user = userEvent.setup()
     const { rerenderWith } = setupRerender()
-    expect(screen.getByText('formulario-info')).toBeInTheDocument()
+    expect(screen.getByText(INFO_FORM)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Anonimizar datos' }))
     await user.click(screen.getByRole('button', { name: 'Sí, anonimizar' }))
     rerenderWith({ ...client, name: 'Cliente eliminado', email: 'anonimo_c1@borrado.com' })
 
-    expect(screen.queryByText('formulario-info')).not.toBeInTheDocument()
+    expect(screen.queryByText(INFO_FORM)).not.toBeInTheDocument()
     expect(screen.getByText(/ya no se pueden editar/)).toBeInTheDocument()
   })
 
   it('una clienta que no está anonimizada conserva el formulario y el botón de bloquear', () => {
     setup()
-    expect(screen.getByText('formulario-info')).toBeInTheDocument()
+    expect(screen.getByText(INFO_FORM)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Bloquear cliente/ })).toBeInTheDocument()
   })
 })

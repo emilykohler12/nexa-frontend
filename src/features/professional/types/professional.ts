@@ -21,7 +21,6 @@ export interface ProfessionalProfile {
   id:              string
   firstName:       string
   lastName:        string
-  birthDate:       string | null
   gender:          Gender | null
   phone:           string
   email:           string
