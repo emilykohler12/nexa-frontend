@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { UserPlus } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ProfessionalCard }   from './ProfessionalCard'
 import { ProfessionalDetail } from './ProfessionalDetail'
 import { InviteModal }        from './InviteModal'
@@ -43,7 +44,7 @@ export function ProfessionalsPage() {
           : p
         )
       ))
-      .catch(() => setError('Error al cambiar el estado'))
+      .catch((err: unknown) => setError(safeErrorMessage(err, 'Error al cambiar el estado')))
   }
 
   const handleToggleRole = (id: string) => {
@@ -54,7 +55,7 @@ export function ProfessionalsPage() {
           : p
         )
       ))
-      .catch(() => setError('Error al cambiar el rol'))
+      .catch((err: unknown) => setError(safeErrorMessage(err, 'Error al cambiar el rol')))
   }
 
   if (selected) {

@@ -88,8 +88,8 @@ export function PromotionsPage() {
       await api.delete(`/api/admin/promotions/${confirmDelete.id}`)
       setPromotions(prev => prev.filter(p => p.id !== confirmDelete.id))
       setConfirmDelete(null)
-    } catch {
-      showToast('No se pudo eliminar la promoción', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'No se pudo eliminar la promoción'), 'error')
     } finally {
       setDeleting(false)
     }

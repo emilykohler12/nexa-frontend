@@ -4,6 +4,7 @@ import { api } from '@/shared/utils/api'
 import { uploadImage } from '@/shared/utils/uploadImage'
 import type { AdminClient } from '../types'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 type GalleryCategory = 'before' | 'after'
 
@@ -58,8 +59,8 @@ export function GalleryTab({ client }: { client: AdminClient }) {
       })
       setPhotos(prev => [res.data.photo, ...prev])
       setPending(null)
-    } catch {
-      showToast('No se pudo subir la foto', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'No se pudo subir la foto'), 'error')
     } finally {
       setSaving(false)
     }
@@ -70,9 +71,9 @@ export function GalleryTab({ client }: { client: AdminClient }) {
     setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, showOnHome: next } : p))
     try {
       await api.patch(`/api/admin/clients/${client.id}/gallery/${photo.id}`, { showOnHome: next })
-    } catch {
+    } catch (err: unknown) {
       setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, showOnHome: !next } : p))
-      showToast('No se pudo actualizar la foto', 'error')
+      showToast(safeErrorMessage(err, 'No se pudo actualizar la foto'), 'error')
     }
   }
 
@@ -81,9 +82,9 @@ export function GalleryTab({ client }: { client: AdminClient }) {
     setPhotos(prev.filter(p => p.id !== id))
     try {
       await api.delete(`/api/admin/clients/${client.id}/gallery/${id}`)
-    } catch {
+    } catch (err: unknown) {
       setPhotos(prev)
-      showToast('No se pudo eliminar la foto', 'error')
+      showToast(safeErrorMessage(err, 'No se pudo eliminar la foto'), 'error')
     }
   }
 

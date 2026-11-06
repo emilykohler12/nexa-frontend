@@ -4,6 +4,7 @@ import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import { api } from '@/shared/utils/api'
 import type { StoreProduct, InventoryMovement, MovementType } from '@/app/data/admin/store/types'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 
 const TYPE_LABEL: Record<MovementType, string> = {
   entry: 'Entrada',
@@ -84,8 +85,8 @@ export function InventoryTab({ products, onProductStockChange }: Props) {
       }
       setShowForm(false)
       setEditing(null)
-    } catch {
-      showToast('No se pudo guardar el movimiento', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'No se pudo guardar el movimiento'), 'error')
     }
   }
 
@@ -95,9 +96,9 @@ export function InventoryTab({ products, onProductStockChange }: Props) {
     try {
       const res = await api.delete<{ success: boolean; affectedProducts: AffectedProduct[] }>(`/api/store/movements/${id}`)
       onProductStockChange(res.data.affectedProducts ?? [])
-    } catch {
+    } catch (err: unknown) {
       setMovements(prev)
-      showToast('No se pudo eliminar el movimiento', 'error')
+      showToast(safeErrorMessage(err, 'No se pudo eliminar el movimiento'), 'error')
     }
   }
 
