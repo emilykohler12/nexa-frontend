@@ -1,3 +1,4 @@
+import { NO_ALLERGY_INFO } from '@/features/professional/types/client'
 import { useState } from 'react'
 import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
 import { appointmentStatusConfig, getAppointmentStatusConfig, isNoShowStatus } from '@/features/professional/utils/appointmentStatus'
@@ -66,8 +67,10 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
           <Section title="Datos del cliente">
             <Row><Phone size={14} /><span>{appointment.client.phone}</span></Row>
             <Row><Mail size={14} /><span>{appointment.client.email}</span></Row>
-            {appointment.client.allergies && (
+            {appointment.client.allergies ? (
               <Row><AlertCircle size={14} color="#e53935" /><span style={{ color: '#e53935' }}>{appointment.client.allergies}</span></Row>
+            ) : (
+              <Row><AlertCircle size={14} /><span style={{ color: '#666' }}>{NO_ALLERGY_INFO}</span></Row>
             )}
             {appointment.client.notes && (
               <Row><FileText size={14} /><span>{appointment.client.notes}</span></Row>

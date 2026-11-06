@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import { api } from '@/shared/utils/api'
 import type { StoreProduct, InventoryMovement, MovementType } from '@/app/data/admin/store/types'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
@@ -13,6 +14,9 @@ const TYPE_COLOR: Record<MovementType, string> = {
   entry: '#069494',
   exit:  '#e53935',
 }
+
+// Las salidas por ventas las crea el backend al aprobarse el pago, con la nota «Venta — pedido <id>».
+const isSale = (m: { type: MovementType; note: string }) => m.type === 'exit' && m.note.startsWith('Venta — pedido')
 
 const MOVEMENT_TYPES: MovementType[] = ['entry', 'exit']
 
@@ -30,7 +34,7 @@ export function InventoryTab({ products, onProductStockChange }: Props) {
     type:        'entry',
     quantity:    1,
     note:        '',
-    date:        new Date().toISOString().split('T')[0],
+    date:        todayInArgentina(),
   })
 
   const [movements, setMovements] = useState<InventoryMovement[]>([])
@@ -168,7 +172,7 @@ export function InventoryTab({ products, onProductStockChange }: Props) {
                 <td style={{ ...tdStyle, fontWeight: 700, color: TYPE_COLOR[m.type] }}>
                   {m.type === 'exit' ? '-' : '+'}{Math.abs(m.quantity)}
                 </td>
-                <td style={{ ...tdStyle, color: '#000' }}>{m.note || '—'}</td>
+                <td style={{ ...tdStyle, color: '#000' }}>{isSale(m) && <span style={{ marginRight: 6, padding: '1px 8px', borderRadius: 999, background: '#e0f5f5', color: '#069494', fontSize: 12 }}>Venta</span>}{m.note || '—'}</td>
                 <td style={tdStyle}>
                   <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                     <IconBtn onClick={() => openEdit(m)} aria-label="Editar"><Edit2 size={14} /></IconBtn>

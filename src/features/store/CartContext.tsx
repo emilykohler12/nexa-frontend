@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { api } from '@/shared/utils/api'
 
 export interface CartItem {
   productId:    string
@@ -30,6 +31,9 @@ interface CartContextValue {
   // muestra "¿ir a pagar o seguir viendo?" en vez de la lista normal.
   showFirstAddPrompt: boolean
   dismissFirstAddPrompt: () => void
+  // Nombres de los productos que se sacaron del carrito porque dejaron de estar disponibles.
+  removedNames: string[]
+  dismissRemoved: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -54,6 +58,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(loadCart)
   const [isOpen, setIsOpen] = useState(false)
   const [showFirstAddPrompt, setShowFirstAddPrompt] = useState(false)
+  const [removedNames, setRemovedNames] = useState<string[]>([])
+
+  // La lista pública solo trae productos disponibles: lo que ya no figura se saca del carrito y se avisa.
+  useEffect(() => {
+    if (loadCart().length === 0) return
+    api.get<{ products: { id: string }[] }>('/api/store/products')
+      .then(res => {
+        const available = new Set((res.data.products ?? []).map(p => p.id))
+        setItems(prev => {
+          const gone = prev.filter(i => !available.has(i.productId))
+          if (gone.length === 0) return prev
+          setRemovedNames(Array.from(new Set(gone.map(i => i.name))))
+          return prev.filter(i => available.has(i.productId))
+        })
+      })
+      .catch(() => { /* sin conexión: el pedido igual valida el stock real */ })
+  }, [])
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)) } catch { /* almacenamiento no disponible */ }
@@ -98,6 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items, addItem, removeItem, setQuantity, clear, total, count,
       isOpen, open: () => setIsOpen(true), close: () => setIsOpen(false), toggle: () => setIsOpen(o => !o),
       showFirstAddPrompt, dismissFirstAddPrompt: () => setShowFirstAddPrompt(false),
+      removedNames, dismissRemoved: () => setRemovedNames([]),
     }}>
       {children}
     </CartContext.Provider>

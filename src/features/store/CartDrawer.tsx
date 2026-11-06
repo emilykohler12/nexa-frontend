@@ -22,7 +22,7 @@ export function CartDrawer() {
   const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const {
-    items, removeItem, setQuantity, clear, total,
+    items, removeItem, setQuantity, clear, total, removedNames, dismissRemoved,
     isOpen, close, showFirstAddPrompt, dismissFirstAddPrompt,
   } = useCart()
 
@@ -164,6 +164,14 @@ export function CartDrawer() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {removedNames.length > 0 && (
+            <div role="alert" className="m-4 p-3 rounded-xl text-sm" style={{ background: '#fff4e5', color: '#8a4b00' }}>
+              {removedNames.length === 1
+                ? 'Sacamos de tu carrito un producto que ya no está disponible'
+                : 'Sacamos de tu carrito productos que ya no están disponibles'}: {removedNames.join(', ')}.
+              <button type="button" onClick={dismissRemoved} className="ml-2 underline">Entendido</button>
+            </div>
+          )}
           {showFirstAddPrompt && phase === 'cart' ? (
             <div className="p-8 text-center flex flex-col items-center">
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: `${primaryColor}12` }}>

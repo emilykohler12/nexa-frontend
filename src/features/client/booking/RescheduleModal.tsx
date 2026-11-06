@@ -55,7 +55,9 @@ export function RescheduleModal<T extends { id: string }>({
     setTime(null)
   }
 
-  const canSave = Boolean(serviceId && professionalId && date && time)
+  // Guardar queda deshabilitado mientras no se cambie nada: mismo servicio, profesional, día y hora.
+  const unchanged = serviceId === initialServiceId && professionalId === initialProfessionalId && date === initialDate && time === initialTime
+  const canSave = Boolean(serviceId && professionalId && date && time) && !unchanged
 
   const handleSave = async () => {
     if (!canSave) return

@@ -217,7 +217,7 @@ export function ClientDetail({ client, onBack, onSave, onToggleBlock, onAnonymiz
       {confirmingAnonymize && (
         <ConfirmModal
           title="¿Anonimizar los datos de esta clienta?"
-          message={`Se van a borrar de forma permanente el nombre, el apellido, el email y el teléfono de ${displayName}, y su cuenta se va a desactivar. Los turnos y los importes se conservan. Esto no se puede deshacer.`}
+          message={`Se borran de forma permanente: el nombre, el apellido, el email y el teléfono de ${displayName}, sus fotos de la galería, el teléfono, la dirección y las notas de sus pedidos y el texto de sus reseñas. Su cuenta se desactiva. Se conservan: los turnos, los importes de pedidos y pagos, y el puntaje de las reseñas. Esto no se puede deshacer.`}
           confirmLabel="Sí, anonimizar"
           danger
           accentColor="#069494"

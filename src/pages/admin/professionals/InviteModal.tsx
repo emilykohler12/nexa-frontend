@@ -1,4 +1,5 @@
 // src/pages/admin/professionals/InviteModal.tsx
+import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import { useState }       from 'react'
 import { X, Copy, Check } from 'lucide-react'
 import { api }            from '@/shared/utils/api'
@@ -118,7 +119,7 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
             <input
               type="date"
               value={expiresAt}
-              min={new Date().toISOString().split('T')[0]}
+              min={todayInArgentina()}
               onChange={e => setExpiresAt(e.target.value)}
             />
             <p className="invite-field-hint">Vacío = 7 días por defecto</p>

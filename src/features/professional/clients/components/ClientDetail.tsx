@@ -1,3 +1,4 @@
+import { NO_ALLERGY_INFO } from '@/features/professional/types/client'
 import { useState } from 'react'
 import { ArrowLeft, Phone, Mail, AlertCircle, ChevronDown, FileText } from 'lucide-react'
 import type { ProfessionalClient } from '@/features/professional/types/client'
@@ -42,8 +43,10 @@ export function ClientDetail({ client, primary, accent, onBack }: Props) {
           <div style={{ display: 'flex', gap: '16px', marginTop: '8px', flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#000' }}><Phone size={14} />{client.phone}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#000' }}><Mail size={14} />{client.email}</span>
-            {client.allergies && (
+            {client.allergies ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#e53935' }}><AlertCircle size={14} />{client.allergies}</span>
+            ) : (
+              <span style={{ fontSize: '13px', color: '#666' }}>{NO_ALLERGY_INFO}</span>
             )}
           </div>
         </div>

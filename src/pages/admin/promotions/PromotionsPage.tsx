@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Edit2, Trash2, Upload, Check } from 'lucide-react'
+import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import { api } from '@/shared/utils/api'
 import { uploadImage } from '@/shared/utils/uploadImage'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -7,7 +8,7 @@ import type { Promotion, PromotionType, PromotionStatus, PromotionKind, Promotio
 import { SpecialEventsSection } from './SpecialEventsSection'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
-const todayISO = () => new Date().toISOString().split('T')[0]
+const todayISO = () => todayInArgentina()
 
 // Vigencia real de la promo según sus fechas de inicio/fin — independiente
 // del estado "activa/inactiva" que pone el admin.
@@ -227,7 +228,7 @@ function PromotionForm({ promotion, onSave, onCancel }: { promotion: Promotion; 
 
   useEffect(() => {
     const isProduct = form.type === 'product'
-    const url = isProduct ? '/api/store/products' : '/api/services'
+    const url = isProduct ? '/api/admin/store/products' : '/api/services'
     const dataKey = isProduct ? 'products' : 'services'
     api.get<Record<string, CatalogItem[]>>(url)
       .then(res => {
