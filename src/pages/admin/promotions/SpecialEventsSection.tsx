@@ -72,8 +72,8 @@ export function SpecialEventsSection() {
     try {
       const res = await api.put<{ specialEvent: SpecialEvent }>(`/api/admin/special-events/${e.id}`, { active: !e.active })
       setItems(prev => prev.map(x => x.id === e.id ? res.data.specialEvent : x))
-    } catch {
-      showToast('No se pudo cambiar el estado del evento', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'No se pudo cambiar el estado del evento'), 'error')
     }
   }
 
@@ -84,8 +84,8 @@ export function SpecialEventsSection() {
       await api.delete(`/api/admin/special-events/${confirmDelete.id}`)
       setItems(prev => prev.filter(x => x.id !== confirmDelete.id))
       setConfirmDelete(null)
-    } catch {
-      showToast('No se pudo eliminar el evento', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'No se pudo eliminar el evento'), 'error')
     } finally {
       setDeleting(false)
     }

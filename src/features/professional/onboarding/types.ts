@@ -40,7 +40,24 @@ export function generateSlots(range: DayRange): string[] {
   return slots
 }
 
-export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say'
+// Valida las franjas antes de enviarlas: el backend responde 400 VALIDATION_ERROR si el inicio no
+// es menor al fin o si falta una hora. Devuelve el mensaje del primer problema o null si está bien.
+// Las horas son texto «HH:MM», así que comparar como texto es correcto (no se usa Date).
+export function validateAvailability(availability: WeeklyAvailability): string | null {
+  for (const day of WEEK_DAYS) {
+    for (const range of availability[day]) {
+      if (!range.start || !range.end) {
+        return `${WEEK_DAY_LABEL[day]}: completá la hora de inicio y la de fin.`
+      }
+      if (range.start >= range.end) {
+        return `${WEEK_DAY_LABEL[day]}: la hora de inicio tiene que ser anterior a la de fin.`
+      }
+    }
+  }
+  return null
+}
+
+export type Gender ='male' | 'female' | 'other' | 'prefer_not_to_say'
 export type ProfessionalStatus = 'active' | 'leave' | 'vacation' | 'suspended'
 export type CommissionType = 'earned' | 'to_owner'
 export type PaymentMethod = 'cash' | 'transfer' | 'card' | 'mp'

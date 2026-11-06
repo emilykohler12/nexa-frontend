@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Plus, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { AddServiceModal } from './AddServiceModal'
 import { SERVICE_CATEGORIES } from '@/app/data/shared'
 import type { CatalogService, AssignedService } from './types'
@@ -37,9 +38,9 @@ export function Services() {
     setAssigned(next)
     setError(null)
     api.patch('/api/professional/services', { services: next })
-      .catch(() => {
+      .catch((err: unknown) => {
         setAssigned(prev)
-        setError('No se pudo guardar el cambio. Intentá de nuevo.')
+        setError(safeErrorMessage(err, 'No se pudo guardar el cambio. Intentá de nuevo.'))
       })
   }
 

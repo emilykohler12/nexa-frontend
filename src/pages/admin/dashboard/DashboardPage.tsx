@@ -132,7 +132,7 @@ export function DashboardPage() {
                 sublabel={`Dentro de los ${data.returningWindowDays} días`}
               />
             </div>
-            <div style={KPI_ITEM_STYLE}><KpiCard label="Saldo pendiente a cobrar en local" value={formatCurrency(data.pendingBalance)} icon={<Wallet size={18} />} accentColor="#d4af37" /></div>
+            <div style={KPI_ITEM_STYLE}><KpiCard label="Saldo pendiente a cobrar en local" value={formatCurrency(data.pendingBalance)} icon={<Wallet size={18} />} accentColor="#d4af37" sublabel="Precio menos seña y menos lo ya cobrado en el local" /></div>
             <div style={KPI_ITEM_STYLE}><KpiCard label="Señas reembolsadas" value={String(data.refundedDeposits)} icon={<Undo2 size={18} />} accentColor="#a1887f" /></div>
           </div>
         </>

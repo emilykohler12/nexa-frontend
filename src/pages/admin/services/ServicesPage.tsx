@@ -89,8 +89,8 @@ export function ServicesPage() {
         setServices(prev => prev.filter(s => s.id !== deletingService.id))
         showToast(`"${deletingService.name}" se eliminó.`, 'success')
       }
-    } catch {
-      showToast('Error al eliminar el servicio', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'Error al eliminar el servicio'), 'error')
     } finally {
       setDeletingService(null)
     }
@@ -100,8 +100,8 @@ export function ServicesPage() {
     try {
       const res = await api.patch<{ service: AdminService }>(`/api/services/${id}/status`)
       setServices(prev => prev.map(s => s.id === id ? res.data.service : s))
-    } catch {
-      showToast('Error al cambiar el estado', 'error')
+    } catch (err: unknown) {
+      showToast(safeErrorMessage(err, 'Error al cambiar el estado'), 'error')
     }
   }
 

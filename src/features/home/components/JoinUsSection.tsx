@@ -2,7 +2,22 @@ import { useState } from 'react'
 import { Briefcase, Check } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorStatus, apiErrorCode } from '@/shared/utils/errorMessage'
+
+// Postulación pública: el backend responde 400 (VALIDATION_ERROR) con campos inválidos y 429 al
+// pasar de 5 envíos por hora desde la misma conexión. Los campos vacíos son válidos (se mandan null).
+function joinUsErrorMessage(err: unknown): string {
+  const status = apiErrorStatus(err)
+  if (status === 429) return 'Enviaste demasiadas postulaciones seguidas. Probá de nuevo en un rato.'
+  // Único 5xx cuyo texto se muestra: el backend lo manda en español cuando falla el mail al estudio.
+  // El resto de los 5xx sigue con el mensaje genérico.
+  if (status === 500 && apiErrorCode(err) === 'JOB_INTEREST_MAIL_FAILED') {
+    const text = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
+    if (typeof text === 'string' && text.trim()) return text
+  }
+  if (status === 400) return safeErrorMessage(err, 'Revisá los datos que cargaste: alguno no es válido.')
+  return 'No se pudo enviar tu mensaje. Intentá de nuevo.'
+}
 
 export function JoinUsSection() {
   const { business } = useTenant()
@@ -32,7 +47,7 @@ export function JoinUsSection() {
       setSent(true)
       setName(''); setEmail(''); setPhone(''); setMessage('')
     } catch (err: unknown) {
-      setError(safeErrorMessage(err, 'No se pudo enviar tu mensaje. Intentá de nuevo.'))
+      setError(joinUsErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -75,6 +90,7 @@ export function JoinUsSection() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Nombre"
+                aria-label="Nombre"
                 className="w-full px-4 py-3 rounded-xl border outline-none"
                 style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-cormorant)' }}
               />
@@ -83,6 +99,7 @@ export function JoinUsSection() {
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="Teléfono"
+                aria-label="Teléfono"
                 className="w-full px-4 py-3 rounded-xl border outline-none"
                 style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-cormorant)' }}
               />
@@ -92,6 +109,7 @@ export function JoinUsSection() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Correo"
+              aria-label="Correo"
               className="w-full px-4 py-3 rounded-xl border outline-none mb-4"
               style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-cormorant)' }}
             />
@@ -100,12 +118,13 @@ export function JoinUsSection() {
               onChange={e => setMessage(e.target.value)}
               rows={4}
               placeholder="Contanos por qué te gustaría sumarte al equipo"
+              aria-label="Mensaje"
               className="w-full px-4 py-3 rounded-xl border outline-none resize-none mb-4"
               style={{ borderColor: '#e5e5e5', fontFamily: 'var(--font-cormorant)' }}
             />
 
             {error && (
-              <p className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-cormorant)' }}>{error}</p>
+              <p role="alert" className="text-sm text-center mb-4" style={{ color: '#e53935', fontFamily: 'var(--font-cormorant)' }}>{error}</p>
             )}
 
             <button

@@ -33,27 +33,59 @@ export const ERROR_CODE_MESSAGES: Record<string, string> = {
   NOTICE_TOO_OLD: 'Un aviso de hace más de 48 horas lo tiene que cargar la administradora.',
 }
 
+// Fase 10 del backend. A diferencia de los de arriba, estos NO pisan el texto del servidor: el
+// servidor ya manda un mensaje en español y más preciso (ej. «No hay suficiente stock de Esmalte…»,
+// «La hora de inicio tiene que ser anterior a la de fin»). Se usan solo cuando ese texto falta o
+// no es seguro de mostrar, y tienen prioridad sobre el fallback genérico de cada pantalla.
+export const ERROR_CODE_FALLBACKS: Record<string, string> = {
+  VALIDATION_ERROR: 'Hay datos que no son válidos. Revisá lo que cargaste y probá de nuevo.',
+  NOT_FOUND: 'Ya no existe lo que intentás modificar. Actualizá la página y probá de nuevo.',
+  INSUFFICIENT_STOCK: 'No hay stock suficiente para hacer esto. Revisá las cantidades.',
+}
+
+// 429 sin código (el límite de envíos de postulaciones y el global no mandan `code`).
+export const TOO_MANY_REQUESTS_MESSAGE = 'Hiciste demasiados intentos seguidos. Esperá un rato y probá de nuevo.'
+
+// El backend agrega a veces la ruta del campo al final del mensaje de validación, ej.
+// «La hora de inicio tiene que ser anterior a la de fin (availability.monday.0)». Eso es técnico.
+const TRAILING_FIELD_PATH = /\s*\([A-Za-z_][\w]*(?:\.[\w]+)+\)\s*$|\s*\([A-Za-z_]\w*\)\s*$/
+
+// Mensajes por defecto de zod (en inglés) que nunca deben llegar a la pantalla.
+const ENGLISH_VALIDATION = /^(invalid|required|expected|too (small|big)|string must|number must|unrecognized)/i
+
 // Forma de un error de axios de la que solo se lee el status, el código y el mensaje del backend.
 interface ApiErrorLike {
   response?: { status?: number; data?: { error?: unknown; code?: unknown } }
 }
 
+function usableServerMessage(raw: unknown, code: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  let message = raw.trim()
+  if (code === 'VALIDATION_ERROR') message = message.replace(TRAILING_FIELD_PATH, '').trim()
+  if (!message) return null
+  if (message.length > 200) return null
+  if (message.includes('\n')) return null
+  if (UNSAFE_PATTERNS.some(p => p.test(message))) return null
+  if (ENGLISH_VALIDATION.test(message)) return null
+  return message
+}
+
 export function safeErrorMessage(err: unknown, fallback: string): string {
   const apiError = err as ApiErrorLike | null | undefined
   const status   = apiError?.response?.status
-  const message  = apiError?.response?.data?.error
   const code     = apiError?.response?.data?.code
 
   if (typeof code === 'string' && code in ERROR_CODE_MESSAGES && !(status && status >= 500)) {
     return ERROR_CODE_MESSAGES[code]
   }
-  if (typeof message !== 'string' || !message.trim()) return fallback
   if (status && status >= 500) return fallback
-  if (message.length > 200) return fallback
-  if (message.includes('\n')) return fallback
-  if (UNSAFE_PATTERNS.some(p => p.test(message))) return fallback
 
-  return message
+  const message = usableServerMessage(apiError?.response?.data?.error, code)
+  if (message) return message
+
+  if (typeof code === 'string' && code in ERROR_CODE_FALLBACKS) return ERROR_CODE_FALLBACKS[code]
+  if (status === 429) return TOO_MANY_REQUESTS_MESSAGE
+  return fallback
 }
 
 // Código de error del backend (por ejemplo 'PROFESSIONAL_SLOT_TAKEN') y status HTTP de un error de

@@ -1,8 +1,9 @@
 // src/features/professional/schedule/Schedule.tsx
 import { useState, useEffect } from 'react'
 import { api } from '@/shared/utils/api'
+import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { ScheduleStep } from '@/features/professional/onboarding/steps/ScheduleStep'
-import { EMPTY_AVAILABILITY } from '@/features/professional/onboarding/types'
+import { EMPTY_AVAILABILITY, validateAvailability } from '@/features/professional/onboarding/types'
 import type { WeeklyAvailability } from '@/features/professional/onboarding/types'
 
 // Una franja horaria tal como la devuelve el backend (dayOfWeek: 0 = lunes ... 6 = domingo).
@@ -14,6 +15,7 @@ export function Schedule() {
   const [loading, setLoading]           = useState(true)
   const [saving, setSaving]             = useState(false)
   const [saved, setSaved]               = useState(false)
+  const [error, setError]               = useState<string | null>(null)
 
   useEffect(() => {
     api.get<{ profile: { availability?: AvailabilityRow[] } }>('/api/professional/profile')
@@ -34,13 +36,17 @@ export function Schedule() {
   }, [])
 
   const handleSave = async () => {
+    // El inicio tiene que ser menor al fin: se avisa acá antes de molestar al servidor.
+    const rangeError = validateAvailability(availability)
+    if (rangeError) { setError(rangeError); return }
     setSaving(true)
+    setError(null)
     try {
       await api.patch('/api/professional/schedule', { availability })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch {
-      // TODO: mostrar error al usuario
+    } catch (err: unknown) {
+      setError(safeErrorMessage(err, 'No se pudieron guardar los horarios. Intentá de nuevo.'))
     } finally {
       setSaving(false)
     }
@@ -63,6 +69,8 @@ export function Schedule() {
           {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar cambios'}
         </button>
       </div>
+
+      {error && <div className="schedule-error" role="alert">{error}</div>}
 
       <div className="schedule-content">
         <ScheduleStep availability={availability} onChange={setAvailability} />

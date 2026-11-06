@@ -11,7 +11,7 @@ import { ServicesStep }    from './steps/ServicesStep'
 import { PoliciesStep }    from './steps/PoliciesStep'
 import { ConfirmationStep } from './steps/ConfirmationStep'
 import {
-  EMPTY_AVAILABILITY, EMPTY_PERSONAL, EMPTY_WORK, EMPTY_POLICIES,
+  EMPTY_AVAILABILITY, EMPTY_PERSONAL, EMPTY_WORK, EMPTY_POLICIES, validateAvailability,
 } from './types'
 import type { OnboardingData, PersonalData } from './types'
 import './OnboardingWizard.css'
@@ -62,6 +62,8 @@ export function OnboardingWizard({ onComplete }: Props) {
     if (step === 2) {
       const active = Object.values(data.availability).some(ranges => ranges.length > 0)
       if (!active) return 'Activá al menos un día de trabajo.'
+      const rangeError = validateAvailability(data.availability)
+      if (rangeError) return rangeError
     }
     return null
   }
@@ -76,6 +78,9 @@ export function OnboardingWizard({ onComplete }: Props) {
   const back = () => { setError(null); setStep(s => s - 1) }
 
   const handleSave = async () => {
+    // Revalida las franjas por si se llegó acá sin pasar por el paso de horarios.
+    const rangeError = validateAvailability(data.availability)
+    if (rangeError) { setError(rangeError); setStep(2); return }
     setLoading(true)
     setError(null)
     try {
