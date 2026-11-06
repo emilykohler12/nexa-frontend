@@ -24,7 +24,7 @@ export function StorePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ products: StoreProduct[] }>('/api/store/products')
+    api.get<{ products: StoreProduct[] }>('/api/admin/store/products')
       .then(res => setProducts(res.data.products ?? []))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));

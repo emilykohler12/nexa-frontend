@@ -29,3 +29,12 @@ export function argentinaDateOf(at: Date): string {
 export function todayInArgentina(now: Date = new Date()): string {
   return argentinaDateOf(now)
 }
+
+const argentinaTimeParts = new Intl.DateTimeFormat('en-GB', {
+  timeZone: ARGENTINA_TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+})
+
+// Hora («HH:mm») de un instante en hora de Argentina, sin importar la zona del navegador.
+export function argentinaTimeOf(at: Date): string {
+  return argentinaTimeParts.format(at)
+}

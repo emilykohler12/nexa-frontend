@@ -5,6 +5,7 @@ import {
   AlertCircle, Users, Image as ImageIcon, Tag, MessageCircle,
 } from 'lucide-react';
 import { api } from '@/shared/utils/api';
+import { argentinaDateOf, argentinaTimeOf, appointmentInstant } from '@/shared/utils/argentinaTime';
 import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
 import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
@@ -81,8 +82,8 @@ export function AppointmentModal({
 
   const startEditing = () => {
     const start = new Date(appointment.start);
-    setEditDate(start.toISOString().split('T')[0]);
-    setEditTime(`${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`);
+    setEditDate(argentinaDateOf(start));
+    setEditTime(argentinaTimeOf(start));
     setEditing(true);
   };
 
@@ -97,9 +98,7 @@ export function AppointmentModal({
     setActionError(null);
     // Recalcula el inicio/fin del turno con la fecha/hora elegidas — así "Editar"
     // también sirve para reprogramar sin un flujo aparte.
-    const [h, m] = editTime.split(':').map(Number);
-    const newStart = new Date(`${editDate}T00:00:00`);
-    newStart.setHours(h, m, 0, 0);
+    const newStart = appointmentInstant(editDate, editTime);
     const newEnd = new Date(newStart.getTime() + form.serviceDuration * 60000);
     const updated: Appointment = { ...form, start: newStart.toISOString(), end: newEnd.toISOString() };
     const error = await onSave(updated);

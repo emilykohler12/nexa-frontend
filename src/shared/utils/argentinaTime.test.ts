@@ -50,3 +50,10 @@ describe('todayInArgentina', () => {
     expect(todayInArgentina()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 })
+
+describe('argentinaTimeOf', () => {
+  it('da la hora de Argentina aunque el instante sea del día siguiente en UTC', async () => {
+    const { argentinaTimeOf } = await import('./argentinaTime')
+    expect(argentinaTimeOf(new Date('2026-11-02T01:30:00Z'))).toBe('22:30')
+  })
+})

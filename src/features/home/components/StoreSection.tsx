@@ -13,8 +13,7 @@ interface Product {
   category:    string
   imageUrl:    string | null
   price:       number
-  stock:       number
-  status:      'active' | 'inactive' | 'out_of_stock'
+  available:   boolean
   description?: string | null
 }
 
@@ -31,7 +30,7 @@ export function StoreSection() {
   useEffect(() => {
     api.get<{ products: Product[] }>('/api/store/products')
       .then(res => setProducts(
-        (res.data.products ?? []).filter(p => p.status === 'active' && p.stock > 0)
+        res.data.products ?? []
       ))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false))
