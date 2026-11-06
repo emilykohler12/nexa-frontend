@@ -128,3 +128,16 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
     expect(screen.getByText(/pasados 30 min de la hora pactada se marca "No asistió \(automático\)"/)).toBeInTheDocument()
   })
 })
+
+describe('AppointmentDialog (profesional): alergias del perfil', () => {
+  it.each([['vacía', ''], ['null', null], ['ausente', undefined]])('con alergia %s explica por qué no se muestra', (_n, allergies) => {
+    setup({ client: { ...base.client, allergies } as Appointment['client'] })
+    expect(screen.getByText(/Sin alergias para mostrar/)).toBeInTheDocument()
+  })
+
+  it('con alergia cargada la muestra y no agrega la explicación', () => {
+    setup({ client: { ...base.client, allergies: 'Látex' } })
+    expect(screen.getByText('Látex')).toBeInTheDocument()
+    expect(screen.queryByText(/Sin alergias para mostrar/)).not.toBeInTheDocument()
+  })
+})

@@ -10,7 +10,7 @@ export interface AppointmentClient {
   phone:    string
   email:    string
   photo:    string | null
-  allergies: string
+  allergies?: string | null
   notes:    string
 }
 
