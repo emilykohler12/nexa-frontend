@@ -64,6 +64,12 @@ describe('resolveReminderLink', () => {
   })
 
   describe('turno que ya empezó', () => {
+    it('cancelar abre el diálogo aunque el turno ya haya empezado', () => {
+      const late = new Date('2026-11-03T21:30:00-03:00').getTime()
+      expect(resolveReminderLink(link('cancelar'), [appt({ time: '21:00' })], late)).toMatchObject({ kind: 'open', accion: 'cancelar' })
+      expect(resolveReminderLink(link('reprogramar'), [appt({ time: '21:00' })], late).kind).toBe('message')
+    })
+
     it('un segundo antes abre; a la hora exacta y después, no', () => {
       const a = appt({ time: '21:00' })
       expect(resolveReminderLink(link(), [a], new Date('2026-11-03T20:59:59-03:00').getTime()).kind).toBe('open')

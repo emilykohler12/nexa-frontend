@@ -177,8 +177,14 @@ describe('Mis turnos: enlaces del mail de recordatorio', () => {
       await expectNotice('?turno=ajeno-1&accion=ver', [appointment({ id: 'mio-1' })], /No encontramos ese turno en tu cuenta/)
     })
 
-    it('turno que ya empezó', async () => {
-      await expectNotice('?turno=a1&accion=cancelar', [appointment({ time: '09:30' })], /ya empezó/)
+    it('turno que ya empezó: reprogramar avisa, cancelar abre el diálogo', async () => {
+      await expectNotice('?turno=a1&accion=reprogramar', [appointment({ time: '09:30' })], /ya empezó/)
+    })
+
+    it('turno que ya empezó: el enlace de cancelar abre el diálogo', async () => {
+      mockServer([appointment({ time: '09:30' })])
+      renderLink('?turno=a1&accion=cancelar')
+      expect(await screen.findByText(CANCEL_TITLE)).toBeInTheDocument()
     })
 
     it('«No asistió (automático)» explica que no se puede cancelar ni reprogramar', async () => {
@@ -287,10 +293,10 @@ describe('Mis turnos: enlaces del mail de recordatorio', () => {
       expect(await screen.findByText(CANCEL_TITLE)).toBeInTheDocument()
     })
 
-    it('un turno de las 21:00: a las 21:00 en punto ya empezó y el enlace no lo abre', async () => {
+    it('un turno de las 21:00: a las 21:00 en punto ya empezó y el enlace de reprogramar no lo abre', async () => {
       vi.setSystemTime(new Date('2026-11-03T21:00:00-03:00'))
       mockServer([appointment({ time: '21:00' })])
-      renderLink('?turno=a1&accion=cancelar')
+      renderLink('?turno=a1&accion=reprogramar')
 
       expect(await screen.findByRole('status')).toHaveTextContent(/ya empezó/)
       expect(screen.queryByText(CANCEL_TITLE)).not.toBeInTheDocument()

@@ -54,6 +54,12 @@ describe('RescheduleModal: horarios del servidor', () => {
     expect(api.get).toHaveBeenCalledWith('/api/professional/p1/availability', { params: { date: DATE, serviceId: 's1' } })
   })
 
+  it('Guardar queda deshabilitado mientras el horario no cambió', async () => {
+    setup()
+    await screen.findByRole('group', { name: 'Horario de último momento' })
+    expect(confirmBtn()).toBeDisabled()
+  })
+
   it('reprograma a un horario de último momento', async () => {
     vi.mocked(api.patch).mockResolvedValue({ data: { appointment: { id: 'a1' } } } as never)
     const { user, onSuccess } = setup()

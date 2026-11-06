@@ -81,7 +81,9 @@ export function resolveReminderLink<T extends LinkAppointment>(
   if (active.length === 0) return { kind: 'message', text: closedMessage(found.status) }
 
   const target = isActive(found.status) ? found : active[0]
-  if (appointmentInstant(target.date, target.time).getTime() <= now) {
+  // Cancelar se permite aunque el turno ya haya empezado (la regla del backend lo admite); «No asistió (automático)»
+  // ya salió arriba porque no es un estado activo.
+  if (link.accion !== 'cancelar' && appointmentInstant(target.date, target.time).getTime() <= now) {
     return { kind: 'message', text: REMINDER_LINK_MESSAGES.started }
   }
   if (link.accion === 'reprogramar' && target.comboGroupId) {
