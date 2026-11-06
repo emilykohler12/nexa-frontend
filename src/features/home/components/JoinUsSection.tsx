@@ -2,13 +2,19 @@ import { useState } from 'react'
 import { Briefcase, Check } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
-import { safeErrorMessage, apiErrorStatus } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorStatus, apiErrorCode } from '@/shared/utils/errorMessage'
 
 // Postulación pública: el backend responde 400 (VALIDATION_ERROR) con campos inválidos y 429 al
 // pasar de 5 envíos por hora desde la misma conexión. Los campos vacíos son válidos (se mandan null).
 function joinUsErrorMessage(err: unknown): string {
   const status = apiErrorStatus(err)
   if (status === 429) return 'Enviaste demasiadas postulaciones seguidas. Probá de nuevo en un rato.'
+  // Único 5xx cuyo texto se muestra: el backend lo manda en español cuando falla el mail al estudio.
+  // El resto de los 5xx sigue con el mensaje genérico.
+  if (status === 500 && apiErrorCode(err) === 'JOB_INTEREST_MAIL_FAILED') {
+    const text = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
+    if (typeof text === 'string' && text.trim()) return text
+  }
   if (status === 400) return safeErrorMessage(err, 'Revisá los datos que cargaste: alguno no es válido.')
   return 'No se pudo enviar tu mensaje. Intentá de nuevo.'
 }

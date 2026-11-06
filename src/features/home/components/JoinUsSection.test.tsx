@@ -49,6 +49,18 @@ describe('JoinUsSection', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/demasiadas postulaciones/)
   })
 
+  it('500 JOB_INTEREST_MAIL_FAILED: muestra el texto en español del servidor', async () => {
+    vi.mocked(api.post).mockRejectedValue(apiError(500, { error: 'No pudimos enviar tu postulación. Probá de nuevo en un rato.', code: 'JOB_INTEREST_MAIL_FAILED' }))
+    await enviar()
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos enviar tu postulación. Probá de nuevo en un rato.')
+  })
+
+  it('un 500 con otro código sigue con el mensaje genérico', async () => {
+    vi.mocked(api.post).mockRejectedValue(apiError(500, { error: 'Texto del servidor', code: 'OTRO' }))
+    await enviar()
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo enviar tu mensaje. Intentá de nuevo.')
+  })
+
   it('error de envío (500): muestra el mensaje genérico y deja reintentar', async () => {
     vi.mocked(api.post).mockRejectedValue(apiError(500, { error: 'Prisma exploded' }))
     await enviar()
