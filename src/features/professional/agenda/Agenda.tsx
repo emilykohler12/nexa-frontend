@@ -11,6 +11,7 @@ import type { Appointment } from '@/features/professional/types/appointment'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
 import type { StaffCancellation } from '@/shared/utils/cancellation'
+import type { BalanceMethod } from '@/shared/utils/balancePayment'
 import type { SpecialAssignment } from './components/AgendaDay'
 
 type View = 'day' | 'week' | 'month'
@@ -49,6 +50,14 @@ export function Agenda() {
     api.get<{ appointments: Appointment[] }>('/api/professional/appointments')
       .then(res => setAppointments(res.data.appointments ?? []))
       .catch(() => setAppointments([]))
+  }, [])
+
+  // Colegas a quienes se puede pasar un servicio de combo (el backend valida que hagan ese servicio).
+  const [colleagues, setColleagues] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    api.get<{ professionals: { id: string; name: string }[] }>('/api/professionals/public?includeAdmin=true')
+      .then(res => setColleagues((res.data.professionals ?? []).map(p => ({ id: p.id, name: p.name }))))
+      .catch(() => setColleagues([]))
   }, [])
 
   useEffect(() => {
@@ -144,6 +153,32 @@ export function Agenda() {
     }
   }
 
+  // Cobro del saldo en el local, solo de turnos propios (el backend lo rechaza si no). Devuelve el mensaje del servidor.
+  const handleRegisterBalancePayment = async (appointment: Appointment, data: { method: BalanceMethod; amount: number }): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/balance-payment`, data)
+      setAppointments(prev => prev.map(a => a.id === appointment.id ? res.data.appointment : a))
+      setSelected(res.data.appointment)
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo registrar el cobro. Intentá de nuevo.')
+    }
+  }
+
+  // Pasa un servicio de un combo a otra profesional. Como el turno deja de ser de ella, se recarga la lista y se
+  // cierra el diálogo. Si el backend lo rechaza (servicio, franja, superposición), su mensaje vuelve al diálogo.
+  const handleChangeProfessional = async (appointment: Appointment, professionalId: string): Promise<string | null> => {
+    try {
+      await api.patch(`/api/professional/appointments/${appointment.id}`, { professionalId })
+      const res = await api.get<{ appointments: Appointment[] }>('/api/professional/appointments')
+      setAppointments(res.data.appointments ?? [])
+      setSelected(null)
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo cambiar la profesional. Intentá de nuevo.')
+    }
+  }
+
   const handleMarkArrival = async (appointment: Appointment) => {
     try {
       const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/arrival`)
@@ -218,6 +253,9 @@ export function Agenda() {
           onMarkArrival={handleMarkArrival}
           onChangeStatus={handleChangeStatus}
           onCancel={handleCancel}
+          onRegisterBalancePayment={handleRegisterBalancePayment}
+          colleagues={colleagues}
+          onChangeProfessional={handleChangeProfessional}
         />
       )}
 

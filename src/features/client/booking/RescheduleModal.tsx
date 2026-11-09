@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
-import { ServiceStep } from './steps/ServiceStep'
-import { ProviderStep } from './steps/ProviderStep'
 import { DateTimeStep } from './steps/DateTimeStep'
 import '@/pages/client/AppointmentsPage.css'
 import { safeErrorMessage, apiErrorCode, apiErrorStatus } from '@/shared/utils/errorMessage'
@@ -32,8 +30,9 @@ export function RescheduleModal<T extends { id: string }>({
   onSuccess,
 }: Props<T>) {
   const { business } = useTenant()
-  const [serviceId, setServiceId]           = useState(initialServiceId)
-  const [professionalId, setProfessionalId] = useState(initialProfessionalId)
+  // Una vez confirmado el turno la clienta no cambia de servicio ni de profesional: solo de día y hora.
+  const serviceId      = initialServiceId
+  const professionalId = initialProfessionalId
   const [date, setDate]                     = useState<string | null>(initialDate)
   const [time, setTime]                     = useState<string | null>(initialTime)
   const [saving, setSaving]                 = useState(false)
@@ -43,20 +42,13 @@ export function RescheduleModal<T extends { id: string }>({
   if (!business) return null
   const { primaryColor } = business
 
-  const handleProfessionalChange = (id: string) => {
-    if (id === professionalId) return
-    setProfessionalId(id)
-    setDate(null)
-    setTime(null)
-  }
-
   const handleDateChange = (d: string) => {
     setDate(d)
     setTime(null)
   }
 
-  // Guardar queda deshabilitado mientras no se cambie nada: mismo servicio, profesional, día y hora.
-  const unchanged = serviceId === initialServiceId && professionalId === initialProfessionalId && date === initialDate && time === initialTime
+  // Guardar queda deshabilitado mientras no se cambie nada: mismo día y hora.
+  const unchanged = date === initialDate && time === initialTime
   const canSave = Boolean(serviceId && professionalId && date && time) && !unchanged
 
   const handleSave = async () => {
@@ -103,13 +95,9 @@ export function RescheduleModal<T extends { id: string }>({
         </div>
 
         <div className="reschedule-body">
-          <ServiceStep
-            selectedServiceId={serviceId}
-            onSelect={service => { setServiceId(service.id); if (service.id !== serviceId) handleProfessionalChange('') }}
-          />
-          <div className="reschedule-divider" />
-          <ProviderStep serviceId={serviceId} selectedProfessionalId={professionalId} onSelect={handleProfessionalChange} />
-          <div className="reschedule-divider" />
+          <p className="reschedule-note" style={{ margin: "0 0 12px", fontSize: "14px", color: "#555" }}>
+            Reprogramás con la misma profesional y el mismo servicio. Elegí el nuevo día y horario.
+          </p>
           <DateTimeStep
             professionalId={professionalId}
             serviceId={serviceId}

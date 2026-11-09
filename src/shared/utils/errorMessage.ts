@@ -30,7 +30,11 @@ export const ERROR_CODE_MESSAGES: Record<string, string> = {
   START_TIME_PASSED: 'Ese horario ya pasó. Elegí otro horario.',
   // Fase 3: hora de aviso de la clienta al cancelar (la carga el personal).
   INVALID_NOTICE_TIME: 'La hora de aviso no puede ser futura. Revisá el día y la hora en que avisó la clienta.',
-  NOTICE_TOO_OLD: 'Un aviso de hace más de 48 horas lo tiene que cargar la administradora.',
+  NOTICE_TOO_OLD: 'Un aviso de hace más de 48 horas lo tiene que cargar la administradora.',
+  // Una clienta bloqueada nunca debe enterarse de que lo está: el servidor responde OPERATION_FAILED y, por si algún
+  // servidor viejo todavía manda CLIENT_BLOCKED, se muestra el mismo texto genérico.
+  OPERATION_FAILED: 'No pudimos completar la operación',
+  CLIENT_BLOCKED: 'No pudimos completar la operación',
 }
 
 // Fase 10 del backend. A diferencia de los de arriba, estos NO pisan el texto del servidor: el

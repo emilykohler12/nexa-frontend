@@ -8,6 +8,9 @@ import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowAc
 import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
 import { CancellationSummary } from '@/shared/ui/molecules/CancellationSummary'
 import type { StaffCancellation } from '@/shared/utils/cancellation'
+import { BalancePaymentForm } from '@/shared/ui/molecules/BalancePaymentForm'
+import type { BalanceMethod } from '@/shared/utils/balancePayment'
+import { ChangeLegProfessional } from '@/shared/ui/molecules/ChangeLegProfessional'
 
 interface Props {
   appointment:     Appointment
@@ -20,9 +23,14 @@ interface Props {
   onChangeStatus:  (appointment: Appointment, to: NoShowTarget) => Promise<string | null>
   // Cancelar el turno (quién cancela y, si avisó la clienta, el aviso). Devuelve el mensaje de error, o null si salió bien.
   onCancel:        (appointment: Appointment, data: StaffCancellation) => Promise<string | null>
+  // Registrar el cobro del saldo en el local (solo turnos propios). Devuelve el mensaje de error, o null si salió bien.
+  onRegisterBalancePayment?: (appointment: Appointment, data: { method: BalanceMethod; amount: number }) => Promise<string | null>
+  // Pasar un servicio de combo a otra profesional. `colleagues` son las opciones.
+  colleagues?:     { id: string; name: string }[]
+  onChangeProfessional?: (appointment: Appointment, professionalId: string) => Promise<string | null>
 }
 
-export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel }: Props) {
+export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel, onRegisterBalancePayment, colleagues = [], onChangeProfessional }: Props) {
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
   const [cancelling, setCancelling] = useState(false)
@@ -139,6 +147,26 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             <span style={{ fontSize: '14px', color: '#000' }}>Precio del servicio</span>
             <span style={{ fontSize: '22px', fontWeight: 700, color: accent }}>${appointment.servicePrice.toLocaleString('es-AR')}</span>
           </div>
+
+          {/* Cobro del saldo en el local */}
+          {onRegisterBalancePayment && (
+            <BalancePaymentForm
+              servicePrice={appointment.servicePrice}
+              depositAmount={appointment.depositAmount}
+              paymentStatus={appointment.paymentStatus}
+              status={appointment.status}
+              balancePayment={appointment.balancePayment}
+              onRegister={data => onRegisterBalancePayment(appointment, data)}
+            />
+          )}
+
+          {/* Cambiar la profesional de este servicio del combo */}
+          {onChangeProfessional && appointment.comboGroupId && (appointment.status === 'confirmed' || appointment.status === 'pending') && (
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>Profesional de este servicio</p>
+              <ChangeLegProfessional currentId="" options={colleagues} onChange={id => onChangeProfessional(appointment, id)} />
+            </div>
+          )}
 
           {/* Llegada */}
           {appointment.status === 'confirmed' && (

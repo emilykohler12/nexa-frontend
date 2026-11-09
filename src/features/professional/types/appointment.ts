@@ -39,6 +39,9 @@ export interface Appointment {
   client:         AppointmentClient
   serviceName:    string
   servicePrice:   number
+  // Seña de la reserva y, si ya se cobró algo en el local, ese cobro (para sugerir el saldo a cobrar).
+  depositAmount?: number
+  balancePayment?: { method: 'cash' | 'transfer' | 'card' | 'other'; amount: number; collectedByName?: string | null } | null
   duration:       number
   date:           string
   time:           string
