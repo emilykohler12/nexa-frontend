@@ -6,6 +6,7 @@ import { useTenant }    from '@/features/tenant/TenantContext'
 import { api }          from '@/shared/utils/api'
 import { PhotoUpload }  from '@/shared/ui/atoms/PhotoUpload'
 import './Settings.css'
+import { VacationSection } from './VacationSection'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import type { PaymentMethod } from '@/features/professional/onboarding/types'
 
@@ -461,6 +462,8 @@ export function Settings() {
               {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar cambios'}
             </button>
           </div>
+
+          <VacationSection />
         </div>
       )}
 
