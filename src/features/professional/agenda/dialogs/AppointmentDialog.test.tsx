@@ -141,3 +141,43 @@ describe('AppointmentDialog (profesional): alergias del perfil', () => {
     expect(screen.queryByText(/Sin alergias para mostrar/)).not.toBeInTheDocument()
   })
 })
+
+describe('AppointmentDialog (profesional): cobro en el local y cambio de profesional en combos', () => {
+  function setupExtras(appointment: Partial<Appointment>) {
+    const onRegisterBalancePayment = vi.fn().mockResolvedValue(null)
+    const onChangeProfessional = vi.fn().mockResolvedValue(null)
+    render(
+      <AppointmentDialog
+        appointment={{ ...base, ...appointment }} primary="#069494" accent="#d4af37"
+        onClose={vi.fn()} onSave={vi.fn()} onMarkArrival={vi.fn()}
+        onChangeStatus={vi.fn().mockResolvedValue(null)} onCancel={vi.fn().mockResolvedValue(null)}
+        onRegisterBalancePayment={onRegisterBalancePayment}
+        colleagues={[{ id: 'p2', name: 'Marina' }]} onChangeProfessional={onChangeProfessional}
+      />,
+    )
+    return { onRegisterBalancePayment, onChangeProfessional, user: userEvent.setup() }
+  }
+
+  it('la profesional registra el cobro de su turno con la forma de pago y el monto sugerido', async () => {
+    const { onRegisterBalancePayment, user } = setupExtras({ paymentStatus: 'partial', depositAmount: 3000 })
+
+    expect(screen.getByLabelText('Monto cobrado')).toHaveValue(7000)
+    await user.selectOptions(screen.getByLabelText('Forma de pago'), 'card')
+    await user.click(screen.getByRole('button', { name: 'Registrar cobro' }))
+
+    expect(onRegisterBalancePayment).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }), { method: 'card', amount: 7000 })
+  })
+
+  it('en un servicio de combo puede pasarlo a otra profesional; en un turno suelto no aparece', async () => {
+    const { onChangeProfessional, user } = setupExtras({ paymentStatus: 'pending', comboGroupId: 'g1' })
+
+    await user.selectOptions(screen.getByLabelText('Nueva profesional'), 'p2')
+    await user.click(screen.getByRole('button', { name: 'Cambiar' }))
+    expect(onChangeProfessional).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }), 'p2')
+  })
+
+  it('un turno que no es de combo no ofrece cambiar la profesional', () => {
+    setupExtras({ paymentStatus: 'pending', comboGroupId: null })
+    expect(screen.queryByLabelText('Nueva profesional')).not.toBeInTheDocument()
+  })
+})

@@ -155,3 +155,40 @@ describe('AppointmentModal (administrador): estados e inasistencia', () => {
     expect(summary).toHaveTextContent('Marcada como devuelta')
   })
 })
+
+describe('AppointmentModal (administrador): combos y cobro', () => {
+  const combo: Partial<Appointment> = {
+    comboGroupId: 'g1', isSimultaneous: true, paymentStatus: 'partial', depositAmount: 4000,
+    simultaneousWith: [{ appointmentId: 'a2', serviceName: 'Pedicura', professionalId: 'p2', professionalName: 'Marina', duration: 45, price: 5000 }],
+  }
+
+  it('en un combo cada servicio permite cambiar su profesional y se manda el id de ESA pata', async () => {
+    const onChangeLegProfessional = vi.fn().mockResolvedValue(null)
+    const props = {
+      appointment: { ...base, ...combo }, professionals: [...professionals, { id: 'p2', name: 'Marina', color: '#d4af37' }, { id: 'p3', name: 'Sol', color: '#e57373' }],
+      onClose: vi.fn(), onCancel: vi.fn(), onReactivate: vi.fn(), onSave: vi.fn(),
+      onRegisterBalancePayment: vi.fn().mockResolvedValue(null), onRegisterPolishRemoval: vi.fn(), onMarkDepositPaid: vi.fn(),
+      onChangeStatus: vi.fn(), onChangeLegProfessional,
+    }
+    render(<AppointmentModal {...props} />)
+    const user = userEvent.setup()
+
+    const selects = screen.getAllByLabelText('Nueva profesional')
+    expect(selects).toHaveLength(2)
+    await user.selectOptions(selects[1], 'p3')
+    await user.click(screen.getAllByRole('button', { name: 'Cambiar' })[1])
+
+    expect(onChangeLegProfessional).toHaveBeenCalledWith('a2', 'p3')
+  })
+
+  it('«Registrar cobro» sugiere lo que falta y manda la forma de pago elegida', async () => {
+    const { onRegisterBalancePayment } = setup({ paymentStatus: 'partial', depositAmount: 4000 })
+    const user = userEvent.setup()
+
+    expect(screen.getByLabelText('Monto cobrado')).toHaveValue(6000)
+    await user.selectOptions(screen.getByLabelText('Forma de pago'), 'transfer')
+    await user.click(screen.getByRole('button', { name: 'Registrar cobro' }))
+
+    expect(onRegisterBalancePayment).toHaveBeenCalledWith('a1', { method: 'transfer', amount: 6000 })
+  })
+})

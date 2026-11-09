@@ -144,6 +144,21 @@ export function AppointmentsPage() {
     }
   }
 
+  // Cambia la profesional de un servicio del combo. El servidor valida servicio, franja y superposición y, si
+  // rechaza el cambio, su mensaje vuelve al modal. Si sale bien se recarga la lista y el modal queda al día.
+  const handleChangeLegProfessional = async (legId: string, professionalId: string): Promise<string | null> => {
+    try {
+      await api.patch(`/api/admin/appointments/${legId}`, { professionalId })
+      const res = await api.get<{ appointments: Appointment[] }>('/api/admin/appointments')
+      const list = res.data.appointments ?? []
+      setAppointments(list)
+      setModalAppt(current => (current ? list.find(a => a.id === current.id) ?? null : null))
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo cambiar la profesional.')
+    }
+  }
+
   const handleRegisterPolishRemoval = async (id: string, data: { label: string; price: number }): Promise<string | null> => {
     try {
       const res = await api.patch<{ appointment: Appointment }>(`/api/admin/appointments/${id}/polish-removal`, data)
@@ -242,6 +257,7 @@ export function AppointmentsPage() {
           onRegisterPolishRemoval={handleRegisterPolishRemoval}
           onMarkDepositPaid={handleMarkDepositPaid}
           onChangeStatus={patchStatus}
+          onChangeLegProfessional={handleChangeLegProfessional}
         />
       )}
 
