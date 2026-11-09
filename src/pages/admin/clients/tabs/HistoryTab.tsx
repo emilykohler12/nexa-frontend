@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '@/shared/utils/api'
+import { cancelReasonText } from '@/shared/utils/cancelReason'
 import type { AdminClient, AppointmentHistoryStatus, ClientAppointmentHistory } from '../types'
 
 const STATUS_CONFIG: Record<AppointmentHistoryStatus, { label: string; color: string }> = {
@@ -50,10 +51,10 @@ export function HistoryTab({ client }: { client: AdminClient }) {
 
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '12px', overflow: 'auto' }}>
-      <table style={{ width: '100%', minWidth: '560px', borderCollapse: 'collapse', fontSize: '15px', fontFamily: "'Lato', sans-serif" }}>
+      <table style={{ width: '100%', minWidth: '720px', borderCollapse: 'collapse', fontSize: '15px', fontFamily: "'Lato', sans-serif" }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #eee' }}>
-            {['Servicio', 'Profesional', 'Fecha', 'Precio', 'Estado'].map(h => (
+            {['Servicio', 'Profesional', 'Fecha', 'Precio', 'Estado', 'Motivo'].map(h => (
               <th key={h} style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {h}
               </th>
@@ -77,6 +78,9 @@ export function HistoryTab({ client }: { client: AdminClient }) {
                   <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', background: `${status.color}18`, color: status.color }}>
                     {status.label}
                   </span>
+                </td>
+                <td style={{ padding: '13px 16px', color: '#444', fontSize: '14px' }}>
+                  {cancelReasonText(appt.status, appt.cancelReason, appt.cancelledBy) || '—'}
                 </td>
               </tr>
             )

@@ -37,4 +37,6 @@ export interface ClientAppointmentHistory {
   price: number
   status: AppointmentHistoryStatus
   cancelReason?: string | null
+  // Quién canceló: client, studio o system.
+  cancelledBy?: string | null
 }
