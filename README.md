@@ -479,6 +479,17 @@ El último commit de cada fase, el que actualiza esta tabla, se identifica en la
 
 ---
 
+**Cambios de reglas del 06/11/2026 (directo sobre `main`, sin rama ni pull request).** Los hizo **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella; los commits llevan la línea `Co-Authored-By`. Van junto con los del backend (misma fecha). Resultado: lint sin errores, `typecheck:all` sin errores, 395 tests en 53 archivos y build correcto.
+
+| Commit | Qué cambia |
+|---|---|
+| `45f54e7` | Puntos 1 y 3 juntos (comparten archivos): componente `BalancePaymentForm` («Registrar cobro» con forma de pago —efectivo, transferencia, tarjeta u otro—, monto sugerido y el mensaje del servidor) usado por el administrador y por la profesional en sus turnos; `ChangeLegProfessional` para pasar un servicio de un combo a otra profesional, en el modal del administrador (por cada servicio del combo) y en el diálogo de la profesional. Pruebas de ambos componentes y de los dos diálogos |
+| `5eea6c5` | Punto 2: `RescheduleModal` ya no muestra los pasos de servicio ni de profesional; la clienta solo elige día y hora y siempre se manda el servicio y la profesional del turno |
+| `061560b` | Punto 4: `errorMessage.ts` muestra «No pudimos completar la operación» para `OPERATION_FAILED` y también para `CLIENT_BLOCKED` (por si un servidor viejo todavía lo manda); nada de la interfaz de la clienta nombra el bloqueo, solo el panel del administrador |
+| `0f0b7c2` | Punto 5: prueba que recorre el código y falla si algún texto pide verificar el correo (el recordatorio se manda igual) |
+| `7dbcd6e` | Punto 8: el historial de la clienta en el panel del administrador tiene la columna «Motivo» con un texto en español para cada motivo (`cancelReason` y `cancelledBy`, `shared/utils/cancelReason.ts`) |
+| `99cfa5b` | Punto 7: «Mis vacaciones» en la configuración de la profesional (`VacationSection`): carga, edita y quita las suyas, con validación de que el inicio no sea posterior al fin |
+
 ## 9. Canal de construcción (CI)
 
 Cada push a `main` corre GitHub Actions en los dos repos. El registro de corridas está en:
