@@ -10,9 +10,6 @@ vi.mock('@/shared/utils/api', () => ({
 vi.mock('@/features/tenant/TenantContext', () => ({
   useTenant: () => ({ business: { primaryColor: '#069494' } }),
 }))
-// Servicio y profesional ya vienen elegidos: lo que se prueba acá es el paso de fecha y hora.
-vi.mock('./steps/ServiceStep', () => ({ ServiceStep: () => null }))
-vi.mock('./steps/ProviderStep', () => ({ ProviderStep: () => null, ANY_PROFESSIONAL_ID: 'any' }))
 
 const DATE = '2099-03-10'
 const BACKEND_DAY = [6, 0, 1, 2, 3, 4, 5][new Date(`${DATE}T00:00:00`).getDay()]
@@ -106,5 +103,33 @@ describe('RescheduleModal: horarios del servidor', () => {
     await user.click(confirmBtn())
 
     expect(await screen.findByText(/corregí primero su estado/)).toBeInTheDocument()
+  })
+})
+
+describe('RescheduleModal: la clienta no cambia de profesional (06/11/2026)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(api.get).mockResolvedValue(availabilityBody() as never)
+  })
+
+  it('no ofrece elegir profesional ni servicio, y lo avisa', async () => {
+    setup()
+    await screen.findByRole('group', { name: 'Horario de último momento' })
+
+    expect(screen.getByText(/Reprogramás con la misma profesional y el mismo servicio/)).toBeInTheDocument()
+    expect(screen.queryByText(/Elegí un profesional|Elegí tu profesional|Cualquier profesional|Cualquiera/i)).not.toBeInTheDocument()
+  })
+
+  it('siempre manda el servicio y la profesional del turno, solo cambia el horario', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ data: { appointment: { id: 'a1' } } } as never)
+    const { user } = setup()
+
+    await user.click(within(await screen.findByRole('group', { name: 'Horario de último momento' })).getByRole('button', { name: '16:50' }))
+    await user.click(confirmBtn())
+
+    await waitFor(() => expect(api.patch).toHaveBeenCalled())
+    expect(api.patch).toHaveBeenCalledWith('/api/client/appointments/a1/reschedule', {
+      serviceId: 's1', professionalId: 'p1', date: DATE, time: '16:50',
+    })
   })
 })
