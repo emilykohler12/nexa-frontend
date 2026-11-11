@@ -1,4 +1,4 @@
-# Nexa — Sistema de Gestión de Turnos para Estudio de Belleza (Prototipo v1.3)
+# Nexa — Sistema de Gestión de Turnos para Estudio de Belleza
 
 Creado por: Emily Noralí Kohler
 
@@ -9,7 +9,7 @@ El sistema está dividido en dos repositorios que se clonan uno al lado del otro
 
 ---
 
-## 1. Identificación del proyecto y qué hace este prototipo
+## 1. Identificación del proyecto y qué hace el sistema
 
 ### 1.1 Identificación
 
@@ -18,15 +18,16 @@ El sistema está dividido en dos repositorios que se clonan uno al lado del otro
 | Proyecto | Nexa — Sistema de Gestión de Turnos para Estudio de Belleza (cliente real: Loren Estudio de Belleza) |
 | Autora | Kohler, Emily Noralí — DNI 45.555.841 |
 | Comisión | A |
-| Instancia | Proyecto Final de Grado — AE3 |
+| Instancia | Proyecto Final de Grado — AE4 |
 | Docente | PosDr. Darío Ezequiel Díaz |
-| Versión | v1.3 (etiqueta anotada `v1.3` en ambos repos; `v1`, `v1.1` y `v1.2` se conservan) |
+| Versión | Rama `main` de los dos repositorios al 10/11/2026. La última etiqueta es `v1.3` (AE3; `v1`, `v1.1` y `v1.2` se conservan). La etiqueta de la versión congelada de la AE4 todavía no está puesta: cuando se ponga, este manual vale para esa etiqueta |
+| En producción | Frontend: https://lorenestudiodebelleza.vercel.app (Vercel). Backend en Render y base de datos en Supabase |
 
 ### 1.2 Versiones exactas del entorno
 
 | Herramienta | Versión |
 |---|---|
-| Node.js | 24.x (probado con 24.17.0; el CI usa `node-version: 24`) |
+| Node.js | 24.x (probado con 24.17.0; el CI usa `node-version: 24` y Render la versión de `.node-version`, 24.22.1) |
 | npm | 11.13.0 |
 | PostgreSQL | 16 (versión de referencia: el CI corre con `postgres:16`). Producción en Supabase 17.x; también probado en local con 18.4 |
 
@@ -43,32 +44,43 @@ Una clienta se registra, elige un servicio, una profesional, una fecha y un hora
 
 **Requisito:** RF-01 — **Regla de negocio:** R-01 (no se puede confirmar un turno si la profesional ya tiene otro turno activo en ese horario).
 
-### 1.4 Decisión arquitectónica probada
+### 1.4 Decisión arquitectónica probada y reglas vigentes
 
 La disponibilidad se garantiza en el **backend**, no solo en la interfaz:
 
 - El frontend no ofrece los horarios ya ocupados (`GET /api/professional/:id/availability`).
-- La fuente de verdad es un **índice único parcial** en PostgreSQL sobre `(professional_id, date, time)` que excluye los turnos `cancelled` y `cancelled_no_show`. Es atómico: aunque dos reservas lleguen a la vez o alguien salte la interfaz, solo una se guarda y la otra recibe **HTTP 409** (`PROFESSIONAL_SLOT_TAKEN`). No hay consulta previa.
+- La fuente de verdad es un **índice único parcial** en PostgreSQL sobre `(professional_id, date, time)` que excluye los turnos `cancelled` y `cancelled_no_show`, salvo los que tienen el horario original bloqueado (`slot_locked`: marcados como no asistidos o cancelados ya empezados). Un turno `no_show_auto` sigue ocupando el horario. Es atómico: aunque dos reservas lleguen a la vez o alguien salte la interfaz, solo una se guarda y la otra recibe **HTTP 409** (`PROFESSIONAL_SLOT_TAKEN`). No hay consulta previa.
 - La reserva de la clienta (simple, combo y reprogramación) además exige que la hora caiga dentro de las franjas que definió la profesional: si no, **HTTP 400** (`OUT_OF_HOURS`). Los turnos manuales del admin no se validan contra la franja.
-- Pruebas automatizadas: `tests/integration/appointments.booking.test.ts` y `tests/integration/appointments.out-of-hours.test.ts`.
+- **Inasistencia, horario reabierto y reserva tardía** (reglas confirmadas por la propietaria el 30/10/2026; ver el ADR-002, revisión del 31/10/2026): el job pasa a `no_show_auto` («No asistió (automático)») un turno confirmado sin llegada registrada a los **más de 30 minutos** de su hora de inicio (cada 5 minutos); la seña no cambia. El personal puede marcar «No asistió» desde la hora de inicio: hasta 40 minutos después se reabre el horario en inicios de 5 minutos hasta 60 minutos después de la hora original, siempre que el servicio entre. El horario original nunca se vuelve a reservar. La clienta puede reservar o reprogramar hasta 15 minutos después de la hora de inicio (`START_TIME_PASSED` después). El personal corrige el estado a «Finalizado» siempre o a «Confirmado» si no se superpone.
+- **Cancelación y devolución de la seña** (fase 3): el sistema solo **marca** la seña como devuelta, no hace ninguna devolución en Mercado Pago. Si la clienta cancela con 12 horas o más de anticipación (`cancellationHours`) y la seña estaba paga, queda como devuelta; con menos, retenida. Cuando cancela el personal indica si cancela la clienta (con la hora en que avisó, el medio y una nota) o el estudio (devuelve siempre). La política de devolución admite solo `full` o `none`.
+- **Recordatorio de turno por mail** (fase 3b, RF-35, decisión de la autora): un mail por turno entre 5 horas y 1 hora antes del inicio, con enlaces a «Mis turnos» que no ejecutan nada por sí solos. Es el único mail que el sistema manda por iniciativa propia; no hay campañas automáticas, puntos de fidelización ni recordatorio de inactividad (se quitaron en la fase 1).
+- **Cambios de reglas del 06/11/2026:** el personal puede pasar un servicio de un combo a otra profesional; la clienta no cambia de profesional al reprogramar; el administrador y la profesional registran el cobro en el local con la forma de pago; una clienta bloqueada recibe un error genérico; la profesional carga sus vacaciones. Detalle en `docs/cambios-y-decisiones.md`.
+- Pruebas automatizadas: `tests/integration/appointments.booking.test.ts`, `tests/integration/appointments.out-of-hours.test.ts`, `tests/integration/appointments.arrival-noshow.test.ts`, `tests/integration/appointments.reopened-slots.test.ts`, `tests/integration/appointments.cancellation-refund.test.ts`, `tests/integration/settings.deposit-and-refund.test.ts` (seña en porcentaje y límites de la devolución) y `tests/integration/client-details-job-interest-late-booking.test.ts` (reserva tardía en combos y servicios especiales).
 - Alternativas evaluadas y motivo de la elección: `04-diseno/adr-002-validacion-antes-persistencia.md`.
 
-> **Limitación conocida:** el bloqueo compara la **hora de inicio**. Dos turnos de la misma profesional que empiezan a horas distintas pero se pisan por duración (ej. 16:00 de 90 min y 16:30) todavía no se detectan. Está registrada como una iteración nueva a planificar.
+> **Limitación conocida:** el bloqueo compara la **hora de inicio**. Dos turnos de la misma profesional que empiezan a horas distintas pero se pisan por duración (ej. 16:00 de 90 min y 16:30) todavía no se detectan, salvo en los inicios de un horario reabierto, donde sí se verifica la duración. Está registrada como una iteración nueva a planificar.
 
 ### 1.5 Dónde está la documentación
 
-Vive en el repositorio **nexa-backend** (el frontend no guarda bitácoras: las tres, incluida la del frontend, están allá):
+Vive en el repositorio **nexa-backend** (el frontend no guarda bitácoras: todas, incluidas las entradas del frontend, están allá). Las rutas de la tabla son de ese repositorio:
 
 | Documento | Ubicación |
 |---|---|
-| Catálogo de requisitos (versión vigente) | `03-requisitos/20261005_CatalogoRequisitos_Kohler_v5.xlsx` |
+| Catálogo de requisitos | `03-requisitos/20261030_CatalogoRequisitos_Kohler_v7.xlsx` es la última versión subida al repositorio (también están la v5 y la v6). Las versiones v8 (06/11/2026) y v9 (09/11/2026) todavía no están en el repositorio |
+| Relevamiento (entrevistas e instrumentos) | `01-relevamiento/` |
+| Cobertura de cada requisito con pruebas automatizadas | `docs/cobertura-por-requisito.md` |
+| Cambios y decisiones de la AE4, por fase | `docs/cambios-y-decisiones.md` |
+| Plan de despliegue de la AE4 e instalación desde una base vacía | `docs/plan-de-despliegue.md` |
+| Consultas de solo lectura para verificar producción | `docs/consultas-previas-produccion.sql` |
+| Estimación de horas de desarrollo (cifra única: 424 horas, de 394 a 454 al 95 %; método de tres valores, no por commits) | `docs/estimacion-horas.md` |
 | ADR-001: estrategia de multi-tenancy | `04-diseno/adr-001-multi-tenancy.md` |
 | ADR-002: integridad de la reserva (índice único parcial y `OUT_OF_HOURS`) | `04-diseno/adr-002-validacion-antes-persistencia.md` |
 | ADR-003: JWT para autenticación | `04-diseno/adr-003-jwt-auth.md` |
 | Bitácora de decisiones, AE1 (hasta el 03/09/2026) | `00-gestion/BITACORA.md` |
 | Bitácora de decisiones, AE2 (10/09 al 06/10/2026; continúa la anterior) | `00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx` |
-| Bitácora de decisiones, AE3 (desde el 23/10/2026 hasta hoy, con los cambios del frontend y los que se hagan en noviembre y diciembre; continúa la anterior) | `00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md` |
-| Backup y restauración, RUNBOOK y SOP | `00-gestion/` |
+| Bitácora de decisiones, AE3 y AE4 (desde el 23/10/2026 hasta hoy; continúa la anterior; incluye los cambios del frontend y las sesiones de Claude en el chat; entradas 1 a 145) | `00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md` |
+| Backup y restauración, RUNBOOK, SOP y texto de la política de privacidad | `00-gestion/` |
+| Evidencia de la medición de RNF-01 | `05-entregas/evidencia-RNF-01/` |
 
 ---
 
@@ -80,11 +92,15 @@ Vive en el repositorio **nexa-backend** (el frontend no guarda bitácoras: las t
 | API | Express | 5.2.1 |
 | ORM | Prisma | 6.19.3 |
 | Base de datos | PostgreSQL | 16 |
-| Validación | Zod | 4.6.5 |
-| Tests backend | Vitest + Supertest | 5.0.1 / 7.3.0 |
+| Validación | Zod | 4.6.7 |
+| Tests backend | Vitest + Supertest | 5.0.5 / 7.3.0 |
+| Tareas programadas | node-cron (tres tareas, cada 5 minutos) | 4.6.x |
 | Autenticación | JWT en cookies httpOnly | — |
-| Frontend | React + Vite | 19.2.7 / 8.1.0 |
+| Frontend | React + Vite + TypeScript | 19.2.7 / 8.1.0 / 6.0.3 |
+| Rutas del frontend | React Router | 7.18.4 |
 | Estilos | Tailwind CSS | 4.3.1 |
+| Tests frontend | Vitest + Testing Library (jsdom) | 5.0.1 |
+| Despliegue | Render (backend), Supabase (PostgreSQL y archivos) y Vercel (frontend) | — |
 | CI | GitHub Actions | — |
 
 ---
@@ -110,7 +126,7 @@ Además, un usuario y contraseña de PostgreSQL con permiso para crear bases (en
 
 Todos los comandos se escriben en una terminal. En Windows sirve Git Bash o PowerShell.
 
-### 4.1 Clonar los dos repositorios en la etiqueta v1.3
+### 4.1 Clonar los dos repositorios
 
 Crear una carpeta vacía, entrar y clonar ambos repos **uno al lado del otro**:
 
@@ -119,9 +135,6 @@ mkdir nexa && cd nexa
 
 git clone https://github.com/emilykohler12/nexa-backend.git
 git clone https://github.com/emilykohler12/nexa-frontend.git
-
-cd nexa-backend  && git checkout v1.3 && cd ..
-cd nexa-frontend && git checkout v1.3 && cd ..
 ```
 
 Queda así:
@@ -132,7 +145,7 @@ nexa/
 └── nexa-frontend/
 ```
 
-> `git checkout v1.3` muestra un aviso de *"detached HEAD"*: es normal, significa que estás parado en la versión etiquetada.
+Los dos quedan en la rama `main`, que es la versión que describe este manual. No hacer `git checkout v1.3`: esa etiqueta es la de la AE3 y trae un código anterior (54 migraciones y otros datos de demo), que no coincide con las salidas esperadas de abajo.
 
 ### 4.2 Instalar dependencias
 
@@ -169,7 +182,7 @@ Abrir `.env` y editar **solo** la línea `DATABASE_URL` con tu usuario y contras
 DATABASE_URL="postgresql://USUARIO:CONTRASEÑA@localhost:5432/nexa_dev"
 ```
 
-El resto de los valores ya sirven para desarrollo local. Las variables de Mercado Pago, Sentry y Supabase pueden quedar vacías.
+El resto de los valores ya sirven para desarrollo local. El archivo lista todas las variables que lee el backend (las de `src/app/config/env.ts` más `SENTRY_DSN`); las de Mercado Pago (`MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, `BACKEND_PUBLIC_URL`), Sentry, Supabase y Brevo pueden quedar vacías. No definir `TZ`: el backend tiene que correr en UTC.
 
 **Frontend** — copiar el archivo de ejemplo (no hace falta editarlo):
 
@@ -179,7 +192,7 @@ cp .env.example .env.local
 cd ..
 ```
 
-Contiene `VITE_API_URL="http://localhost:4000"`, que es el puerto donde escucha el backend.
+Contiene `VITE_API_URL="http://localhost:4000"`, que es el puerto donde escucha el backend, y el resto de las variables `VITE_` con valores que sirven para desarrollo (`VITE_SENTRY_DSN` puede quedar vacía).
 
 > En PowerShell, si `cp` no funciona, usar `Copy-Item .env.example .env`.
 
@@ -195,7 +208,7 @@ npm run seed:demo
 **Esperado:**
 
 ```
-54 migrations found in prisma/migrations
+62 migrations found in prisma/migrations
 Applying migration `20260720211431_init`
 Applying migration `20260813212326_init`
 ...
@@ -205,11 +218,14 @@ All migrations have been successfully applied.
 ...
 ✅ Datos de demo listos:
    Servicio:    Manicura semipermanente (60 min, $15.000)
-   Profesional: Loren (demo) — lun a sáb 09:00–18:00
+   Profesional: Valeria (demo) — lun a sáb 09:00–18:00
+   Turnos de la clienta: confirmado AAAA-MM-DD 10:00, no asistió (automático) AAAA-MM-DD 10:00, cancelado AAAA-MM-DD 15:00
+   Promoción vigente: Semipermanente con descuento (demo) (AAAA-MM-DD a AAAA-MM-DD)
    Login profesional: profesional@nexa.local / Profesional1234!
+   Login clienta:     clienta@nexa.local / Clienta1234!
 ```
 
-`seed:demo` carga una profesional con horario, un servicio y un WhatsApp de demo del negocio, que es lo mínimo necesario para poder reservar. Se puede correr más de una vez sin duplicar nada.
+`seed:demo` carga un escenario de demostración con datos inventados, coherente con las reglas de la AE4: una profesional con horario de lunes a sábado, un servicio, una clienta de demo con un turno **confirmado** (a 2 días o más, en día hábil, con la seña paga), uno **`no_show_auto`** («No asistió (automático)», del día hábil anterior, con la seña retenida y el horario todavía ocupado) y uno **cancelado** por la clienta con más de 12 horas de aviso (seña marcada como devuelta y horario libre), una **promoción vigente** (desde hoy por 30 días) y un WhatsApp de demo del negocio. Las fechas se calculan en hora de Argentina el día que se corre. Se puede correr más de una vez sin duplicar nada: cada corrida vuelve a crear solo los turnos de la clienta de demo. Lo verifica `tests/integration/seed-demo.test.ts`. Solo para desarrollo: nunca correrlo contra la base de producción.
 
 > Usar `migrate deploy`, **no** `migrate dev`: `migrate dev` puede quedarse esperando que escribas el nombre de una migración nueva.
 
@@ -231,7 +247,7 @@ npm run dev
 ```
 ✅ Conectado a PostgreSQL
 👤 Admin inicial creado: admin@nexa.local
-[jobs] scheduler iniciado — ...
+[jobs] scheduler iniciado (hora de Argentina) — release-unpaid (cada 5 min) + auto-no-show (cada 5 min) + appointment-reminder (cada 5 min)
 🚀 Servidor en http://localhost:4000 (development)
 ```
 
@@ -261,14 +277,16 @@ Abrir **http://localhost:5173** en el navegador.
 
 1. En http://localhost:5173 ir a **Ingresar** → pestaña **Registro**.
 2. Completar nombre, apellido, teléfono celular (los tres obligatorios, RF-02), email (ej. `maria@test.local`), contraseña (ej. `Maria1234!`) y aceptar los términos. Se guarda la fecha y la versión de la política aceptada (RF-08).
-3. Registrarse. No hace falta verificar el email para reservar.
+3. Registrarse. No hace falta verificar el email para reservar. El teléfono tiene que ser un celular argentino válido (por ejemplo `3764123456`).
+
+También se puede entrar con la clienta de demo que crea `seed:demo` (`clienta@nexa.local` / `Clienta1234!`), que ya tiene tres turnos cargados.
 
 ### 6.2 Reservar un turno
 
 1. Ir a **Mis turnos** → **+ Reservar nuevo turno**.
 2. **Servicio:** elegir *Manicura semipermanente* → **Siguiente**.
-3. **Profesional:** elegir *Loren (demo)* → **Siguiente**.
-4. **Fecha:** elegir un día de lunes a sábado a partir de mañana. Aparecen los horarios libres; elegir uno → **Siguiente**.
+3. **Profesional:** elegir *Valeria (demo)* → **Siguiente**.
+4. **Fecha:** elegir un día de lunes a sábado a partir de mañana. Aparecen los horarios libres (los datos de demo ya ocupan las 10:00 de un día cercano); elegir uno → **Siguiente**.
 5. **Confirmar:** se muestra el resumen (servicio, profesional, fecha, hora, total y seña) → **Confirmar reserva**.
 6. Marcar *Acepto los Términos de Servicio y la Política de Privacidad* y elegir **Coordinar el pago por WhatsApp**. Se abre una pestaña de WhatsApp con un mensaje armado: se puede cerrar.
 7. En *"Antes de terminar..."* elegir **Omitir por ahora**.
@@ -314,8 +332,8 @@ npm test
 **Esperado:**
 
 ```
-Test Files  46 passed (46)
-     Tests  546 passed (546)
+Test Files  61 passed (61)
+     Tests  683 passed (683)
 ```
 
 Los tests del caso de uso vertical están en `tests/integration/appointments.booking.test.ts`, entre ellos:
@@ -324,6 +342,8 @@ Los tests del caso de uso vertical están en `tests/integration/appointments.boo
 
 Y en `tests/integration/appointments.out-of-hours.test.ts`:
 - *rechaza reservar a las 23:00 con disponibilidad de 09:00 a 18:00*
+
+La corrida completa tarda unos 5 a 6 minutos (los archivos corren en serie contra la base). Qué prueba cubre cada requisito está en `docs/cobertura-por-requisito.md`.
 
 ### 7.2 Frontend
 
@@ -335,21 +355,21 @@ npm test
 **Esperado:**
 
 ```
-Test Files  37 passed (37)
-     Tests  333 passed (333)
+Test Files  53 passed (53)
+     Tests  395 passed (395)
 ```
 
 ---
 
 ## 8. Declaración de uso de IA
 
-En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5 y Claude Opus 5.5. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026) y [`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`](00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md) (AE3, desde el 23/10/2026). Las entradas de la AE4 (31/10/2026: baja de campañas, puntos y fecha de nacimiento; horarios reabiertos y estados de inasistencia; cancelación con hora de aviso) están al final de [`00-gestion/BITACORA.md`](00-gestion/BITACORA.md).
+En este proyecto se usó **Claude Code** (Anthropic) como asistente de programación, con los modelos Claude Sonnet 5, Claude Sonnet 5.5, Claude Haiku 4.5, Claude Opus 5.5 y Claude Fable 5.2. Toda decisión de dominio (entidades, reglas, alcance del MVP, iteraciones) la tomó la autora; el detalle de cada decisión, las alternativas descartadas y en qué intervino la IA está en la bitácora: [`00-gestion/BITACORA.md`](https://github.com/emilykohler12/nexa-backend/blob/main/00-gestion/BITACORA.md) (AE1, hasta el 03/09/2026) y su continuación [`00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx`](https://github.com/emilykohler12/nexa-backend/blob/main/00-gestion/20261006_BitacoraIndividual_KohlerAE2_v5.docx) (AE2, del 10/09 al 06/10/2026) y [`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`](https://github.com/emilykohler12/nexa-backend/blob/main/00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md) (AE3 y AE4, desde el 23/10/2026).
 
-También se usó **Claude** (chat, Anthropic) sobre documentos —el informe, los instrumentos, el libro de requisitos, el acta, el tablero y la bitácora—; ese uso está declarado en la bitácora y en el Anexo III.
+También se usó **Claude** (chat, Anthropic) sobre documentos —el informe, los instrumentos, el libro de requisitos, el acta, el tablero y la bitácora—; ese uso está declarado en la bitácora (las entradas que dicen «Claude (chat)» en el elemento 6) y en el Anexo III.
 
 ### 8.1 Cifras (calculadas con `git log`)
 
-Corte: commit `6e7d8c0` en nexa-backend y `3090b89` en nexa-frontend (2026-10-28, los merges de los pull requests #12 y #9 en `main`), el último de cada repositorio al escribir esto. No cuentan el commit de este README ni los que se hagan después: un commit no puede citar su propio hash.
+**Primer corte (28/10/2026, cierre de la AE3):** commit `6e7d8c0` en nexa-backend y `3090b89` en nexa-frontend (2026-10-28, los merges de los pull requests #12 y #9 en `main`), el último de cada repositorio al escribir esto. No cuentan el commit de este README ni los que se hagan después: un commit no puede citar su propio hash.
 
 | | nexa-backend | nexa-frontend |
 |---|---|---|
@@ -370,6 +390,18 @@ La línea de coautoría, por modelo:
 | `Co-Authored-By: Claude Haiku 4.5` | 4 | 3 |
 | `Co-Authored-By: Claude Opus 5.5` | 0 | 0 |
 
+**Segundo corte (09/11/2026):** commit `078c0c4` en nexa-backend y `7551f05` en nexa-frontend (los merges de los pull requests #34 y #22 en `main`). No cuenta los commits posteriores.
+
+| | nexa-backend | nexa-frontend |
+|---|---|---|
+| Commits totales | 232 | 148 |
+| Merges de pull requests (los hace la autora) | 36 | 23 |
+| Commits sin contar merges | 196 | 125 |
+| de ellos, con la línea `Co-Authored-By: Claude …` | 67 commits (69 líneas: Sonnet 5.5, 41; Sonnet 5, 24; Haiku 4.5, 4) | 79 commits (80 líneas: Sonnet 5.5, 46; Sonnet 5, 29; Haiku 4.5, 3; Opus 5.5, 2) |
+| de ellos, sin la línea | 129 | 46 |
+
+Nota: los commits sin la línea incluyen, en cada repositorio, la edición del README desde la web y los primeros commits de agosto (6 en el backend y 5 en el frontend), que no son de Claude Code. Igual que en el primer corte, todos los commits que no son merges, ediciones web ni los primeros de agosto los hizo Claude Code a pedido de la autora, lleven o no la línea; el modelo de cada sesión posterior al 28/10 figura en la entrada de la bitácora que describe el cambio (8.3).
+
 Comandos usados:
 
 ```bash
@@ -382,7 +414,7 @@ git log --no-merges -i --invert-grep --grep='^Co-Authored-By: Claude' --oneline 
 
 ### 8.2 Commits sin la línea, hechos con Claude Code
 
-Todos los commits que no son merges, ediciones web ni los primeros de agosto los hizo Claude Code, a pedido de la autora y con el nombre de ella como autor del commit. Desde el 25/09 se dejó de agregar la línea `Co-Authored-By`. Para no subdeclarar, cada commit sin la línea se cruzó con el registro de sesiones de Claude Code (el comando `git commit` ejecutado por el asistente y el modelo de esa sesión), y los posteriores al 06/10 con la bitácora de la AE3 ([`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`](00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md)):
+Todos los commits que no son merges, ediciones web ni los primeros de agosto los hizo Claude Code, a pedido de la autora y con el nombre de ella como autor del commit. Desde el 25/09 se dejó de agregar la línea `Co-Authored-By`. Para no subdeclarar, cada commit sin la línea se cruzó con el registro de sesiones de Claude Code (el comando `git commit` ejecutado por el asistente y el modelo de esa sesión), y los posteriores al 06/10 con la bitácora de la AE3 ([`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`](https://github.com/emilykohler12/nexa-backend/blob/main/00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md)):
 
 | Modelo | nexa-backend | nexa-frontend |
 |---|---|---|
@@ -395,9 +427,9 @@ Todos los commits que no son merges, ediciones web ni los primeros de agosto los
 
 Los commits `54933ca` y `ec976da` son los del README v1.1; `ce550a9` y `2e7734f`, los de la corrección de ese README, y `9bdc3ee` y `4bf842e`, los de la bitácora de la AE2. La última fila reúne los commits sin la línea (sin contar merges) entre `9bdc3ee..6e7d8c0` en el backend y `4bf842e..3090b89` en el frontend; la bitácora de la AE3 describe el trabajo desde el 23/10.
 
-### 8.3 Cambios de la AE4 hechos con Claude Code (rama `integracion-ae4`)
+### 8.3 Cambios de la AE4 hechos con Claude Code
 
-Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella y sobre su propia rama cortada de `integracion-ae4`; la autora revisa y hace el merge. Los commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5` (salvo los de la Fase 6, que no la llevan). Cada fila cita solo los commits de código de la fase: el último commit de cada fase (README y bitácora) no puede citar su propio hash y se identifica en la bitácora de la AE3, que vive solo en **nexa-backend** (`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`); el frontend no guarda bitácora propia.
+Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella y sobre su propia rama (cortada de `integracion-ae4` hasta la Fase 6; esa rama ya está integrada en `main` y borrada); la autora revisa y hace el merge. Los números de entrada son los de la bitácora renumerada el 10/11/2026 (la equivalencia con los anteriores está en su entrada 144). Los commits llevan la línea `Co-Authored-By: Claude Sonnet 5.5` (salvo los de la Fase 6, que no la llevan). Cada fila cita solo los commits de código de la fase: el último commit de cada fase (README y bitácora) no puede citar su propio hash y se identifica en la bitácora de la AE3, que vive solo en **nexa-backend** (`00-gestion/20261028_BitacoraIndividual_KohlerAE3_v1.md`); el frontend no guarda bitácora propia.
 
 | Fase | Rama | Commits |
 |---|---|---|
@@ -407,6 +439,10 @@ Desde la AE4, cada fase del frontend la hace **Claude Code (Claude Sonnet 5.5)**
 | 3b — enlaces del recordatorio de turno y fechas en hora de Argentina | `feat/enlaces-recordatorio-y-fechas` | `0aeb530`, `b05d8d0`, `aeaac72`, `f78f8aa` |
 | 6 — brechas de requisitos: celular argentino, seña del servicio especial, fecha de ingreso, categoría «Combo» y avisos sin emisor | `fix/brechas-requisitos` | `2f15ec1`, `88cfa58`, `6cd805d`, `a1f092b`, `6d46fbb` |
 | Sincronización — `main` traído a `integracion-ae4` para que se pueda mergear sin conflictos (Claude Opus 5.5) | `chore/sincronizar-main-en-integracion` | `88896ee` (merge de `origin/main`) |
+| 7 — tienda, alergias, fechas en hora de Argentina y reprogramación | `fix/fase-7-tienda-alergias-fechas` (pull request 20) | `b234004`, `4b14174`, `ad28510` |
+| 10 — errores nuevos del backend, franjas, postulaciones y saldo pendiente | `fix/fase-10-frontend` (pull request 21) | `2717a91`, `80b5381`, `4c8605d`, `ebc4698`, `d38a129`, `56ab518`, `9d1a696` |
+| Cambios de reglas del 06/11/2026 | `feat/cambios-de-reglas-06-11` (pull request 22) | `45f54e7`, `5eea6c5`, `061560b`, `0f0b7c2`, `7dbcd6e`, `99cfa5b` |
+| Footer y barra de Kologic a todo el ancho (Claude Fable 5.2) | `feat/footer-ancho-completo` | `be8a00f` |
 
 **Fase 1.** El backend eliminó las campañas automáticas, los puntos de fidelización, el recordatorio de inactividad y la fecha de nacimiento; la ficha de la clienta devuelve `visits { totalVisits, totalSpent, lastVisit }` (solo turnos finalizados) en lugar de `loyalty`. `dd1b050`: la ficha lee `visits`, se elimina la pestaña Fidelización y la fecha de nacimiento de la clienta. `55fa408`: se eliminan `AutoPromotionsSection.tsx` y `autoPromotionTypes.ts`; Promociones conserva servicios, productos y eventos especiales. `1f54677`: el alta de la profesional ya no pide la fecha de nacimiento (el backend no la guarda). Pruebas: la ficha muestra visitas y no muestra puntos ni fecha de nacimiento, y `PromotionsPage` no ofrece campañas.
 
@@ -443,7 +479,7 @@ Pruebas: la hora de aviso por defecto, el bloqueo de horas futuras y de más de 
 
 Pruebas: el alias conserva los parámetros, el login y la vuelta, cada acción pide confirmación y no cancela hasta «Sí, cancelar», los casos de borde, los combos y las fechas a las 20:59, 21:00, 21:30 y 23:59 (con el código anterior fallan las de fecha). Resultado de la Fase 3b: lint sin errores, `typecheck:all` sin errores, 296 tests en 34 archivos y build correcto.
 
-**Fase 6.** Cierra siete brechas de requisitos que el backend resolvió en la misma rama (`fix/brechas-requisitos`, pull request 16). Los commits de esta fase están a nombre de la autora y **no llevan la línea `Co-Authored-By`**; la bitácora de la AE3 (entrada 82) dice que los hizo Claude Code (Sonnet 5.5). En el frontend:
+**Fase 6.** Cierra siete brechas de requisitos que el backend resolvió en la misma rama (`fix/brechas-requisitos`, pull request 16). Los commits de esta fase están a nombre de la autora y **no llevan la línea `Co-Authored-By`**; la bitácora de la AE3 (entrada 100) dice que los hizo Claude Code (Sonnet 5.5). En el frontend:
 
 | Commit | Qué cambia |
 |---|---|
@@ -452,18 +488,28 @@ Pruebas: el alias conserva los parámetros, el login y la vuelta, cada acción p
 | `6cd805d` | RF-06: el administrador carga la fecha de ingreso de la profesional (`joinedAt` y `joinedAtIsDefault`; el `PATCH` acepta `joinedAt` o `null`) |
 | `a1f092b` | RF-11: la categoría «Combo» solo se ofrece en los servicios simultáneos (el backend responde `400 VALIDATION_ERROR` si no) |
 | `6d46fbb` | RF-24 y RNF-07: se quitan los tipos de aviso que nadie emite (las filas viejas se ven con un ícono genérico) y el script de Google de `index.html` |
-| `b234004` | Fase 7 (hecha por Claude Code, no por la autora): la tienda pública usa `available` y el administrador `/api/admin/store/products`; el carrito saca y avisa lo no disponible; las salidas por ventas se marcan en el libro; las fechas de PromotionsPage, promotionWindow, InviteModal, InventoryTab y AppointmentModal van en hora de Argentina
-| `4b14174` | Fase 7 (Claude Code): alergias vacías o ausentes con texto explicativo y el botón de anonimizar dice qué se borra y qué se conserva
-| `ad28510` | Fase 7 (Claude Code): Guardar deshabilitado si el horario de la reprogramación no cambió; el enlace de cancelar del recordatorio abre el diálogo aunque el turno haya empezado |
-| `2717a91` | Fase 10 (Claude Code): `errorMessage.ts` con mensajes claros para `400 VALIDATION_ERROR` (le saca la ruta técnica del campo), `404 NOT_FOUND`, `400 INSUFFICIENT_STOCK` y el `429` sin código; conservan el texto del servidor cuando es seguro y usan uno propio solo si falta |
-| `80b5381` | Fase 10 (Claude Code): `JoinUsSection` distingue `400` (datos inválidos), `429` (más de 5 postulaciones por hora) y error de envío; los campos opcionales vacíos siguen siendo válidos (se mandan `null`); campos con `aria-label` |
-| `4c8605d` | Fase 10 (Claude Code): las franjas del onboarding y de Horarios validan que el inicio sea menor al fin antes de enviar (`validateAvailability`) y muestran el error del servidor; Horarios antes se tragaba el error |
-| `ebc4698` | Fase 10 (Claude Code): servicios, promociones, eventos, entradas de stock, galería y profesionales muestran el motivo que manda el servidor (por ejemplo «ya se vendió parte de ese stock») en vez de un texto fijo |
-| `d38a129` | Fase 10 (Claude Code): la tarjeta «Saldo pendiente a cobrar en local» aclara que es el precio menos la seña y menos lo ya cobrado en el local (el backend ahora no baja de cero) |
-| `56ab518` | Fase 10 (Claude Code): `JoinUsSection` muestra el texto en español del servidor cuando responde `500` con `JOB_INTEREST_MAIL_FAILED` (falló el mail al estudio); el resto de los 5xx sigue con el mensaje genérico |
-| `9d1a696` | Fase 10 (Claude Code): `.env.example` con todas las variables `VITE_` que usa el código (`VITE_API_URL`, `VITE_SENTRY_DSN`, `VITE_TENANT_SLUG`, `VITE_LOCALE`, `VITE_CURRENCY`), con explicación y valores falsos |
 
-Pruebas nuevas: `phone.test.ts` y 4 en `SpecialServiceBookingFlow.test.tsx`. Resultado de la Fase 6: `typecheck:all` sin errores, 326 tests en 36 archivos y build correcto. Las fases 4 (tienda) y 5 (anonimización) del backend no tienen fila porque no hay commits de frontend de esas fases; la entrada 78 de la bitácora del backend deja pendiente la adaptación del frontend a la Fase 4 (lista pública de la tienda).
+Pruebas nuevas: `phone.test.ts` y 4 en `SpecialServiceBookingFlow.test.tsx`. Resultado de la Fase 6: `typecheck:all` sin errores, 326 tests en 36 archivos y build correcto. Las fases 4 (tienda) y 5 (anonimización) del backend no tienen fila propia: el frontend se adaptó a ellas en la Fase 7 (la entrada 96 de la bitácora del backend había dejado pendiente la lista pública de la tienda).
+
+**Fase 7.** Adapta el frontend a las fases 4 y 5 del backend (tienda y anonimización) y cierra pendientes de fechas. La hizo Claude Code, no la autora (bitácora, entrada 119):
+
+| Commit | Qué cambia |
+|---|---|
+| `b234004` | La tienda pública usa `available` y el administrador `/api/admin/store/products`; el carrito saca y avisa lo no disponible; las salidas por ventas se marcan en el libro; las fechas de PromotionsPage, promotionWindow, InviteModal, InventoryTab y AppointmentModal van en hora de Argentina |
+| `4b14174` | Alergias vacías o ausentes con texto explicativo y el botón de anonimizar dice qué se borra y qué se conserva |
+| `ad28510` | Guardar deshabilitado si el horario de la reprogramación no cambió; el enlace de cancelar del recordatorio abre el diálogo aunque el turno haya empezado |
+
+**Fase 10.** Adapta el frontend a los códigos de respuesta nuevos de la fase 10 del backend. La hizo Claude Code, no la autora (bitácora, entradas 124 y 125):
+
+| Commit | Qué cambia |
+|---|---|
+| `2717a91` | `errorMessage.ts` con mensajes claros para `400 VALIDATION_ERROR` (le saca la ruta técnica del campo), `404 NOT_FOUND`, `400 INSUFFICIENT_STOCK` y el `429` sin código; conservan el texto del servidor cuando es seguro y usan uno propio solo si falta |
+| `80b5381` | `JoinUsSection` distingue `400` (datos inválidos), `429` (más de 5 postulaciones por hora) y error de envío; los campos opcionales vacíos siguen siendo válidos (se mandan `null`); campos con `aria-label` |
+| `4c8605d` | Las franjas del onboarding y de Horarios validan que el inicio sea menor al fin antes de enviar (`validateAvailability`) y muestran el error del servidor; Horarios antes se tragaba el error |
+| `ebc4698` | Servicios, promociones, eventos, entradas de stock, galería y profesionales muestran el motivo que manda el servidor (por ejemplo «ya se vendió parte de ese stock») en vez de un texto fijo |
+| `d38a129` | La tarjeta «Saldo pendiente a cobrar en local» aclara que es el precio menos la seña y menos lo ya cobrado en el local (el backend ahora no baja de cero) |
+| `56ab518` | `JoinUsSection` muestra el texto en español del servidor cuando responde `500` con `JOB_INTEREST_MAIL_FAILED` (falló el mail al estudio); el resto de los 5xx sigue con el mensaje genérico |
+| `9d1a696` | `.env.example` con todas las variables `VITE_` que usa el código (`VITE_API_URL`, `VITE_SENTRY_DSN`, `VITE_TENANT_SLUG`, `VITE_LOCALE`, `VITE_CURRENCY`), con explicación y valores falsos |
 
 **Sincronización con `main`.** GitHub no podía mergear `integracion-ae4` en `main` porque `main` tenía cambios que la AE4 no: la indexación para Google (pull request 9) y el arreglo de la clienta anonimizada (pull request 8). La hizo Claude Code (Claude Opus 5.5), no la autora, a pedido de ella: el commit `88896ee` mergea `origin/main` en una rama cortada de `integracion-ae4` y resuelve tres conflictos conservando el comportamiento de la AE4:
 
@@ -475,11 +521,9 @@ Pruebas nuevas: `phone.test.ts` y 4 en `SpecialServiceBookingFlow.test.tsx`. Res
 
 El resto de lo que trae `main` (`index.html`, `vercel.json`, `robots.txt`, `sitemap.xml`, `seo.config.ts`, `usePageMeta` y `ClientDetail.tsx`) entró sin conflicto; el script de Google que quitó la Fase 6 no vuelve. Resultado: lint sin errores, `typecheck:all` sin errores, 332 tests en 37 archivos y build correcto.
 
-El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora de la AE3 del backend (entradas 89 a 94, que cubren el frontend de la AE4).
+El último commit de cada fase, el que actualiza esta tabla, se identifica en la bitácora de la AE3 del backend (entradas 107 a 110, 114 y 115, que cubren el frontend de la AE4 hasta la sincronización).
 
----
-
-**Cambios de reglas del 06/11/2026 (directo sobre `main`, sin rama ni pull request).** Los hizo **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella; los commits llevan la línea `Co-Authored-By`. Van junto con los del backend (misma fecha). Resultado: lint sin errores, `typecheck:all` sin errores, 395 tests en 53 archivos y build correcto.
+**Cambios de reglas del 06/11/2026.** Los hizo **Claude Code (Claude Sonnet 5.5)**, no la autora, a pedido de ella; los commits llevan la línea `Co-Authored-By`. Entraron a `main` por el pull request 22 y van junto con los del backend (pull request 34); bitácora, entradas 136 y 137. Resultado: lint sin errores, `typecheck:all` sin errores, 395 tests en 53 archivos y build correcto.
 
 | Commit | Qué cambia |
 |---|---|
@@ -489,6 +533,10 @@ El último commit de cada fase, el que actualiza esta tabla, se identifica en la
 | `0f0b7c2` | Punto 5: prueba que recorre el código y falla si algún texto pide verificar el correo (el recordatorio se manda igual) |
 | `7dbcd6e` | Punto 8: el historial de la clienta en el panel del administrador tiene la columna «Motivo» con un texto en español para cada motivo (`cancelReason` y `cancelledBy`, `shared/utils/cancelReason.ts`) |
 | `99cfa5b` | Punto 7: «Mis vacaciones» en la configuración de la profesional (`VacationSection`): carga, edita y quita las suyas, con validación de que el inicio no sea posterior al fin |
+
+**Footer y barra de Kologic (10/11/2026).** Lo hizo Claude Code (Claude Fable 5.2), no la autora, a pedido de ella: el footer y la barra de Kologic ocupan todo el ancho de la pantalla con margen a los costados (`Footer.css`, `KologicBar.css`, `KologicBar.tsx`) y la barra reserva el lugar del botón flotante de WhatsApp para que el correo de Kologic no quede debajo. Verificado en el navegador a 1600 px y a 375 px de ancho; bitácora, entrada 145.
+
+---
 
 ## 9. Canal de construcción (CI)
 
@@ -551,6 +599,12 @@ Cortarlo con Ctrl+C y usar `npx prisma migrate deploy` (paso 4.5).
 - Verificar que exista `nexa-frontend/.env.local` con `VITE_API_URL="http://localhost:4000"`. Después de cambiarlo, reiniciar `npm run dev` del frontend.
 - Si no aparece ningún servicio para reservar, falta `npm run seed:demo` (paso 4.5).
 
+**El puerto 5173 ya está en uso**
+Arrancar el frontend en otro puerto (`npm run dev -- --port 5183`) y poner ese origen en `FRONTEND_URL` de `nexa-backend/.env` (el backend solo acepta pedidos del origen configurado); después reiniciar el backend.
+
+**El registro rechaza el teléfono**
+Tiene que ser un celular argentino: código de área más número, 10 dígitos (por ejemplo `3764123456`).
+
 **El puerto 4000 ya está en uso**
 Cambiar `PORT` en `nexa-backend/.env` (ej. `4100`) y `VITE_API_URL` en `nexa-frontend/.env.local` al mismo puerto.
 
@@ -559,4 +613,4 @@ Falta `.env.test`, o su `DATABASE_URL` apunta a una base cuyo nombre no contiene
 
 ---
 
-**Versión:** 1.0.0 · **Última actualización:** 2026-10-01
+**Última actualización:** 2026-11-10 (sobre `main`; ver 1.1)
