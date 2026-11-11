@@ -1,0 +1,54 @@
+/* src/features/home/components/KologicBar.css */
+
+/* Barra de Kologic: ocupa todo el ancho, con el mismo aire lateral que el footer. */
+.kologic-bar {
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  padding: 6px clamp(24px, 5vw, 80px);
+}
+
+/* El botón flotante de WhatsApp queda fijo abajo a la derecha (60 px + 24 px de margen):
+   se le reserva ese lugar para que el correo nunca quede debajo. */
+.kologic-bar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-right: 96px;
+}
+
+.kologic-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.kologic-bar__logo {
+  width: 80px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.kologic-bar__name { font-weight: 300; font-size: 16px; }
+
+.kologic-bar__tagline,
+.kologic-bar__email {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 300;
+}
+
+.kologic-bar__tagline { text-align: center; }
+.kologic-bar__email { flex-shrink: 0; overflow-wrap: anywhere; }
+
+/* Celular y tablet angosta: todo apilado y centrado, con el mismo margen de los dos lados
+   para que siga centrado y libre del botón de WhatsApp. */
+@media (max-width: 768px) {
+  .kologic-bar { padding: 10px 92px; }
+  .kologic-bar__inner {
+    flex-direction: column;
+    padding-right: 0;
+    text-align: center;
+  }
+}

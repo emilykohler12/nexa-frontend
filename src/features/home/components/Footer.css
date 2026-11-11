@@ -2,16 +2,16 @@
 
 .footer {
   color: #fff;
-  padding: 40px 24px 20px;
+  /* Todo el ancho de la pantalla, con aire a los costados que crece con el ancho. */
+  padding: 40px clamp(24px, 5vw, 80px) 20px;
   font-family: var(--font-cormorant, 'Cormorant Garamond', Georgia, serif);
 }
 
 .footer-grid {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   display: grid;
   grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr;
-  column-gap: 64px;
+  column-gap: clamp(24px, 4vw, 64px);
   row-gap: 32px;
   align-items: start;
 }
