@@ -22,6 +22,10 @@ export interface AvailabilityResponse {
   // "HH:mm" del primer inicio reservable; '00:00' si la fecha es futura; null si la fecha ya pasó.
   earliestStart?:  string | null
   reopenedStarts?: string[]
+  // Vacaciones de la profesional (AAAA-MM-DD) y si la fecha consultada cae adentro.
+  vacationFrom?:   string | null
+  vacationTo?:     string | null
+  onVacation?:     boolean
 }
 
 // Qué día es la fecha consultada según el servidor: 'past' (ya pasó), 'today' (hoy, hay un primer
@@ -32,6 +36,8 @@ export interface DaySlots {
   regular:  string[]
   reopened: string[]
   dayKind:  DayKind
+  // Presente cuando la profesional está de vacaciones ese día: no se ofrecen horarios y se explica por qué.
+  vacation?: { from: string; to: string }
 }
 
 export const EMPTY_DAY: DaySlots = { regular: [], reopened: [], dayKind: 'unknown' }
@@ -45,6 +51,9 @@ function dayKindOf(earliestStart: string | null | undefined): DayKind {
 export function slotsFromAvailability(res: AvailabilityResponse, date: string): DaySlots {
   const dayKind = dayKindOf(res.earliestStart)
   if (dayKind === 'past') return { regular: [], reopened: [], dayKind }
+  if (res.onVacation && res.vacationFrom && res.vacationTo) {
+    return { regular: [], reopened: [], dayKind, vacation: { from: res.vacationFrom, to: res.vacationTo } }
+  }
 
   const backendDay = JS_DAY_TO_BACKEND_DAY[new Date(`${date}T00:00:00`).getDay()]
   // Un mismo día puede tener varias filas (varios rangos con un hueco entre medio, ej: 08–12 y

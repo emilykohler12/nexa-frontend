@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Sparkles, ShoppingBag, Tag, CalendarClock } from 'lucide-react'
+import { Bell, Sparkles, ShoppingBag, Tag, CalendarClock, CalendarX, Repeat } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { ClientReviewsList } from '@/features/client/reviews/ClientReviewsList'
@@ -14,6 +14,9 @@ const TYPE_CONFIG: Record<ClientNotificationType, { icon: typeof Bell; color: st
   new_product:          { icon: ShoppingBag,  color: '#8e24aa' },
   new_promotion:        { icon: Tag,          color: '#d4af37' },
   special_service:      { icon: CalendarClock, color: '#8a6800' },
+  appointment_cancelled:   { icon: CalendarX,     color: '#c62828' },
+  appointment_rescheduled: { icon: CalendarClock, color: '#8a6800' },
+  professional_changed:    { icon: Repeat,        color: '#069494' },
 }
 
 // RF-24: los tipos que nadie emitía se quitaron; un aviso viejo guardado con otro tipo se ve con el ícono genérico.

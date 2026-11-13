@@ -31,6 +31,12 @@ interface Props {
   dateLocked?: boolean;
 }
 
+// AAAA-MM-DD → DD/MM/AAAA, sin pasar por la zona horaria del navegador.
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 export function DateTimeStep({ professionalId, serviceId, selectedDate, selectedTime, onSelectDate, onSelectTime, refreshSignal, dateLocked }: Props) {
   const { business } = useTenant();
   const isAny = professionalId === ANY_PROFESSIONAL_ID;
@@ -124,7 +130,9 @@ export function DateTimeStep({ professionalId, serviceId, selectedDate, selected
           </p>
           {noTimes ? (
             <p className="text-gray-400 text-sm" style={{ fontFamily: 'var(--font-lato)' }}>
-              {slots.dayKind === 'past'
+              {slots.vacation
+                ? `La profesional está de vacaciones del ${formatShortDate(slots.vacation.from)} al ${formatShortDate(slots.vacation.to)}. Elegí otra fecha.`
+                : slots.dayKind === 'past'
                 ? 'Esa fecha ya pasó. Elegí otra fecha.'
                 : (isAny || hasWorkingHours) && slots.dayKind === 'today'
                 ? 'No quedan horarios disponibles por hoy. Probá con otra fecha.'

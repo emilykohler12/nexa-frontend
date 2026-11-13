@@ -68,6 +68,19 @@ export function ActivityPage() {
   const clearFilters = () => { setFilterUser(''); setFilterDate(''); setFilterModule(''); setFilterLevel('') }
   const hasActiveFilters = filterUser || filterDate || filterModule || filterLevel
 
+  const [markError, setMarkError] = useState<string | null>(null)
+  // Seña coordinada por WhatsApp: el administrador la marca paga desde acá apenas la recibe.
+  const markDepositPaid = async (log: ActivityLog) => {
+    if (!log.appointmentId) return
+    setMarkError(null)
+    try {
+      await api.patch(`/api/admin/appointments/${log.appointmentId}/deposit-paid`)
+      setLogs(prev => prev.map(l => l.appointmentId === log.appointmentId && l.pendingWhatsappDeposit ? { ...l, pendingWhatsappDeposit: false } : l))
+    } catch {
+      setMarkError('No se pudo marcar la seña como paga. Probá de nuevo.')
+    }
+  }
+
   const resolveReview = (log: ActivityLog, decision: 'approved' | 'rejected') => {
     if (!log.reviewId) return
     setLogs(prev => prev.map(l => l.id === log.id ? { ...l, reviewStatus: decision } : l))
@@ -114,6 +127,8 @@ export function ActivityPage() {
         )}
       </div>
 
+      {markError && <p role="alert" style={{ color: '#e53935', fontSize: '13px', margin: '0 0 8px' }}>{markError}</p>}
+
       <p className="activity-count">
         {filtered.length} registro{filtered.length !== 1 ? 's' : ''}{hasActiveFilters ? ' (filtrados)' : ''}
       </p>
@@ -140,6 +155,14 @@ export function ActivityPage() {
                   <span className="activity-time">{formatTimestamp(log.timestamp)}</span>
                   <span className="activity-action">{log.action}</span>
                   <span className="activity-user">{log.user}</span>
+                  {log.pendingWhatsappDeposit && (
+                    <button
+                      onClick={e => { e.stopPropagation(); markDepositPaid(log) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', border: 'none', borderRadius: '8px', background: '#4caf50', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: "'Lato', sans-serif", flexShrink: 0 }}
+                    >
+                      <Check size={13} /> Marcar seña pagada
+                    </button>
+                  )}
                   {(log.detail || log.reviewId) && (
                     <ChevronDown size={16} className={`activity-chevron ${isOpen ? 'activity-chevron--open' : ''}`} />
                   )}

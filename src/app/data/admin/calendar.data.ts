@@ -55,6 +55,8 @@ export interface CalendarAppointment {
   serviceName: string;
   serviceDuration: number;
   servicePrice: number;
+  // Precio de lista del servicio (el que cargó el administrador); en un combo, servicePrice es el precio repartido.
+  serviceListPrice?: number;
   start: string;
   end: string;
   status: AppointmentStatus;

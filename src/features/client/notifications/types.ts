@@ -3,6 +3,9 @@ export type ClientNotificationType =
   | 'new_product'
   | 'new_promotion'
   | 'special_service'
+  | 'appointment_cancelled'
+  | 'appointment_rescheduled'
+  | 'professional_changed'
 
 export interface ClientNotification {
   id:        string

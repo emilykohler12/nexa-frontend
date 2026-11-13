@@ -4,6 +4,7 @@ import { useTenant }   from '@/features/tenant/TenantContext'
 import { useAuth }     from '@/features/auth/AuthContext'
 import { ROUTES }      from '@/app/config/routes.config'
 import { Calendar, Plus, User, Heart, LogOut, Home, Bell, ShoppingBag } from 'lucide-react'
+import { StaffChangePopup } from '@/features/client/notifications/StaffChangePopup'
 import './ClientLayout.css'
 
 const NAV_ITEMS = [
@@ -109,6 +110,9 @@ export function ClientLayout() {
           )
         })}
       </nav>
+
+      {/* Cambios que hizo el personal en sus turnos (cancelación, reprogramación, cambio de profesional) */}
+      <StaffChangePopup primaryColor={primaryColor} />
     </div>
   )
 }
