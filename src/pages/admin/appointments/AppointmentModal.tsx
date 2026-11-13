@@ -125,7 +125,6 @@ export function AppointmentModal({
 
   return (
     <div
-      onClick={onClose}
       style={{
         position: 'fixed', inset: 0,
         background: 'rgba(0,0,0,0.45)',
@@ -350,7 +349,7 @@ export function AppointmentModal({
               // cada uno con su propia duración, precio y profesional.
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {[
-                  { appointmentId: appointment.id, serviceName: appointment.serviceName, professionalId: appointment.professionalId, professionalName: appointment.professionalName, duration: appointment.serviceDuration, price: appointment.servicePrice },
+                  { appointmentId: appointment.id, serviceName: appointment.serviceName, professionalId: appointment.professionalId, professionalName: appointment.professionalName, duration: appointment.serviceDuration, price: appointment.serviceListPrice ?? appointment.servicePrice },
                   ...(appointment.simultaneousWith ?? []),
                 ].map(leg => {
                   const legColor = professionals.find(p => p.id === leg.professionalId)?.color ?? profColor;

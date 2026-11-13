@@ -15,6 +15,8 @@ export interface ActivityLog {
   // desde acá mismo para que se muestre (o no) en "Opiniones de clientes".
   reviewId?:     string
   reviewStatus?: 'pending' | 'approved' | 'rejected'
+  // Solo en las entradas «…seña por coordinar por WhatsApp»: true mientras la seña siga sin cobrarse.
+  pendingWhatsappDeposit?: boolean
 }
 
 export const ACTIVITY_MODULE_LABEL: Record<ActivityModule, string> = {
