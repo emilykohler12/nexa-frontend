@@ -475,7 +475,7 @@ export function Settings() {
             <div className="settings-session-row">
               <span className="settings-session-label">Cuenta creada</span>
               <span className="settings-session-value">
-                {user?.createdAt ? formatDateTime(user.createdAt) : 'No disponible'}
+                {user?.createdAt ? formatDate(user.createdAt) : 'No disponible'}
               </span>
             </div>
           </div>
@@ -591,8 +591,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function formatDateTime(iso: string): string {
+function formatDate(iso: string): string {
   const date = new Date(iso)
   if (isNaN(date.getTime())) return 'No disponible'
-  return date.toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })
+  return date.toLocaleDateString('es-AR', { dateStyle: 'medium', timeZone: 'America/Argentina/Buenos_Aires' })
 }
