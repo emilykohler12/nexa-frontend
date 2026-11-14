@@ -9,6 +9,7 @@ export interface CatalogService {
   price:       number
   image:       string | null
   status:      string
+  isCombo?:    boolean
 }
 
 export type AssignedStatus = 'active' | 'inactive'

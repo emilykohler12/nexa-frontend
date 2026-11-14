@@ -44,6 +44,18 @@ describe('formulario de la profesional: servicios', () => {
     expect(screen.queryByText('52fcbab4-a56b-4706-8fbb-c8f3d4253c26')).not.toBeInTheDocument()
   })
 
+  it('no ofrece los servicios simultáneos (combos): los asigna el administrador', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { services: [
+      { id: 's1', name: 'Capping manos', duration: 90, price: 22000, status: 'active', isCombo: false },
+      { id: 'c1', name: 'Extensiones + Capping', duration: 120, price: 42000, status: 'active', isCombo: true },
+    ] } } as never)
+    render(<Harness />)
+
+    expect(await screen.findByText('Capping manos')).toBeInTheDocument()
+    expect(screen.queryByText('Extensiones + Capping')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1)
+  })
+
   it('los textos del paso son negros y grandes para que se lean', async () => {
     render(<Harness />)
     const name = await screen.findByText('Capping manos')
