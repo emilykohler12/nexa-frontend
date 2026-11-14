@@ -84,6 +84,8 @@ export interface WorkData {
 
 export interface SelectedService {
   serviceId:  string
+  // Solo para mostrar el resumen; no se manda al servidor.
+  name?:      string
   ownPrice:   number
   ownDuration: number
 }

@@ -36,7 +36,7 @@ export function ServicesStep({ selected, onChange }: Props) {
     if (isSelected(service.id)) {
       onChange(selected.filter(s => s.serviceId !== service.id))
     } else {
-      onChange([...selected, { serviceId: service.id, ownPrice: service.price, ownDuration: service.duration }])
+      onChange([...selected, { serviceId: service.id, name: service.name, ownPrice: service.price, ownDuration: service.duration }])
     }
   }
 
@@ -54,7 +54,7 @@ export function ServicesStep({ selected, onChange }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <p style={{ fontSize: '13px', color: '#888', margin: '0 0 4px' }}>
+      <p style={{ fontSize: '17px', fontWeight: 600, color: '#000', margin: '0 0 6px', fontFamily: "'Lato', sans-serif" }}>
         Seleccioná los servicios que realizás. Podés ajustar tu precio.
       </p>
 
@@ -75,13 +75,13 @@ export function ServicesStep({ selected, onChange }: Props) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
               <input
                 type="checkbox" checked={active} onChange={() => toggle(service)}
-                style={{ width: '16px', height: '16px', accentColor: primary, cursor: 'pointer' }}
+                style={{ width: '20px', height: '20px', accentColor: primary, cursor: 'pointer' }}
               />
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: '15px', color: '#1a1a1a', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '19px', color: '#000', fontFamily: "'Lato', sans-serif" }}>
                   {service.name}
                 </p>
-                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#888', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                <p style={{ margin: '4px 0 0', fontSize: '16px', color: '#000', fontFamily: "'Lato', sans-serif" }}>
                   {service.duration} min · precio sugerido ${service.price.toLocaleString('es-AR')}
                 </p>
               </div>
@@ -89,7 +89,7 @@ export function ServicesStep({ selected, onChange }: Props) {
 
             {active && sel && (
               <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#666' }}>Tu precio:</span>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: '#000' }}>Tu precio:</span>
                 <button
                   type="button"
                   onClick={() => updatePrice(service.id, Math.max(0, sel.ownPrice - 500))}

@@ -1,5 +1,4 @@
 // src/pages/admin/professionals/InviteModal.tsx
-import { todayInArgentina } from '@/shared/utils/argentinaTime'
 import { useState }       from 'react'
 import { X, Copy, Check } from 'lucide-react'
 import { api }            from '@/shared/utils/api'
@@ -21,7 +20,6 @@ interface Props {
 export function InviteModal({ onClose, onInviteSent }: Props) {
   const { business }                    = useTenant()
   const [email,      setEmail]          = useState('')
-  const [expiresAt,  setExpiresAt]      = useState('')
   const [emailError, setEmailError]     = useState('')
   const [apiError,   setApiError]       = useState('')
   const [loading,    setLoading]        = useState(false)
@@ -49,10 +47,7 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
     setApiError('')
     
     try {
-      const res = await api.post<{ token: string; expiresAt: string }>('/api/invitations', {
-        email,
-        expiresAt: expiresAt || undefined,
-      })
+      const res = await api.post<{ token: string; expiresAt: string }>('/api/invitations', { email })
 
       const newLink: GeneratedLink = {
         email,
@@ -64,7 +59,6 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
       onInviteSent?.()
       setPrevious(prev => [newLink, ...prev])
       setEmail('')
-      setExpiresAt('')
     } catch (err: unknown) {
       setApiError(safeErrorMessage(err, 'Error al generar la invitación'))
     } finally {
@@ -114,16 +108,7 @@ export function InviteModal({ onClose, onInviteSent }: Props) {
             {emailError && <p className="invite-field-error">{emailError}</p>}
           </label>
 
-          <label className="invite-field">
-            <span>Vencimiento del link</span>
-            <input
-              type="date"
-              value={expiresAt}
-              min={todayInArgentina()}
-              onChange={e => setExpiresAt(e.target.value)}
-            />
-            <p className="invite-field-hint">Vacío = 7 días por defecto</p>
-          </label>
+          <p className="invite-field-hint">El link vence a los 7 días de generarlo.</p>
 
           {apiError && <p className="invite-field-error">{apiError}</p>}
 

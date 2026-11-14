@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '@/shared/utils/api'
 import { useTenant } from '@/features/tenant/TenantContext'
+import { useAuth } from '@/features/auth/AuthContext'
 import { ROUTES } from '@/app/config/routes.config'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { isArgentineMobile, PHONE_ERROR } from '@/shared/utils/phone'
@@ -92,6 +93,7 @@ interface FormState {
 }
 
 function RegisterForm({ token, email, onSuccess }: RegisterFormProps) {
+  const { refreshUser } = useAuth()
   const [form, setForm]       = useState<FormState>({ name: '', phone: '', password: '', confirm: '', gender: '' })
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -118,6 +120,8 @@ function RegisterForm({ token, email, onSuccess }: RegisterFormProps) {
         gender:   form.gender,
         password: form.password,
       })
+      // La invitación dejó la sesión de la profesional en las cookies: se vuelve a leer antes de ir a su panel.
+      await refreshUser()
       onSuccess()
     } catch (err: unknown) {
       setError(safeErrorMessage(err, 'Error al completar el registro'))

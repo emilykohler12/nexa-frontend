@@ -36,7 +36,8 @@ export function ConfirmationStep({ data }: Props) {
   const services = business?.services ?? []
 
   const activeDays = WEEK_DAYS.filter(d => data.availability[d].length > 0)
-  const getName = (id: string) => services.find(s => s.id === id)?.name ?? id
+  // El nombre viaja con el servicio elegido; si falta, se busca en el catálogo y, como último recurso, un texto genérico (nunca el id).
+  const getName = (s: { serviceId: string; name?: string }) => s.name ?? services.find(x => x.id === s.serviceId)?.name ?? 'Servicio'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -57,7 +58,7 @@ export function ConfirmationStep({ data }: Props) {
           <p style={{ color: '#aaa', fontSize: '16px', margin: 0 }}>Sin servicios seleccionados</p>
         ) : data.services.map(s => (
           <div key={s.serviceId} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
-            <span style={{ fontSize: '16px', color: '#333', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{getName(s.serviceId)}</span>
+            <span style={{ fontSize: '16px', color: '#333', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{getName(s)}</span>
             <span style={{ fontSize: '18px', fontWeight: 700, color: accent, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>${s.ownPrice.toLocaleString('es-AR')}</span>
           </div>
         ))}
