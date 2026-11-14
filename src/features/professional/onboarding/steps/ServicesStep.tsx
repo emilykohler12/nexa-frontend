@@ -11,6 +11,7 @@ interface CatalogService {
   duration: number
   price:    number
   status:   string
+  isCombo?: boolean
 }
 
 interface Props {
@@ -26,7 +27,8 @@ export function ServicesStep({ selected, onChange }: Props) {
 
   useEffect(() => {
     api.get<{ services: CatalogService[] }>('/api/services')
-      .then(res => setServices((res.data.services ?? []).filter(s => s.status === 'active')))
+      // Los servicios simultáneos (combos) los asigna el administrador: no se ofrecen acá.
+      .then(res => setServices((res.data.services ?? []).filter(s => s.status === 'active' && !s.isCombo)))
       .catch(() => setServices([]))
   }, [])
 

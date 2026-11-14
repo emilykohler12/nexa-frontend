@@ -23,7 +23,8 @@ export function Services() {
       api.get<{ services: AssignedService[] }>('/api/professional/services'),
     ])
       .then(([catalogRes, assignedRes]) => {
-        setCatalog(catalogRes.data.services ?? [])
+        // Los servicios simultáneos (combos) los asigna el administrador: no se ofrecen ni se muestran acá.
+        setCatalog((catalogRes.data.services ?? []).filter(s => !s.isCombo))
         setAssigned(assignedRes.data.services ?? [])
       })
       .catch(() => setError('No se pudieron cargar los servicios'))

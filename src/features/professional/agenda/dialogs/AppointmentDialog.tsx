@@ -1,5 +1,6 @@
 import { NO_ALLERGY_INFO } from '@/features/professional/types/client'
 import { useState } from 'react'
+import { minutesSinceStart } from '@/shared/utils/argentinaTime'
 import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
 import { appointmentStatusConfig, getAppointmentStatusConfig, isNoShowStatus } from '@/features/professional/utils/appointmentStatus'
 import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
@@ -39,6 +40,8 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
   // (NoShowActions y CancelAppointmentDialog).
   const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished']
   const canCancel = appointment.status === 'confirmed' || appointment.status === 'pending'
+  // «Finalizado» solo desde la hora de inicio.
+  const notStarted = minutesSinceStart(appointment.date, appointment.time) < 0
   const noShow = isNoShowStatus(appointment.status)
   const currentCfg = getAppointmentStatusConfig(appointment.status, appointment.cancelReason, appointment.displayStatus, appointment.statusLabel)
 
@@ -206,15 +209,19 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             <div style={{ display: noShow ? 'none' : 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
               {STATUS_OPTIONS.map(s => {
                 const cfg = appointmentStatusConfig[s]
+                const blocked = s === 'finished' && notStarted
                 return (
                   <button
                     key={s}
                     onClick={() => setStatus(s)}
+                    disabled={blocked}
+                    title={blocked ? 'Se puede finalizar desde la hora de inicio del turno' : undefined}
                     style={{
                       padding: '5px 12px', border: 'none', borderRadius: '20px',
                       background: status === s ? cfg.bg : '#f0f0f0',
                       color: status === s ? cfg.color : '#888',
-                      fontWeight: 600, fontSize: '13px', cursor: 'pointer',
+                      opacity: blocked ? 0.5 : 1,
+                      fontWeight: 600, fontSize: '13px', cursor: blocked ? 'not-allowed' : 'pointer',
                       fontFamily: "'Lato', sans-serif",
                       transition: 'all 0.15s',
                     }}

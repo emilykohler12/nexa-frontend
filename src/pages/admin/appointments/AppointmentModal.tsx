@@ -5,7 +5,7 @@ import {
   AlertCircle, Users, Image as ImageIcon, Tag, MessageCircle,
 } from 'lucide-react';
 import { api } from '@/shared/utils/api';
-import { argentinaDateOf, argentinaTimeOf, appointmentInstant } from '@/shared/utils/argentinaTime';
+import { argentinaDateOf, argentinaTimeOf, appointmentInstant, minutesSinceStart } from '@/shared/utils/argentinaTime';
 import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
 import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
@@ -116,6 +116,8 @@ export function AppointmentModal({
     onClose();
   };
 
+  // «Marcar finalizado» solo desde la hora de inicio (el servidor igual lo rechaza: FINISH_BEFORE_START).
+  const notStarted = minutesSinceStart(appointment.start.slice(0, 10), appointment.start.slice(11, 16)) < 0;
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('es-AR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -215,7 +217,8 @@ export function AppointmentModal({
                         if (error) { setActionError(error); return; }
                         onClose();
                       }}
-                      disabled={saving}
+                      disabled={saving || (status === 'finished' && notStarted)}
+                      title={status === 'finished' && notStarted ? 'Se puede finalizar desde la hora de inicio del turno' : undefined}
                       style={{
                         padding: '8px 14px',
                         borderRadius: '8px',
@@ -226,7 +229,7 @@ export function AppointmentModal({
                         fontSize: '13px',
                         cursor: 'pointer',
                         fontFamily: "'Lato', sans-serif",
-                        opacity: saving ? 0.6 : 1,
+                        opacity: saving || (status === 'finished' && notStarted) ? 0.5 : 1,
                       }}
                     >
                       {status === 'confirmed' ? 'Confirmar' : status === 'finished' ? 'Marcar finalizado' : 'Marcar cancelado por inasistencia'}
