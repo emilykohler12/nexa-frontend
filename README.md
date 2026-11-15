@@ -411,8 +411,8 @@ npm test
 **Esperado:**
 
 ```
-Test Files  64 passed (64)
-     Tests  704 passed (704)
+Test Files  68 passed (68)
+     Tests  714 passed (714)
 ```
 
 Los tests del caso de uso vertical están en `tests/integration/appointments.booking.test.ts`, entre ellos:
@@ -434,8 +434,8 @@ npm test
 **Esperado:**
 
 ```
-Test Files  58 passed (58)
-     Tests  405 passed (405)
+Test Files  62 passed (62)
+     Tests  412 passed (412)
 ```
 
 Si alguna prueba falla en una máquina lenta, volver a correr solo ese archivo (`npx vitest run ruta/del/archivo`) antes de dar el problema por cierto.
