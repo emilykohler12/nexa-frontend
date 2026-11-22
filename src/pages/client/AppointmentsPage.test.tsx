@@ -49,31 +49,34 @@ async function openHistory() {
 describe('Mis turnos: turnos que figuran como «No asistió»', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
-  it('un turno «No asistió (automático)» aparece en el Historial con su etiqueta', async () => {
-    mockAppointments([appointment({ status: 'no_show_auto', statusLabel: 'No asistió (automático)' })])
+  it('un turno marcado por el sistema aparece en el Historial como «No asistió», sin decir que fue automático', async () => {
+    mockAppointments([appointment({ status: 'no_show_auto', statusLabel: 'No asistió' })])
     await openHistory()
 
     expect(await screen.findByText('Corte')).toBeInTheDocument()
-    expect(screen.getByText('No asistió (automático)')).toBeInTheDocument()
+    expect(screen.getByText('No asistió')).toBeInTheDocument()
+    expect(screen.queryByText(/automático/i)).not.toBeInTheDocument()
   })
 
-  it('no se puede cancelar ni reprogramar: no hay botones y se explica por qué', async () => {
-    mockAppointments([appointment({ status: 'no_show_auto', statusLabel: 'No asistió (automático)' })])
+  it('no hay botones ni ningún aviso (ni texto en naranja): solo el estado «No asistió»', async () => {
+    mockAppointments([appointment({ status: 'no_show_auto', statusLabel: 'No asistió' })])
     await openHistory()
 
-    expect(await screen.findByText(NOTICE)).toBeInTheDocument()
+    expect(await screen.findByText('Corte')).toBeInTheDocument()
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Cancelar/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Reprogramar/ })).not.toBeInTheDocument()
-    expect(screen.getByText(/Si viniste, avisale al estudio/)).toBeInTheDocument()
+    expect(screen.queryByText(/Si viniste, avisale al estudio/)).not.toBeInTheDocument()
   })
 
-  it('al abrir el detalle del turno repite el mensaje', async () => {
-    mockAppointments([appointment({ status: 'no_show_auto', statusLabel: 'No asistió (automático)' })])
+  it('al abrir el detalle del turno tampoco hay aviso', async () => {
+    mockAppointments([appointment({ status: 'no_show_auto', statusLabel: 'No asistió' })])
     const user = await openHistory()
 
     await user.click(await screen.findByText('Corte'))
 
-    expect(await screen.findAllByText(NOTICE)).toHaveLength(2)
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+    expect(screen.queryByText(/porque no se registró tu llegada/)).not.toBeInTheDocument()
   })
 
   it('un turno «No asistió» marcado por el personal se ve en el Historial, sin el aviso de corrección', async () => {

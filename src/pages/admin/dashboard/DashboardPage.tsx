@@ -28,8 +28,9 @@ const PERIOD_OPTIONS: { key: PeriodFilter; label: string }[] = [
 // flex-grow) para que todas las cards midan exactamente lo mismo sin importar
 // cuántas entren en cada fila — si no, una fila con menos cards que otra
 // terminaba estirando las suyas más que las demás.
-const KPI_ROW_STYLE: CSSProperties = { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px' }
-const KPI_ITEM_STYLE: CSSProperties = { flex: '0 0 240px', maxWidth: '100%' }
+const KPI_ROW_STYLE: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '14px' }
+// Las tarjetas se reparten TODO el ancho de la pantalla (antes tenían ancho fijo y quedaba espacio vacío a los costados).
+const KPI_ITEM_STYLE: CSSProperties = { flex: '1 1 220px', minWidth: 0 }
 
 const EMPTY_DASHBOARD_DATA: DashboardData = {
   depositRevenueTotal: 0,

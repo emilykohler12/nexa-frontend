@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Calendar, Clock, User, DollarSign, Shield, MapPin, Phone, AlertCircle, Users, Image as ImageIcon, FileText, Pencil, Tag } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
-import { getAppointmentStatusDisplay, NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
 import type { AppointmentStatus } from '@/features/client/types'
 import { PostBookingDetails, type AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
 import './AppointmentsPage.css'
@@ -94,12 +94,6 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
           >
             {status.label}
           </span>
-
-          {appointment.status === 'no_show_auto' && (
-            <p role="note" style={{ margin: 0, fontFamily: 'var(--font-lato)', fontSize: '14px', color: '#b45309' }}>
-              {NO_SHOW_AUTO_NOTICE}
-            </p>
-          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: 'var(--font-lato)', fontSize: '15px', color: '#333' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

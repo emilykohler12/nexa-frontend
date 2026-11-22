@@ -1,5 +1,5 @@
 import { useState, useEffect, useEffectEvent } from 'react'
-import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, Shield, MessageCircle } from 'lucide-react'
+import { ChevronLeft, Check, Clock, Users2, Shuffle, ExternalLink, RefreshCw, MapPin, Info, MessageCircle } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import {
@@ -127,11 +127,6 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
   const [sharedDetails, setSharedDetails] = useState<SharedDetails | null>(null)
   const [comboGroupId, setComboGroupId] = useState<string | null>(null)
   const [checkingPayment, setCheckingPayment] = useState(false)
-  const [proPoliciesById, setProPoliciesById] = useState<Record<string, {
-    name: string
-    toleranceMinutes: number | null; latePenalty: string | null
-    cancellationPolicy: string | null; reschedulePolicy: string | null; depositPolicy: string | null
-  }>>({})
 
   // Carga los servicios del combo y la configuración de pagos. Se dispara solo al cambiar de combo (combo.id).
   const loadCombo = useEffectEvent(() => {
@@ -266,38 +261,6 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, comboGroupId, detailsQueue.length])
-
-  // Al llegar a éxito, traemos las políticas de CADA profesional asignada (una
-  // por servicio) para mostrarlas junto con ubicación y qué incluye cada
-  // servicio — mismo contenido que ve un cliente que reserva un solo servicio.
-  useEffect(() => {
-    if (phase !== 'success' || assignedProfessionalIds.length === 0) return
-    api.get<{ professionals: {
-      id: string; name: string
-      toleranceMinutes?: number | null; latePenalty?: string | null
-      cancellationPolicy?: string | null; reschedulePolicy?: string | null; depositPolicy?: string | null
-    }[] }>('/api/professional/public')
-      .then(res => {
-        const map: typeof proPoliciesById = {}
-        for (const proId of assignedProfessionalIds) {
-          const pro = res.data.professionals.find(p => p.id === proId)
-          if (!pro) continue
-          if (pro.latePenalty || pro.cancellationPolicy || pro.reschedulePolicy || pro.depositPolicy || pro.toleranceMinutes) {
-            map[proId] = {
-              name: pro.name,
-              toleranceMinutes:   pro.toleranceMinutes   ?? null,
-              latePenalty:        pro.latePenalty        ?? null,
-              cancellationPolicy: pro.cancellationPolicy ?? null,
-              reschedulePolicy:   pro.reschedulePolicy   ?? null,
-              depositPolicy:      pro.depositPolicy      ?? null,
-            }
-          }
-        }
-        setProPoliciesById(map)
-      })
-      .catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase])
 
   // Después de todos los hooks: un return anticipado antes de un hook cambia el orden de los hooks entre renders.
   if (!business) return null
@@ -699,33 +662,6 @@ export function ComboBookingFlow({ combo, onBack, onSuccess }: Props) {
           </div>
         )}
 
-        {/* Políticas de cada profesional — una por servicio */}
-        {Object.entries(proPoliciesById).map(([proId, pol]) => (
-          <div key={proId}>
-            <p className="text-xs font-bold uppercase tracking-wide mb-2 flex items-center gap-1.5" style={{ fontFamily: 'var(--font-lato)', color: '#888', letterSpacing: '0.06em' }}>
-              <Shield size={13} /> Políticas de {pol.name}
-            </p>
-            <ul className="flex flex-col gap-2" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-              {pol.toleranceMinutes != null && (
-                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>
-                  · Tolerancia de {pol.toleranceMinutes} minutos
-                </li>
-              )}
-              {pol.latePenalty && (
-                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.latePenalty}</li>
-              )}
-              {pol.cancellationPolicy && (
-                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.cancellationPolicy}</li>
-              )}
-              {pol.reschedulePolicy && (
-                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.reschedulePolicy}</li>
-              )}
-              {pol.depositPolicy && (
-                <li className="text-sm" style={{ fontFamily: 'var(--font-lato)', color: '#555' }}>· {pol.depositPolicy}</li>
-              )}
-            </ul>
-          </div>
-        ))}
       </div>
 
       <button

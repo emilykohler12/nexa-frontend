@@ -190,8 +190,8 @@ describe('Mis turnos: enlaces del mail de recordatorio', () => {
       await expectNotice('?turno=a1&accion=cancelar', [appointment({ time: '09:30' })], /ya empezó/)
     })
 
-    it('«No asistió (automático)» explica que no se puede cancelar ni reprogramar', async () => {
-      await expectNotice('?turno=a1&accion=reprogramar', [appointment({ status: 'no_show_auto', time: '09:30' })], /No se puede cancelar ni reprogramar/)
+    it('«No asistió» (también el automático) solo dice que figura como «No asistió»', async () => {
+      await expectNotice('?turno=a1&accion=reprogramar', [appointment({ status: 'no_show_auto', time: '09:30' })], /figura como «No asistió»./)
     })
 
     it('turno ya cancelado', async () => {

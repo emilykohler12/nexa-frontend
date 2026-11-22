@@ -60,6 +60,26 @@ describe('formulario de la profesional: servicios', () => {
     render(<Harness />)
     const name = await screen.findByText('Capping manos')
     expect(name).toHaveStyle({ color: 'rgb(0, 0, 0)', fontSize: '19px' })
-    expect(screen.getByText(/precio sugerido/)).toHaveStyle({ color: 'rgb(0, 0, 0)', fontSize: '16px' })
+    expect(screen.getByText(/^Precio \$22\.000/)).toHaveStyle({ color: 'rgb(0, 0, 0)', fontSize: '16px' })
+  })
+
+  it('la profesional solo elige servicios: no ajusta precio ni duración (los carga el administrador)', async () => {
+    render(<Harness />)
+    await userEvent.click(await screen.findByRole('checkbox'))
+
+    expect(screen.queryByText(/Tu precio/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
+    expect(screen.queryByText(/\d+ min/)).not.toBeInTheDocument()
+  })
+
+  it('no ofrece los servicios especiales: los asigna el administrador', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { services: [
+      { id: 's1', name: 'Capping manos', duration: 90, price: 22000, status: 'active' },
+      { id: 'e1', name: 'Depilación definitiva', duration: 0, price: 0, status: 'active', isSpecial: true },
+    ] } } as never)
+    render(<Harness />)
+
+    expect(await screen.findByText('Capping manos')).toBeInTheDocument()
+    expect(screen.queryByText('Depilación definitiva')).not.toBeInTheDocument()
   })
 })

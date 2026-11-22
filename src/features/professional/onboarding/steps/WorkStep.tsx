@@ -37,17 +37,6 @@ export function WorkStep({ data, onChange }: Props) {
         </Field>
       </div>
 
-      <Field label="Idiomas que hablás" hint="Separados por coma">
-        <input
-          className="work-input"
-          value={data.languages}
-          onChange={e => onChange({ languages: e.target.value })}
-          placeholder="Español, Inglés..."
-          onFocus={e => e.currentTarget.style.borderColor = primary}
-          onBlur={e => e.currentTarget.style.borderColor = '#e0e0e0'}
-        />
-      </Field>
-
       <Field label="Certificaciones y cursos" hint="Una por línea">
         <textarea
           className="work-input work-textarea"

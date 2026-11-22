@@ -5,7 +5,7 @@ import { useTenant }      from '@/features/tenant/TenantContext'
 import { useAuth, isFirstVisit } from '@/features/auth/AuthContext'
 import { api }            from '@/shared/utils/api'
 import { ROUTES }         from '@/app/config/routes.config'
-import { getAppointmentStatusDisplay, NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
+import { getAppointmentStatusDisplay } from '@/app/data/shared/status.data'
 import { Calendar, Clock, User, Users, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
@@ -482,12 +482,6 @@ export function AppointmentsPage() {
                   <span><Clock size={14} />{appt.time}</span>
                   <span><Clock size={14} />{appt.duration} min</span>
                 </div>
-
-                {appt.status === 'no_show_auto' && (
-                  <p role="note" className="appointment-meta" style={{ color: '#b45309', margin: 0 }}>
-                    {NO_SHOW_AUTO_NOTICE}
-                  </p>
-                )}
 
                 <div className="appointment-footer">
                   <span className="appointment-price" style={{ color: accentColor }}>

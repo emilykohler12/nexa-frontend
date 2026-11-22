@@ -90,7 +90,8 @@ export function OnboardingWizard({ onComplete }: Props) {
         personal:     { ...data.personal, gender: data.personal.gender || undefined },
         work:         data.work,
         availability: data.availability,
-        services:     data.services.map(({ serviceId, ownPrice, ownDuration }) => ({ serviceId, ownPrice, ownDuration })),
+        // Solo se elige QUÉ servicios hace: el precio y la duración los carga el administrador.
+        services:     data.services.map(({ serviceId }) => ({ serviceId })),
         policies:     data.policies,
       })
       onComplete()

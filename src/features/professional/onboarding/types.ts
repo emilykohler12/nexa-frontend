@@ -79,24 +79,15 @@ export interface WorkData {
   specialty:       string
   yearsExperience: number
   certifications:  string
-  languages:       string
 }
 
 export interface SelectedService {
   serviceId:  string
   // Solo para mostrar el resumen; no se manda al servidor.
   name?:      string
-  ownPrice:   number
-  ownDuration: number
 }
 
 export interface PolicyData {
-  toleranceMinutes:    number
-  latePenalty:         string
-  cancellationPolicy:  string
-  reschedulePolicy:    string
-  depositPolicy:       string
-  paymentMethods:      PaymentMethod[]
   priorRecommendations: string
   afterCare:           string
 }
@@ -116,12 +107,9 @@ export const EMPTY_PERSONAL: PersonalData = {
 }
 
 export const EMPTY_WORK: WorkData = {
-  specialty: '', yearsExperience: 0, certifications: '', languages: 'Español',
+  specialty: '', yearsExperience: 0, certifications: '',
 }
 
 export const EMPTY_POLICIES: PolicyData = {
-  toleranceMinutes: 15, latePenalty: '',
-  cancellationPolicy: '', reschedulePolicy: '',
-  depositPolicy: '', paymentMethods: ['cash', 'transfer'],
   priorRecommendations: '', afterCare: '',
 }

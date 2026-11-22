@@ -3,7 +3,6 @@
 // Enlaces del mail de recordatorio: FRONTEND_URL/mis-turnos?turno=<id>&accion=ver|reprogramar|cancelar.
 // El enlace solo dice QUÉ turno y QUÉ pantalla abrir: nunca ejecuta nada. La cancelación y la reprogramación
 // siempre pasan por su confirmación, y el backend decide si corresponden.
-import { NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
 import { appointmentInstant } from '@/shared/utils/argentinaTime'
 
 export const REMINDER_ACTIONS = ['ver', 'reprogramar', 'cancelar'] as const
@@ -49,7 +48,7 @@ export const REMINDER_LINK_MESSAGES = {
   started:      'Ese turno ya empezó, por eso no lo abrimos desde el enlace. Si hace falta, lo ves en «Historial».',
   cancelled:    'Ese turno ya está cancelado.',
   finished:     'Ese turno ya se realizó.',
-  noShow:       'Ese turno figura como «No asistió». Si viniste, avisale al estudio para que lo corrijan.',
+  noShow:       'Ese turno figura como «No asistió».',
   loadFailed:   'No pudimos cargar tus turnos para abrir ese enlace. Intentá de nuevo en unos minutos.',
 } as const
 
@@ -57,7 +56,7 @@ const isActive = (status: string) => status === 'confirmed' || status === 'pendi
 
 function closedMessage(status: string): string {
   switch (status) {
-    case 'no_show_auto':       return NO_SHOW_AUTO_NOTICE
+    case 'no_show_auto':
     case 'cancelled_no_show':  return REMINDER_LINK_MESSAGES.noShow
     case 'finished':           return REMINDER_LINK_MESSAGES.finished
     default:                   return REMINDER_LINK_MESSAGES.cancelled

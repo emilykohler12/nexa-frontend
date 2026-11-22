@@ -8,16 +8,8 @@ import { PhotoUpload }  from '@/shared/ui/atoms/PhotoUpload'
 import './Settings.css'
 import { VacationSection } from './VacationSection'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
-import type { PaymentMethod } from '@/features/professional/onboarding/types'
 
 type Tab = 'personal' | 'work' | 'security'
-
-// Mercado Pago eliminado — solo efectivo, transferencia y tarjeta
-const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: 'cash',     label: 'Efectivo'      },
-  { value: 'transfer', label: 'Transferencia' },
-  { value: 'card',     label: 'Tarjeta'       },
-]
 
 interface ProfileForm {
   name:      string
@@ -31,26 +23,18 @@ interface ProfileForm {
   twitter:   string
   // Experiencia
   yearsExperience: number
-  languages:       string
   certifications:  string
-  // Políticas
-  toleranceMinutes:     number
-  latePenalty:          string
-  cancellationPolicy:   string
-  reschedulePolicy:     string
-  depositPolicy:        string
+  // Lo único que carga la profesional de sus políticas. Tolerancia, llegadas tarde, cancelación, reprogramación, seña y
+  // métodos de pago los define el administrador para todo el negocio.
   priorRecommendations: string
   afterCare:            string
-  paymentMethods:       PaymentMethod[]
 }
 
 const EMPTY_FORM: ProfileForm = {
   name: '', phone: '', bio: '', photo: null,
   specialty: '', instagram: '', facebook: '', tiktok: '', twitter: '',
-  yearsExperience: 0, languages: '', certifications: '',
-  toleranceMinutes: 15, latePenalty: '', cancellationPolicy: '',
-  reschedulePolicy: '', depositPolicy: '', priorRecommendations: '', afterCare: '',
-  paymentMethods: ['cash', 'transfer'],
+  yearsExperience: 0, certifications: '',
+  priorRecommendations: '', afterCare: '',
 }
 
 export function Settings() {
@@ -91,16 +75,9 @@ export function Settings() {
           tiktok:    p.tiktok    ?? '',
           twitter:   p.twitter   ?? '',
           yearsExperience:      p.yearsExperience      ?? 0,
-          languages:            p.languages            ?? '',
           certifications:       p.certifications       ?? '',
-          toleranceMinutes:     p.toleranceMinutes      ?? 15,
-          latePenalty:          p.latePenalty          ?? '',
-          cancellationPolicy:   p.cancellationPolicy   ?? '',
-          reschedulePolicy:     p.reschedulePolicy     ?? '',
-          depositPolicy:        p.depositPolicy        ?? '',
           priorRecommendations: p.priorRecommendations ?? '',
           afterCare:            p.afterCare            ?? '',
-          paymentMethods:       p.paymentMethods        ?? ['cash', 'transfer'],
         })
       })
       .catch((err: unknown) => {
@@ -172,18 +149,9 @@ export function Settings() {
     }
   }
 
-  const togglePayment = (method: PaymentMethod) => {
-    setForm(f => ({
-      ...f,
-      paymentMethods: f.paymentMethods.includes(method)
-        ? f.paymentMethods.filter(m => m !== method)
-        : [...f.paymentMethods, method],
-    }))
-  }
-
   const TABS: { id: Tab; label: string }[] = [
     { id: 'personal', label: 'Datos personales'      },
-    { id: 'work',     label: 'Experiencia y políticas' },
+    { id: 'work',     label: 'Experiencia' },
     { id: 'security', label: 'Seguridad'              },
   ]
 
@@ -342,14 +310,6 @@ export function Settings() {
                 placeholder="0"
               />
             </Field>
-            <Field label="Idiomas que habla">
-              <input
-                className="settings-input"
-                value={form.languages}
-                onChange={e => setForm(f => ({ ...f, languages: e.target.value }))}
-                placeholder="Español, Inglés..."
-              />
-            </Field>
           </div>
           <Field label="Certificaciones y cursos">
             <textarea
@@ -361,79 +321,7 @@ export function Settings() {
             />
           </Field>
 
-          <div className="settings-section-title">Políticas</div>
-          <div className="settings-grid">
-            <Field label="Tolerancia por llegada tarde (minutos)">
-              <input
-                className="settings-input"
-                type="number"
-                min={0}
-                value={form.toleranceMinutes}
-                onChange={e => setForm(f => ({ ...f, toleranceMinutes: Number(e.target.value) }))}
-                placeholder="15"
-              />
-            </Field>
-            <Field label="Métodos de pago que aceptás">
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {PAYMENT_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => togglePayment(opt.value)}
-                    style={{
-                      padding: '9px 16px',
-                      borderRadius: '9px',
-                      border: `1.5px solid ${form.paymentMethods.includes(opt.value) ? primary : '#ddd'}`,
-                      background: form.paymentMethods.includes(opt.value) ? `${primary}14` : '#fff',
-                      color: form.paymentMethods.includes(opt.value) ? primary : '#444',
-                      fontFamily: 'var(--font-lato, "Lato", sans-serif)',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </Field>
-          </div>
-          <Field label="Política de llegadas tarde">
-            <textarea
-              className="settings-input settings-textarea"
-              rows={2}
-              value={form.latePenalty}
-              onChange={e => setForm(f => ({ ...f, latePenalty: e.target.value }))}
-              placeholder="Qué pasa si el cliente llega tarde..."
-            />
-          </Field>
-          <Field label="Política de cancelación">
-            <textarea
-              className="settings-input settings-textarea"
-              rows={2}
-              value={form.cancellationPolicy}
-              onChange={e => setForm(f => ({ ...f, cancellationPolicy: e.target.value }))}
-              placeholder="Condiciones para cancelar un turno..."
-            />
-          </Field>
-          <Field label="Política de reprogramación">
-            <textarea
-              className="settings-input settings-textarea"
-              rows={2}
-              value={form.reschedulePolicy}
-              onChange={e => setForm(f => ({ ...f, reschedulePolicy: e.target.value }))}
-              placeholder="Condiciones para reprogramar un turno..."
-            />
-          </Field>
-          <Field label="Política de señas">
-            <textarea
-              className="settings-input settings-textarea"
-              rows={2}
-              value={form.depositPolicy}
-              onChange={e => setForm(f => ({ ...f, depositPolicy: e.target.value }))}
-              placeholder="Condiciones sobre la seña..."
-            />
-          </Field>
+          <div className="settings-section-title">Recomendaciones</div>
           <Field label="Recomendaciones previas al turno">
             <textarea
               className="settings-input settings-textarea"

@@ -23,7 +23,6 @@ interface Props {
 export function ServicesStep({ selected, onChange }: Props) {
   const { business } = useTenant()
   const primary = business?.primaryColor ?? '#069494'
-  const accent  = business?.accentColor  ?? '#d4af37'
   const [services, setServices] = useState<CatalogService[]>([])
 
   useEffect(() => {
@@ -40,12 +39,8 @@ export function ServicesStep({ selected, onChange }: Props) {
     if (isSelected(service.id)) {
       onChange(selected.filter(s => s.serviceId !== service.id))
     } else {
-      onChange([...selected, { serviceId: service.id, name: service.name, ownPrice: service.price, ownDuration: service.duration }])
+      onChange([...selected, { serviceId: service.id, name: service.name }])
     }
-  }
-
-  const updatePrice = (serviceId: string, price: number) => {
-    onChange(selected.map(s => s.serviceId === serviceId ? { ...s, ownPrice: price } : s))
   }
 
   if (services.length === 0) {
@@ -59,12 +54,11 @@ export function ServicesStep({ selected, onChange }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <p style={{ fontSize: '17px', fontWeight: 600, color: '#000', margin: '0 0 6px', fontFamily: "'Lato', sans-serif" }}>
-        Seleccioná los servicios que realizás. Podés ajustar tu precio.
+        Seleccioná los servicios que realizás. El precio lo define el administrador.
       </p>
 
       {services.map(service => {
-        const sel    = selected.find(s => s.serviceId === service.id)
-        const active = !!sel
+        const active = selected.some(s => s.serviceId === service.id)
 
         return (
           <div
@@ -86,34 +80,11 @@ export function ServicesStep({ selected, onChange }: Props) {
                   {service.name}
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: '16px', color: '#000', fontFamily: "'Lato', sans-serif" }}>
-                  {service.duration} min · precio sugerido ${service.price.toLocaleString('es-AR')}
+                  Precio ${service.price.toLocaleString('es-AR')}
                 </p>
               </div>
             </label>
 
-            {active && sel && (
-              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 600, color: '#000' }}>Tu precio:</span>
-                <button
-                  type="button"
-                  onClick={() => updatePrice(service.id, Math.max(0, sel.ownPrice - 500))}
-                  style={{ width: '30px', height: '30px', border: '1px solid #e0e0e0', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '16px' }}
-                >−</button>
-                <input
-                  type="number" min={0} value={sel.ownPrice}
-                  onChange={e => updatePrice(service.id, Number(e.target.value))}
-                  style={{ width: '100px', textAlign: 'center', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '6px 10px', fontSize: '15px', outline: 'none', fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-                />
-                <button
-                  type="button"
-                  onClick={() => updatePrice(service.id, sel.ownPrice + 500)}
-                  style={{ width: '30px', height: '30px', border: '1px solid #e0e0e0', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '16px' }}
-                >+</button>
-                <span style={{ fontSize: '18px', fontWeight: 700, color: accent, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-                  ${sel.ownPrice.toLocaleString('es-AR')}
-                </span>
-              </div>
-            )}
           </div>
         )
       })}

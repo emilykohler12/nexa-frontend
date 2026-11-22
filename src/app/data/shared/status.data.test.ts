@@ -11,8 +11,9 @@ describe('getAppointmentStatusDisplay', () => {
   // «Mis turnos» recibe el estado crudo del backend: antes 'cancelled_no_show' no estaba en el mapa.
   it('entiende los estados crudos del backend para la inasistencia', () => {
     expect(getAppointmentStatusDisplay('cancelled_no_show').label).toBe('No asistió')
-    expect(getAppointmentStatusDisplay('no_show_auto').label).toBe('No asistió (automático)')
-    expect(getAppointmentStatusDisplay('no_show_auto').color).not.toBe(getAppointmentStatusDisplay('cancelled_no_show').color)
+    // Para la clienta es un solo estado: no se distingue si lo marcó el sistema o el personal.
+    expect(getAppointmentStatusDisplay('no_show_auto').label).toBe('No asistió')
+    expect(getAppointmentStatusDisplay('no_show_auto').color).toBe(getAppointmentStatusDisplay('cancelled_no_show').color)
   })
 
   it('la etiqueta statusLabel del backend manda sobre la del mapa', () => {

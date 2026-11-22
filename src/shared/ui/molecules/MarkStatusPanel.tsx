@@ -125,7 +125,7 @@ export function MarkStatusPanel({
       )}
       {!started && (
         <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>
-          «Finalizado» y «No asistió» se pueden marcar desde la hora de inicio. Cancelar y reprogramar, en cualquier momento.
+          «Finalizado» y «No asistió» se pueden marcar desde la hora de inicio.
         </p>
       )}
 

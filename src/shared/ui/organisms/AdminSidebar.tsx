@@ -47,11 +47,12 @@ export function AdminSidebar({ onWidthChange }: { onWidthChange?: (w: number) =>
     onWidthChange?.(isMobile ? 0 : sidebarWidth)
   }, [sidebarWidth, isMobile, onWidthChange])
 
+  // logout() ya avisa al servidor (POST /api/auth/logout) y limpia la sesión: antes había además un fetch a una ruta que
+  // no existe (/auth/logout, 404 en la consola).
   const handleLogout = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
+      await logout()
     } finally {
-      logout()
       navigate(ROUTES.LOGIN)
     }
   }
