@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { api } from '@/shared/utils/api';
+import { minutesSinceStart } from '@/shared/utils/argentinaTime';
 import { generateSlots } from '@/features/professional/onboarding/types';
 import type { Appointment, Professional } from './types';
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -124,14 +125,27 @@ export function CreateAppointmentModal({ professionals, onClose, onCreated }: Pr
             <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} style={inputStyle} />
           </Field>
 
+          {/* El turno manual no está atado a la franja de la profesional (a propósito): la hora se escribe a mano y los
+              horarios de su franja quedan como atajo. Si el día y la hora ya pasaron, el turno se carga como finalizado. */}
+          {date && (
+            <Field label="Hora">
+              <input type="time" step={300} value={time} onChange={e => setTime(e.target.value)} style={inputStyle} />
+            </Field>
+          )}
+          {date && time && minutesSinceStart(date, time) >= 0 && (
+            <p style={{ margin: 0, fontSize: '13px', color: '#444' }}>
+              El día y la hora ya pasaron: el turno se va a cargar como finalizado.
+            </p>
+          )}
+
           {date && professionalId && (
             loadingTimes ? (
               <p style={{ fontSize: '14px', color: '#000' }}>Cargando horarios...</p>
             ) : availableTimes.length === 0 ? (
-              <p style={{ fontSize: '14px', color: '#000' }}>Sin horarios disponibles este día para este profesional.</p>
+              <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>Esta profesional no tiene horarios cargados ese día: escribí la hora a mano.</p>
             ) : (
               <div>
-                <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hora</span>
+                <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Horarios de su franja</span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '6px' }}>
                   {availableTimes.map(t => (
                     <button
