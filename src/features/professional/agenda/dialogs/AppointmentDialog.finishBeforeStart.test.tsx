@@ -22,6 +22,7 @@ function setup(appointment: Partial<Appointment>) {
       appointment={{ ...base, ...appointment }} primary="#069494" accent="#d4af37"
       onClose={vi.fn()} onSave={vi.fn()} onMarkArrival={vi.fn()}
       onChangeStatus={vi.fn().mockResolvedValue(null)} onCancel={vi.fn().mockResolvedValue(null)}
+      onReschedule={vi.fn().mockResolvedValue(null)} onMarkDepositPaid={vi.fn().mockResolvedValue(null)}
     />,
   )
 }

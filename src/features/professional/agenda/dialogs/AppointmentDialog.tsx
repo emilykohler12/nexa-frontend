@@ -1,11 +1,11 @@
 import { NO_ALLERGY_INFO } from '@/features/professional/types/client'
 import { useState } from 'react'
-import { minutesSinceStart } from '@/shared/utils/argentinaTime'
 import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
-import { appointmentStatusConfig, getAppointmentStatusConfig, isNoShowStatus } from '@/features/professional/utils/appointmentStatus'
-import type { Appointment, AppointmentStatus } from '@/features/professional/types/appointment'
+import { getAppointmentStatusConfig, isNoShowStatus } from '@/features/professional/utils/appointmentStatus'
+import type { Appointment } from '@/features/professional/types/appointment'
 import { companionText } from '@/shared/utils/companion'
 import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
+import { MarkStatusPanel } from '@/shared/ui/molecules/MarkStatusPanel'
 import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
 import { CancellationSummary } from '@/shared/ui/molecules/CancellationSummary'
 import type { StaffCancellation } from '@/shared/utils/cancellation'
@@ -29,19 +29,22 @@ interface Props {
   // Pasar un servicio de combo a otra profesional. `colleagues` son las opciones.
   colleagues?:     { id: string; name: string }[]
   onChangeProfessional?: (appointment: Appointment, professionalId: string) => Promise<string | null>
+  // Mover el turno a otra fecha y hora (aunque ya haya empezado). Devuelve el mensaje de error, o null si salió bien.
+  onReschedule?:   (appointment: Appointment, date: string, time: string) => Promise<string | null>;
+  // Marcar pagada la seña coordinada por WhatsApp. Devuelve el mensaje de error, o null si salió bien.
+  onMarkDepositPaid?: (appointment: Appointment) => Promise<string | null>;
 }
 
-export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel, onRegisterBalancePayment, colleagues = [], onChangeProfessional }: Props) {
+export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel, onRegisterBalancePayment, colleagues = [], onChangeProfessional, onReschedule, onMarkDepositPaid }: Props) {
   const [notes, setNotes]   = useState(appointment.internalNotes)
-  const [status, setStatus] = useState<AppointmentStatus>(appointment.status)
   const [cancelling, setCancelling] = useState(false)
+  // «Editar»: fecha, hora y notas internas. Las alergias de la clienta no se editan nunca.
+  const [editing, setEditing]   = useState(false)
+  const [editDate, setEditDate] = useState(appointment.date)
+  const [editTime, setEditTime] = useState(appointment.time)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving]       = useState(false)
 
-  // «No asistió» y «Cancelado» no se eligen acá: cada uno tiene su propia acción con confirmación
-  // (NoShowActions y CancelAppointmentDialog).
-  const STATUS_OPTIONS: AppointmentStatus[] = ['confirmed','finished']
-  const canCancel = appointment.status === 'confirmed' || appointment.status === 'pending'
-  // «Finalizado» solo desde la hora de inicio.
-  const notStarted = minutesSinceStart(appointment.date, appointment.time) < 0
   const noShow = isNoShowStatus(appointment.status)
   const currentCfg = getAppointmentStatusConfig(appointment.status, appointment.cancelReason, appointment.displayStatus, appointment.statusLabel)
 
@@ -192,48 +195,23 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             </div>
           )}
 
-          {/* Estado */}
-          <div>
-            <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px' }}>Estado</p>
-            {noShow && (
+          {/* Corrección de un «No asistió» (las demás acciones de estado están abajo, en «Marcar estado»). */}
+          {noShow && (
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px' }}>Estado</p>
               <span style={{ display: 'inline-block', marginBottom: '8px', padding: '5px 12px', borderRadius: '20px', background: currentCfg.bg, color: currentCfg.color, fontWeight: 700, fontSize: '13px' }}>
                 {currentCfg.label}
               </span>
-            )}
-            <NoShowActions
-              status={appointment.status}
-              date={appointment.date}
-              time={appointment.time}
-              accent={primary}
-              onChangeStatus={to => onChangeStatus(appointment, to)}
-              onDone={onClose}
-            />
-            <div style={{ display: noShow ? 'none' : 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-              {STATUS_OPTIONS.map(s => {
-                const cfg = appointmentStatusConfig[s]
-                const blocked = s === 'finished' && notStarted
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setStatus(s)}
-                    disabled={blocked}
-                    title={blocked ? 'Se puede finalizar desde la hora de inicio del turno' : undefined}
-                    style={{
-                      padding: '5px 12px', border: 'none', borderRadius: '20px',
-                      background: status === s ? cfg.bg : '#f0f0f0',
-                      color: status === s ? cfg.color : '#888',
-                      opacity: blocked ? 0.5 : 1,
-                      fontWeight: 600, fontSize: '13px', cursor: blocked ? 'not-allowed' : 'pointer',
-                      fontFamily: "'Lato', sans-serif",
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {cfg.label}
-                  </button>
-                )
-              })}
+              <NoShowActions
+                status={appointment.status}
+                date={appointment.date}
+                time={appointment.time}
+                accent={primary}
+                onChangeStatus={to => onChangeStatus(appointment, to)}
+                onDone={onClose}
+              />
             </div>
-          </div>
+          )}
 
           {appointment.status === 'cancelled' && appointment.cancellation && (
             <Section title="Cancelación">
@@ -241,15 +219,17 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             </Section>
           )}
 
-          {canCancel && (
-            <div>
-              <button
-                type="button"
-                onClick={() => setCancelling(true)}
-                style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.08)', color: '#e53935', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: "'Lato', sans-serif" }}
-              >
-                Cancelar turno
-              </button>
+          {/* Fecha y hora (solo al editar) */}
+          {editing && (
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase' }}>
+                Fecha
+                <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '10px', fontSize: '15px', fontFamily: "'Lato', sans-serif" }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase' }}>
+                Hora
+                <input type="time" step={300} value={editTime} onChange={e => setEditTime(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '10px', fontSize: '15px', fontFamily: "'Lato', sans-serif" }} />
+              </label>
             </div>
           )}
 
@@ -258,26 +238,73 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px' }}>Notas internas</p>
             <textarea
               value={notes}
+              readOnly={!editing}
               onChange={e => setNotes(e.target.value)}
               rows={3}
               placeholder="Solo visibles para vos..."
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '10px', fontSize: '15px', resize: 'none', outline: 'none', fontFamily: "'Lato', sans-serif" }}
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '10px', fontSize: '15px', resize: 'none', outline: 'none', fontFamily: "'Lato', sans-serif", background: editing ? '#fff' : '#fafafa', cursor: editing ? 'text' : 'default' }}
               onFocus={e => (e.currentTarget.style.borderColor = primary)}
               onBlur={e => (e.currentTarget.style.borderColor = '#e0e0e0')}
             />
           </div>
 
-          {/* Acciones */}
+          {/* Marcar estado: abajo, antes de Editar. Solo turnos que todavía no se realizaron. */}
+          {!editing && onReschedule && onMarkDepositPaid && (
+            <MarkStatusPanel
+              status={appointment.status}
+              date={appointment.date}
+              time={appointment.time}
+              accent={primary}
+              paymentStatus={appointment.paymentStatus}
+              depositAmount={appointment.depositAmount}
+              depositMethod={appointment.depositMethod}
+              onRequestCancel={() => setCancelling(true)}
+              onReschedule={(d, t) => onReschedule(appointment, d, t)}
+              onFinish={() => onChangeStatus(appointment, 'finished')}
+              onNoShow={() => onChangeStatus(appointment, 'cancelled_no_show')}
+              onMarkDepositPaid={() => onMarkDepositPaid(appointment)}
+              onDone={onClose}
+            />
+          )}
+
+          {saveError && <p role="alert" style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#e53935' }}>{saveError}</p>}
+
+          {/* Acciones: abajo solo «Editar» (al editar, Descartar y Guardar). */}
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button onClick={onClose} style={{ padding: '10px 20px', border: '1px solid #e0e0e0', borderRadius: '10px', background: 'transparent', color: '#000', cursor: 'pointer', fontSize: '15px', fontFamily: "'Lato', sans-serif" }}>
-              Cancelar
-            </button>
-            <button
-              onClick={() => onSave({ ...appointment, status, internalNotes: notes })}
-              style={{ padding: '10px 24px', border: 'none', borderRadius: '10px', background: primary, color: '#fff', cursor: 'pointer', fontSize: '15px', fontWeight: 700, fontFamily: "'Lato', sans-serif" }}
-            >
-              Guardar
-            </button>
+            {editing ? (
+              <>
+                <button
+                  onClick={() => { setEditing(false); setNotes(appointment.internalNotes); setEditDate(appointment.date); setEditTime(appointment.time); setSaveError(null) }}
+                  disabled={saving}
+                  style={{ padding: '10px 20px', border: '1px solid #e0e0e0', borderRadius: '10px', background: 'transparent', color: '#000', cursor: 'pointer', fontSize: '15px', fontFamily: "'Lato', sans-serif" }}
+                >
+                  Descartar
+                </button>
+                <button
+                  onClick={async () => {
+                    setSaving(true); setSaveError(null)
+                    const moved = editDate !== appointment.date || editTime !== appointment.time
+                    if (moved && onReschedule) {
+                      const message = await onReschedule(appointment, editDate, editTime)
+                      if (message) { setSaving(false); setSaveError(message); return }
+                    }
+                    setSaving(false)
+                    onSave({ ...appointment, ...(moved ? { date: editDate, time: editTime } : {}), internalNotes: notes })
+                  }}
+                  disabled={saving}
+                  style={{ padding: '10px 24px', border: 'none', borderRadius: '10px', background: primary, color: '#fff', cursor: 'pointer', fontSize: '15px', fontWeight: 700, fontFamily: "'Lato', sans-serif", opacity: saving ? 0.7 : 1 }}
+                >
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setEditing(true)}
+                style={{ padding: '10px 24px', border: 'none', borderRadius: '10px', background: primary, color: '#fff', cursor: 'pointer', fontSize: '15px', fontWeight: 700, fontFamily: "'Lato', sans-serif" }}
+              >
+                Editar
+              </button>
+            )}
           </div>
         </div>
       </div>

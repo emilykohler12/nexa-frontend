@@ -5,12 +5,13 @@ import {
   AlertCircle, Users, Image as ImageIcon, Tag, MessageCircle,
 } from 'lucide-react';
 import { api } from '@/shared/utils/api';
-import { argentinaDateOf, argentinaTimeOf, appointmentInstant, minutesSinceStart } from '@/shared/utils/argentinaTime';
+import { argentinaDateOf, argentinaTimeOf, appointmentInstant } from '@/shared/utils/argentinaTime';
 import type { Appointment, BalancePaymentMethod } from './types';
 import type { Professional } from './types';
 import type { PolishRemovalRule } from '../services/PolishRemovalRulesModal';
 import { companionText } from '@/shared/utils/companion'
 import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
+import { MarkStatusPanel } from '@/shared/ui/molecules/MarkStatusPanel'
 import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
 import { BalancePaymentForm } from '@/shared/ui/molecules/BalancePaymentForm'
 import { ChangeLegProfessional } from '@/shared/ui/molecules/ChangeLegProfessional'
@@ -116,8 +117,6 @@ export function AppointmentModal({
     onClose();
   };
 
-  // «Marcar finalizado» solo desde la hora de inicio (el servidor igual lo rechaza: FINISH_BEFORE_START).
-  const notStarted = minutesSinceStart(appointment.start.slice(0, 10), appointment.start.slice(11, 16)) < 0;
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('es-AR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -191,10 +190,10 @@ export function AppointmentModal({
         {/* Cuerpo */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-          {/* Estado del turno */}
-          {!editing && !['cancelled'].includes(appointment.status) && (
+          {/* Corrección de un «No asistió» (el resto de las acciones de estado están abajo, en «Marcar estado»). */}
+          {!editing && ['cancelled_no_show', 'no_show_auto'].includes(appointment.status) && (
             <Section>
-              <SectionTitle color={profColor}>Marcar estado</SectionTitle>
+              <SectionTitle color={profColor}>Estado</SectionTitle>
               <NoShowActions
                 status={appointment.status}
                 date={appointment.start.slice(0, 10)}
@@ -203,40 +202,6 @@ export function AppointmentModal({
                 onChangeStatus={to => onChangeStatus(appointment.id, to)}
                 onDone={onClose}
               />
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {/* Un turno «No asistió» no se pasa a otro estado a ciegas: se corrige con las acciones de arriba. */}
-                {!['cancelled_no_show', 'no_show_auto'].includes(appointment.status) && ['confirmed', 'finished'].map(status => (
-                  appointment.status !== status && (
-                    <button
-                      key={status}
-                      onClick={async () => {
-                        setSaving(true);
-                        setActionError(null);
-                        const error = await onChangeStatus(appointment.id, status as 'confirmed' | 'finished');
-                        setSaving(false);
-                        if (error) { setActionError(error); return; }
-                        onClose();
-                      }}
-                      disabled={saving || (status === 'finished' && notStarted)}
-                      title={status === 'finished' && notStarted ? 'Se puede finalizar desde la hora de inicio del turno' : undefined}
-                      style={{
-                        padding: '8px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #e5e5e5',
-                        background: '#f8f8f8',
-                        color: '#000',
-                        fontWeight: 600,
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        fontFamily: "'Lato', sans-serif",
-                        opacity: saving || (status === 'finished' && notStarted) ? 0.5 : 1,
-                      }}
-                    >
-                      {status === 'confirmed' ? 'Confirmar' : status === 'finished' ? 'Marcar finalizado' : 'Marcar cancelado por inasistencia'}
-                    </button>
-                  )
-                ))}
-              </div>
             </Section>
           )}
 
@@ -494,7 +459,7 @@ export function AppointmentModal({
                   </InfoRow>
                 )}
                 {appointment.depositMethod === 'whatsapp' && (
-                  <WhatsappDepositSection appointment={appointment} onMarkPaid={onMarkDepositPaid} />
+                  <WhatsappDepositSection appointment={appointment} />
                 )}
                 <BalancePaymentSection appointment={appointment} onRegister={onRegisterBalancePayment} />
               </Section>
@@ -530,6 +495,31 @@ export function AppointmentModal({
           />
         </div>
 
+        {/* Marcar estado: abajo, antes de Editar. Solo turnos que todavía no se realizaron. */}
+        {!editing && ['pending', 'confirmed'].includes(appointment.status) && (
+          <div style={{ padding: '0 24px 16px' }}>
+            <MarkStatusPanel
+              status={appointment.status}
+              date={appointment.start.slice(0, 10)}
+              time={appointment.start.slice(11, 16)}
+              accent={profColor}
+              paymentStatus={appointment.paymentStatus ?? 'pending'}
+              depositAmount={appointment.depositAmount}
+              depositMethod={appointment.depositMethod}
+              onRequestCancel={() => setConfirmCancel(true)}
+              onReschedule={(d, t) => {
+                const newStart = appointmentInstant(d, t);
+                const newEnd = new Date(newStart.getTime() + appointment.serviceDuration * 60000);
+                return onSave({ ...appointment, start: newStart.toISOString(), end: newEnd.toISOString() });
+              }}
+              onFinish={() => onChangeStatus(appointment.id, 'finished')}
+              onNoShow={() => onChangeStatus(appointment.id, 'cancelled_no_show')}
+              onMarkDepositPaid={() => onMarkDepositPaid(appointment.id)}
+              onDone={onClose}
+            />
+          </div>
+        )}
+
         {actionError && (
           <p style={{ margin: '0 24px', padding: '10px 14px', background: 'rgba(229,57,53,0.08)', border: '1px solid rgba(229,57,53,0.2)', borderRadius: '8px', color: '#e53935', fontSize: '13px', fontWeight: 600 }}>
             {actionError}
@@ -550,12 +540,10 @@ export function AppointmentModal({
             </>
           ) : (
             <>
-              {appointment.status === 'cancelled' ? (
+              {appointment.status === 'cancelled' && (
                 <Btn onClick={handleReactivate} variant="success" disabled={saving}>{saving ? 'Reactivando...' : 'Reactivar turno'}</Btn>
-              ) : (
-                <Btn onClick={() => setConfirmCancel(true)} variant="danger" disabled={saving}>Cancelar turno</Btn>
               )}
-              <Btn onClick={startEditing} variant="primary" disabled={saving}>Editar / reprogramar</Btn>
+              <Btn onClick={startEditing} variant="primary" disabled={saving}>Editar</Btn>
             </>
           )}
         </div>
@@ -676,13 +664,7 @@ function Btn({ children, onClick, variant, disabled }: {
 // La clienta eligió coordinar la seña por WhatsApp en vez de Mercado Pago —
 // no hay webhook que confirme el pago solo, así que el admin lo marca a mano
 // una vez que lo cobra/coordina.
-function WhatsappDepositSection({ appointment, onMarkPaid }: {
-  appointment: Appointment;
-  onMarkPaid: (id: string) => Promise<string | null>;
-}) {
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
-
+function WhatsappDepositSection({ appointment }: { appointment: Appointment }) {
   if (appointment.paymentStatus === 'partial' || appointment.paymentStatus === 'paid') {
     return (
       <InfoRow icon={<MessageCircle size={14} color="#25D366" />} label="Seña coordinada por WhatsApp">
@@ -692,27 +674,9 @@ function WhatsappDepositSection({ appointment, onMarkPaid }: {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <label style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Seña coordinada por WhatsApp — ${(appointment.depositAmount ?? 0).toLocaleString('es-AR')}, pendiente
-      </label>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <Btn
-          variant="primary"
-          disabled={saving}
-          onClick={async () => {
-            setSaving(true);
-            setError(null);
-            const err = await onMarkPaid(appointment.id);
-            setSaving(false);
-            if (err) setError(err);
-          }}
-        >
-          {saving ? 'Guardando...' : 'Marcar seña como pagada'}
-        </Btn>
-      </div>
-      {error && <p style={{ margin: 0, fontSize: '13px', color: '#e53935' }}>{error}</p>}
-    </div>
+    <InfoRow icon={<MessageCircle size={14} color="#25D366" />} label="Seña coordinada por WhatsApp">
+      ${(appointment.depositAmount ?? 0).toLocaleString('es-AR')} — pendiente (se marca paga en «Marcar estado»)
+    </InfoRow>
   );
 }
 

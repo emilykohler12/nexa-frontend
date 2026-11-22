@@ -30,6 +30,8 @@ function setup(appointment: Partial<Appointment> = {}, onChangeStatus = vi.fn().
     onMarkArrival: vi.fn(),
     onChangeStatus,
     onCancel: vi.fn().mockResolvedValue(null),
+    onReschedule: vi.fn().mockResolvedValue(null),
+    onMarkDepositPaid: vi.fn().mockResolvedValue(null),
   }
   render(<AppointmentDialog {...props} />)
   return { ...props, user: userEvent.setup({ advanceTimers: vi.advanceTimersByTime }) }
@@ -39,21 +41,24 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
   beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }) })
   afterEach(() => { vi.useRealTimers() })
 
-  it('«No asistió» ya no es una opción del selector de estado: tiene su propia acción', () => {
+  it('«Marcar estado» ofrece las cinco opciones y abajo solo queda «Editar»', () => {
     vi.setSystemTime(START)
     setup()
 
-    expect(screen.getByRole('button', { name: 'Confirmado' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Finalizado' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Marcar No asistió' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'No asistió' })).not.toBeInTheDocument()
+    for (const name of ['Cancelar', 'Reprogramar', 'Finalizado', 'No asistió']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    }
+    expect(screen.getByRole('checkbox', { name: /Seña pagada/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmado' })).not.toBeInTheDocument()
   })
 
   it('desde la hora de inicio marca «No asistió» después de confirmar y cierra el diálogo', async () => {
     vi.setSystemTime(new Date(START.getTime() + 10 * 60_000))
     const { user, onChangeStatus, onClose, appointment } = setup()
 
-    await user.click(screen.getByRole('button', { name: 'Marcar No asistió' }))
+    await user.click(screen.getByRole('button', { name: 'No asistió' }))
     expect(screen.getByText(/Se abrirá un horario nuevo desde ahora/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Sí, marcar «No asistió»' }))
 
@@ -65,7 +70,7 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
     vi.setSystemTime(new Date(START.getTime() - 60_000))
     setup()
 
-    expect(screen.getByRole('button', { name: 'Marcar No asistió' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'No asistió' })).toBeDisabled()
   })
 
   it('un turno «No asistió (automático)» muestra su estado y ofrece corregirlo', async () => {
@@ -106,7 +111,7 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
 
     // «Cancelado» ya no es una opción del selector de estado.
     expect(screen.queryByRole('button', { name: 'Cancelado' })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Cancelar turno' }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
     await user.click(screen.getByRole('radio', { name: /El estudio cancela/ }))
     await user.click(screen.getByRole('button', { name: 'Sí, cancelar el turno' }))
 
@@ -118,7 +123,7 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
     vi.setSystemTime(START)
     setup({ status: 'finished' })
 
-    expect(screen.queryByRole('button', { name: 'Cancelar turno' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
   })
 
   it('el aviso de llegada habla de 30 minutos y de «No asistió (automático)»', () => {

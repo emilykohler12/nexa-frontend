@@ -33,13 +33,13 @@ function setup(appointment: Appointment) {
 
 // R-27 (PM-09, 13/11/2026): no se puede finalizar un turno que todavía no empezó.
 describe('PM-09 AppointmentModal (administrador): finalizar antes de la hora de inicio', () => {
-  it('PM-09 con un turno futuro, «Marcar finalizado» está apagado', () => {
+  it('PM-09 con un turno futuro, «Finalizado» está apagado', () => {
     setup(base)
-    expect(screen.getByRole('button', { name: 'Marcar finalizado' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Finalizado' })).toBeDisabled()
   })
 
-  it('PM-09 con un turno que ya empezó, «Marcar finalizado» está habilitado', () => {
+  it('PM-09 con un turno que ya empezó, «Finalizado» está habilitado', () => {
     setup({ ...base, start: '2020-11-03T16:00:00', end: '2020-11-03T17:00:00' })
-    expect(screen.getByRole('button', { name: 'Marcar finalizado' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Finalizado' })).toBeEnabled()
   })
 })
