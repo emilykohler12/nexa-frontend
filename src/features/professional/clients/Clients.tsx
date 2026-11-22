@@ -79,17 +79,12 @@ export function Client() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: '18px', color: '#000' }}>{client.name}</p>
-              <p style={{ margin: '2px 0 0', fontSize: '15px', color: '#000' }}>{client.email} · {client.phone}</p>
+              <p style={{ margin: '2px 0 0', fontSize: '15px', color: '#000' }}>{[client.email, client.phone].filter(Boolean).join(' · ')}</p>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <p style={{ margin: 0, fontSize: '23px', fontWeight: 700, color: accent }}>{finishedVisits(client).length}</p>
               <p style={{ margin: 0, fontSize: '13px', color: '#000' }}>visitas</p>
             </div>
-            {client.nextAppointment && (
-              <span style={{ fontSize: '13px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: 'rgba(6,148,148,0.1)', color: primary }}>
-                Turno
-              </span>
-            )}
           </div>
         ))}
       </div>

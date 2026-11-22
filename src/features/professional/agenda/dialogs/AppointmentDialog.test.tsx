@@ -27,7 +27,6 @@ function setup(appointment: Partial<Appointment> = {}, onChangeStatus = vi.fn().
     accent: '#d4af37',
     onClose: vi.fn(),
     onSave: vi.fn(),
-    onMarkArrival: vi.fn(),
     onChangeStatus,
     onCancel: vi.fn().mockResolvedValue(null),
     onReschedule: vi.fn().mockResolvedValue(null),
@@ -126,24 +125,75 @@ describe('AppointmentDialog (profesional): inasistencia', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
   })
 
-  it('el aviso de llegada habla de 30 minutos y de «No asistió (automático)»', () => {
+  it('ya no hay «Marcar llegada» en el detalle: lo reemplaza «Finalizado»', () => {
     vi.setSystemTime(START)
     setup()
 
-    expect(screen.getByText(/pasados 30 min de la hora pactada se marca "No asistió \(automático\)"/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Marcar llegada/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Todavía no registró la llegada/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Finalizado' })).toBeInTheDocument()
   })
 })
 
-describe('AppointmentDialog (profesional): alergias del perfil', () => {
-  it.each([['vacía', ''], ['null', null], ['ausente', undefined]])('con alergia %s explica por qué no se muestra', (_n, allergies) => {
+describe('AppointmentDialog (profesional): datos de la clienta y de lo que completó', () => {
+  it.each([['vacía', ''], ['null', null], ['ausente', undefined]])('con alergia %s no aparece ningún texto de alergia', (_n, allergies) => {
     setup({ client: { ...base.client, allergies } as Appointment['client'] })
-    expect(screen.getByText(/Sin alergias para mostrar/)).toBeInTheDocument()
+    expect(screen.queryByText(/Sin alergias para mostrar/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Alergias/)).not.toBeInTheDocument()
   })
 
-  it('con alergia cargada la muestra y no agrega la explicación', () => {
+  it('con alergia cargada la muestra como «Alergias: …»', () => {
     setup({ client: { ...base.client, allergies: 'Látex' } })
-    expect(screen.getByText('Látex')).toBeInTheDocument()
-    expect(screen.queryByText(/Sin alergias para mostrar/)).not.toBeInTheDocument()
+    expect(screen.getByText('Alergias: Látex')).toBeInTheDocument()
+  })
+
+  it('sin ningún dato de la clienta no aparece la sección «Datos del cliente»', () => {
+    setup({ client: { ...base.client, phone: '', email: '', allergies: '', notes: '' } })
+    expect(screen.queryByText('Datos del cliente')).not.toBeInTheDocument()
+  })
+
+  it('con correo vacío (turno manual sin correo) no se muestra ninguna dirección', () => {
+    setup({ client: { ...base.client, email: '' } })
+    expect(screen.queryByText(/@/)).not.toBeInTheDocument()
+    expect(screen.getByText('3764000000')).toBeInTheDocument()
+  })
+
+  it('si la clienta no completó el formulario del turno no aparece «Info del turno»', () => {
+    setup({ details: { allergies: null, hasCompanion: false, companionRelation: null, designPreference: null } })
+    expect(screen.queryByText('Info del turno')).not.toBeInTheDocument()
+  })
+
+  it('si lo completó, aparece poca información y solo lo cargado: «Alergias: …», «Acompañante: sí (…)»', () => {
+    setup({ details: { allergies: 'Polen', hasCompanion: true, companionRelation: 'child', designPreference: null } })
+    expect(screen.getByText('Info del turno')).toBeInTheDocument()
+    expect(screen.getByText(/Alergias:/, { selector: 'strong' })).toBeInTheDocument()
+    expect(screen.getByText('Polen', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText(/Acompañante:/, { selector: 'strong' })).toBeInTheDocument()
+    expect(screen.getByText(/sí \(hija\/hijo\)/)).toBeInTheDocument()
+    expect(screen.queryByText(/Extensiones|Largo de cabello|Tipo de piel/)).not.toBeInTheDocument()
+  })
+
+  it('el cobro registrado no dice «registrado por …» y se puede corregir el monto, más o menos', async () => {
+    const onRegister = vi.fn().mockResolvedValue(null)
+    render(
+      <AppointmentDialog
+        appointment={{ ...base, paymentStatus: 'paid', servicePrice: 50000, depositAmount: 5000, balancePayment: { method: 'cash', amount: 45000, collectedByName: 'Profesional D' } }}
+        primary="#069494" accent="#d4af37" onClose={vi.fn()} onSave={vi.fn()}
+        onChangeStatus={vi.fn().mockResolvedValue(null)} onCancel={vi.fn().mockResolvedValue(null)}
+        onRegisterBalancePayment={onRegister}
+      />,
+    )
+    const user = userEvent.setup()
+
+    expect(screen.getByText(/Saldo cobrado en el local: \$45\.000 en Efectivo/)).toBeInTheDocument()
+    expect(screen.queryByText(/registrado por/)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Corregir monto' }))
+    const amount = screen.getByLabelText('Monto cobrado')
+    await user.clear(amount)
+    await user.type(amount, '52000')
+    await user.click(screen.getByRole('button', { name: 'Guardar monto' }))
+
+    expect(onRegister).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }), { method: 'cash', amount: 52000, replace: true })
   })
 })
 
@@ -154,7 +204,7 @@ describe('AppointmentDialog (profesional): cobro en el local y cambio de profesi
     render(
       <AppointmentDialog
         appointment={{ ...base, ...appointment }} primary="#069494" accent="#d4af37"
-        onClose={vi.fn()} onSave={vi.fn()} onMarkArrival={vi.fn()}
+        onClose={vi.fn()} onSave={vi.fn()}
         onChangeStatus={vi.fn().mockResolvedValue(null)} onCancel={vi.fn().mockResolvedValue(null)}
         onRegisterBalancePayment={onRegisterBalancePayment}
         colleagues={[{ id: 'p2', name: 'Marina' }]} onChangeProfessional={onChangeProfessional}

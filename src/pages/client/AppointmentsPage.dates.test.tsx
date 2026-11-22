@@ -70,7 +70,7 @@ describe('Mis turnos: «hoy» es el día de Argentina (cerca de las 21:00)', () 
     expect(screen.queryByText('No voy a asistir')).not.toBeInTheDocument()
   })
 
-  it('un turno de hoy a las 22:00 sigue en «Próximos» a las 21:30', async () => {
+  it('un turno de hoy a las 22:00 sigue en «Confirmados» a las 21:30', async () => {
     renderAt('2026-11-03T21:30:00-03:00', [appointment({ time: '22:00' })])
 
     expect(await screen.findByText('Corte')).toBeInTheDocument()

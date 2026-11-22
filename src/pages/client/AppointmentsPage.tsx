@@ -25,12 +25,13 @@ import { InfoModal } from '@/shared/ui/molecules/InfoModal'
 import { ReviewPromptModal } from '@/features/client/reviews/ReviewPromptModal'
 import { RefundWhatsAppModal } from './RefundWhatsAppModal'
 
-type Filter = 'upcoming' | 'history' | 'cancelled'
+// Dos secciones: «Confirmados» (los que todavía no pasaron) e «Historial» (todo lo demás: pasados, finalizados, no asistidos
+// y cancelados). Ya no hay una sección aparte de cancelados.
+type Filter = 'upcoming' | 'history'
 
 const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'upcoming',  label: 'Próximos'  },
-  { id: 'history',   label: 'Historial' },
-  { id: 'cancelled', label: 'Cancelados' },
+  { id: 'upcoming', label: 'Confirmados' },
+  { id: 'history',  label: 'Historial'   },
 ]
 
 interface Appointment {
@@ -176,12 +177,10 @@ export function AppointmentsPage() {
   // (finished/cancelled_no_show/cancelled), y solo se usa la fecha/hora para los que
   // todavía dependen de si ya pasaron o no. Así nunca puede aparecer duplicado.
   const isUpcomingStatus = (a: Appointment) => a.status === 'confirmed' || a.status === 'pending'
-  const isNoShowStatus = (status: string) => status === 'no_show_auto' || status === 'cancelled_no_show'
 
   const filtered = appointments.filter(a => {
     if (filter === 'upcoming')  return isUpcomingStatus(a) && !isPast(a)
-    if (filter === 'history')   return a.status === 'finished' || isNoShowStatus(a.status) || (isUpcomingStatus(a) && isPast(a))
-    if (filter === 'cancelled') return a.status === 'cancelled'
+    if (filter === 'history')   return !(isUpcomingStatus(a) && !isPast(a))
     return true
   })
 

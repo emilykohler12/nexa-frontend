@@ -245,8 +245,9 @@ export function AppointmentModal({
             ) : (
               <>
                 <InfoRow icon={<User size={14} />} label="Nombre">{appointment.clientName}</InfoRow>
-                <InfoRow icon={<Phone size={14} />} label="Teléfono">{appointment.clientPhone}</InfoRow>
-                <InfoRow icon={<Mail size={14} />} label="Email">{appointment.clientEmail}</InfoRow>
+                {/* Sin teléfono o correo cargado (turno manual) no se muestra la fila. */}
+                {appointment.clientPhone && <InfoRow icon={<Phone size={14} />} label="Teléfono">{appointment.clientPhone}</InfoRow>}
+                {appointment.clientEmail && <InfoRow icon={<Mail size={14} />} label="Email">{appointment.clientEmail}</InfoRow>}
               </>
             )}
           </Section>

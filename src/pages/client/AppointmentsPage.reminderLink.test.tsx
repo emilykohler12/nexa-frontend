@@ -168,7 +168,7 @@ describe('Mis turnos: enlaces del mail de recordatorio', () => {
       renderLink(search)
       expect(await screen.findByRole('status')).toHaveTextContent(text)
       // La lista normal sigue ahí.
-      expect(screen.getByRole('button', { name: 'Próximos' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Confirmados' })).toBeInTheDocument()
       expect(screen.queryByText(CANCEL_TITLE)).not.toBeInTheDocument()
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       expect(patchCalls()).toHaveLength(0)

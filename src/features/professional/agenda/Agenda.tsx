@@ -203,16 +203,6 @@ export function Agenda() {
     }
   }
 
-  const handleMarkArrival = async (appointment: Appointment) => {
-    try {
-      const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/arrival`)
-      setAppointments(prev => prev.map(a => a.id === appointment.id ? res.data.appointment : a))
-      setSelected(res.data.appointment)
-    } catch {
-      // si falla, se puede reintentar desde el mismo diálogo
-    }
-  }
-
   const btnStyle = (active: boolean): React.CSSProperties => ({
     padding: '7px 18px', border: 'none', borderRadius: '8px',
     fontSize: '15px', fontWeight: 600, cursor: 'pointer',
@@ -274,7 +264,6 @@ export function Agenda() {
           accent={accent}
           onClose={() => setSelected(null)}
           onSave={handleSave}
-          onMarkArrival={handleMarkArrival}
           onChangeStatus={handleChangeStatus}
           onCancel={handleCancel}
           onRegisterBalancePayment={handleRegisterBalancePayment}

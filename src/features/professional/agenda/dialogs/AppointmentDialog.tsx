@@ -1,9 +1,8 @@
-import { NO_ALLERGY_INFO } from '@/features/professional/types/client'
 import { useState } from 'react'
-import { X, Phone, Mail, AlertCircle, FileText, Users, Image as ImageIcon, Tag } from 'lucide-react'
+import { X, Phone, Mail, AlertCircle, FileText, Tag } from 'lucide-react'
 import { getAppointmentStatusConfig, isNoShowStatus } from '@/features/professional/utils/appointmentStatus'
-import type { Appointment } from '@/features/professional/types/appointment'
-import { companionText } from '@/shared/utils/companion'
+import type { Appointment, AppointmentDetails } from '@/features/professional/types/appointment'
+import { COMPANION_RELATION_LABELS } from '@/shared/utils/companion'
 import { NoShowActions, type NoShowTarget } from '@/shared/ui/molecules/NoShowActions'
 import { MarkStatusPanel } from '@/shared/ui/molecules/MarkStatusPanel'
 import { CancelAppointmentDialog } from '@/shared/ui/molecules/CancelAppointmentDialog'
@@ -19,7 +18,6 @@ interface Props {
   accent:          string
   onClose:         () => void
   onSave:          (updated: Appointment) => void
-  onMarkArrival:   (appointment: Appointment) => void
   // Marcar «No asistió» o corregirlo. Devuelve el mensaje de error, o null si salió bien.
   onChangeStatus:  (appointment: Appointment, to: NoShowTarget) => Promise<string | null>
   // Cancelar el turno (quién cancela y, si avisó la clienta, el aviso). Devuelve el mensaje de error, o null si salió bien.
@@ -35,7 +33,7 @@ interface Props {
   onMarkDepositPaid?: (appointment: Appointment) => Promise<string | null>;
 }
 
-export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onMarkArrival, onChangeStatus, onCancel, onRegisterBalancePayment, colleagues = [], onChangeProfessional, onReschedule, onMarkDepositPaid }: Props) {
+export function AppointmentDialog({ appointment, primary, accent, onClose, onSave, onChangeStatus, onCancel, onRegisterBalancePayment, colleagues = [], onChangeProfessional, onReschedule, onMarkDepositPaid }: Props) {
   const [notes, setNotes]   = useState(appointment.internalNotes)
   const [cancelling, setCancelling] = useState(false)
   // «Editar»: fecha, hora y notas internas. Las alergias de la clienta no se editan nunca.
@@ -46,6 +44,8 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
   const [saving, setSaving]       = useState(false)
 
   const noShow = isNoShowStatus(appointment.status)
+  const infoLines = detailLines(appointment.details)
+  const designImage = appointment.details?.designPreference?.type === 'image' ? appointment.details.designPreference.value : null
   const currentCfg = getAppointmentStatusConfig(appointment.status, appointment.cancelReason, appointment.displayStatus, appointment.statusLabel)
 
   return (
@@ -79,61 +79,28 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             </div>
           )}
 
-          {/* Cliente */}
-          <Section title="Datos del cliente">
-            <Row><Phone size={14} /><span>{appointment.client.phone}</span></Row>
-            <Row><Mail size={14} /><span>{appointment.client.email}</span></Row>
-            {appointment.client.allergies ? (
-              <Row><AlertCircle size={14} color="#e53935" /><span style={{ color: '#e53935' }}>{appointment.client.allergies}</span></Row>
-            ) : (
-              <Row><AlertCircle size={14} /><span style={{ color: '#666' }}>{NO_ALLERGY_INFO}</span></Row>
-            )}
-            {appointment.client.notes && (
-              <Row><FileText size={14} /><span>{appointment.client.notes}</span></Row>
-            )}
-          </Section>
+          {/* Cliente: solo lo que hay cargado; si no hay ningún dato, la sección no aparece. */}
+          {(appointment.client.phone || appointment.client.email || appointment.client.allergies || appointment.client.notes) && (
+            <Section title="Datos del cliente">
+              {appointment.client.phone && <Row><Phone size={14} /><span>{appointment.client.phone}</span></Row>}
+              {appointment.client.email && <Row><Mail size={14} /><span>{appointment.client.email}</span></Row>}
+              {appointment.client.allergies && (
+                <Row><AlertCircle size={14} color="#e53935" /><span style={{ color: '#e53935' }}>Alergias: {appointment.client.allergies}</span></Row>
+              )}
+              {appointment.client.notes && (
+                <Row><FileText size={14} /><span>{appointment.client.notes}</span></Row>
+              )}
+            </Section>
+          )}
 
-          {/* Info cargada por el cliente al reservar */}
-          {appointment.details && (
-            appointment.details.allergies || appointment.details.hasCompanion || appointment.details.designPreference?.value ||
-            appointment.details.hasOtherSalonPolish || appointment.details.isNailReconstruction || appointment.details.hairLength ||
-            appointment.details.wantsExtensions || appointment.details.skinType
-          ) && (
-            <Section title="Info del turno (cargada por el cliente)">
-              {appointment.details.allergies && (
-                <Row><AlertCircle size={14} color="#e53935" /><span style={{ color: '#e53935' }}>{appointment.details.allergies}</span></Row>
-              )}
-              {appointment.details.hasCompanion && (
-                <Row><Users size={14} /><span>{companionText(appointment.details)}</span></Row>
-              )}
-              {appointment.details.designPreference?.value && (
-                appointment.details.designPreference.type === 'image' ? (
-                  <div>
-                    <Row><ImageIcon size={14} /><span>Diseño de referencia:</span></Row>
-                    <img
-                      src={appointment.details.designPreference.value}
-                      alt="Diseño de referencia"
-                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', marginTop: '6px' }}
-                    />
-                  </div>
-                ) : (
-                  <Row><FileText size={14} /><span>Diseño: {appointment.details.designPreference.value}</span></Row>
-                )
-              )}
-              {appointment.details.hasOtherSalonPolish && (
-                <Row><AlertCircle size={14} color="#d4af37" /><span>Tiene esmaltado de otro salón para retirar</span></Row>
-              )}
-              {appointment.details.isNailReconstruction && (
-                <Row><FileText size={14} /><span>Reconstrucción de uñas{appointment.details.nailReconstructionCount ? ` (${appointment.details.nailReconstructionCount})` : ''}</span></Row>
-              )}
-              {appointment.details.hairLength && (
-                <Row><FileText size={14} /><span>Largo de cabello: {appointment.details.hairLength}</span></Row>
-              )}
-              {appointment.details.wantsExtensions && (
-                <Row><FileText size={14} /><span>Quiere extensiones</span></Row>
-              )}
-              {appointment.details.skinType && (
-                <Row><FileText size={14} /><span>Tipo de piel: {appointment.details.skinType}</span></Row>
+          {/* Lo que la clienta completó al confirmar el turno: poca información y solo lo que cargó (nada si no completó nada). */}
+          {(infoLines.length > 0 || designImage) && (
+            <Section title="Info del turno">
+              {infoLines.map(l => (
+                <Row key={l.label}><span style={{ color: l.danger ? '#e53935' : undefined }}><strong>{l.label}:</strong> {l.value}</span></Row>
+              ))}
+              {designImage && (
+                <img src={designImage} alt="Diseño de referencia" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px' }} />
               )}
             </Section>
           )}
@@ -164,6 +131,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
               paymentStatus={appointment.paymentStatus}
               status={appointment.status}
               balancePayment={appointment.balancePayment}
+              showCollector={false}
               onRegister={data => onRegisterBalancePayment(appointment, data)}
             />
           )}
@@ -173,25 +141,6 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             <div>
               <p style={{ fontSize: '12px', fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>Profesional de este servicio</p>
               <ChangeLegProfessional currentId="" options={colleagues} onChange={id => onChangeProfessional(appointment, id)} />
-            </div>
-          )}
-
-          {/* Llegada */}
-          {appointment.status === 'confirmed' && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: appointment.arrivedAt ? '#eafaf0' : '#fff8e8', borderRadius: '12px', gap: '10px' }}>
-              <span style={{ fontSize: '14px', color: '#000' }}>
-                {appointment.arrivedAt
-                  ? `Llegó a las ${new Date(appointment.arrivedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
-                  : 'Todavía no registró la llegada — pasados 30 min de la hora pactada se marca "No asistió (automático)" sola.'}
-              </span>
-              {!appointment.arrivedAt && (
-                <button
-                  onClick={() => onMarkArrival(appointment)}
-                  style={{ padding: '8px 14px', border: 'none', borderRadius: '10px', background: primary, color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: "'Lato', sans-serif", whiteSpace: 'nowrap' }}
-                >
-                  Marcar llegada
-                </button>
-              )}
             </div>
           )}
 
@@ -324,6 +273,23 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
       )}
     </div>
   )
+}
+
+// Líneas compactas «Etiqueta: valor» con lo que la clienta completó al confirmar el turno (solo lo que cargó).
+function detailLines(d: AppointmentDetails | null | undefined): { label: string; value: string; danger?: boolean }[] {
+  if (!d) return []
+  const lines: { label: string; value: string; danger?: boolean }[] = []
+  if (d.allergies) lines.push({ label: 'Alergias', value: d.allergies, danger: true })
+  if (d.hasCompanion) {
+    lines.push({ label: 'Acompañante', value: d.companionRelation ? `sí (${COMPANION_RELATION_LABELS[d.companionRelation].toLowerCase()})` : 'sí' })
+  }
+  if (d.designPreference?.value && d.designPreference.type !== 'image') lines.push({ label: 'Diseño', value: d.designPreference.value })
+  if (d.hasOtherSalonPolish) lines.push({ label: 'Esmaltado de otro salón', value: 'sí, para retirar' })
+  if (d.isNailReconstruction) lines.push({ label: 'Reconstrucción de uñas', value: d.nailReconstructionCount ? String(d.nailReconstructionCount) : 'sí' })
+  if (d.hairLength) lines.push({ label: 'Largo de cabello', value: d.hairLength })
+  if (d.wantsExtensions) lines.push({ label: 'Extensiones', value: 'sí' })
+  if (d.skinType) lines.push({ label: 'Tipo de piel', value: d.skinType })
+  return lines
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
