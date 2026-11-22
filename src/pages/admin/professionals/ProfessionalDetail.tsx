@@ -15,6 +15,9 @@ type Tab = 'profile' | 'performance';
 
 export function ProfessionalDetail({ professional, onBack, onSave }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
+  // La administradora solo tiene el perfil básico (nombre, correo, teléfono, foto, estado e ingreso). Si vuelve a ser
+  // profesional, reaparece todo: los datos de profesional nunca se borran.
+  const isAdmin = professional.role === 'admin';
   const initials = professional.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -30,26 +33,26 @@ export function ProfessionalDetail({ professional, onBack, onSave }: Props) {
         </div>
         <div className="prof-detail-body">
           <h2 className="prof-detail-name">{professional.name}</h2>
-          <p className="prof-detail-sub">{professional.specialty}</p>
+          {!isAdmin && <p className="prof-detail-sub">{professional.specialty}</p>}
           <div className="prof-detail-info">
             <span className="prof-detail-info-item">📞 {professional.phone}</span>
             <span className="prof-detail-info-item">✉️ {professional.email}</span>
-            {professional.socials.instagram && (
+            {!isAdmin && professional.socials.instagram && (
               <a href={professional.socials.instagram} target="_blank" rel="noopener noreferrer" style={{ color: '#069494' }}>
                 Instagram
               </a>
             )}
-            {professional.socials.facebook && (
+            {!isAdmin && professional.socials.facebook && (
               <a href={professional.socials.facebook} target="_blank" rel="noopener noreferrer" style={{ color: '#069494' }}>
                 Facebook
               </a>
             )}
-            {professional.socials.tiktok && (
+            {!isAdmin && professional.socials.tiktok && (
               <a href={professional.socials.tiktok} target="_blank" rel="noopener noreferrer" style={{ color: '#069494' }}>
                 TikTok
               </a>
             )}
-            {professional.socials.twitter && (
+            {!isAdmin && professional.socials.twitter && (
               <a href={professional.socials.twitter} target="_blank" rel="noopener noreferrer" style={{ color: '#069494' }}>
                 Twitter
               </a>
@@ -58,6 +61,7 @@ export function ProfessionalDetail({ professional, onBack, onSave }: Props) {
         </div>
       </div>
 
+      {!isAdmin && (
       <div className="tab-bar">
         <button type="button" className={`tab-btn ${activeTab === 'profile' ? 'active' : 'inactive'}`}
           onClick={() => setActiveTab('profile')}>
@@ -68,8 +72,9 @@ export function ProfessionalDetail({ professional, onBack, onSave }: Props) {
           Rendimiento
         </button>
       </div>
+      )}
 
-      {activeTab === 'profile'
+      {isAdmin || activeTab === 'profile'
         ? <ProfileTab professional={professional} onSave={onSave} onBack={onBack} />
         : <PerformanceTab professional={professional} />}
     </div>

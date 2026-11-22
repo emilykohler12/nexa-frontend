@@ -12,6 +12,7 @@ interface CatalogService {
   price:    number
   status:   string
   isCombo?: boolean
+  isSpecial?: boolean
 }
 
 interface Props {
@@ -27,8 +28,9 @@ export function ServicesStep({ selected, onChange }: Props) {
 
   useEffect(() => {
     api.get<{ services: CatalogService[] }>('/api/services')
-      // Los servicios simultáneos (combos) los asigna el administrador: no se ofrecen acá.
-      .then(res => setServices((res.data.services ?? []).filter(s => s.status === 'active' && !s.isCombo)))
+      // Los servicios simultáneos (combos) y los especiales (duración 0, con horarios fijos por evento) los asigna el
+      // administrador: no se ofrecen acá. Con un especial el envío fallaba (ownDuration tiene que ser de al menos 1 min).
+      .then(res => setServices((res.data.services ?? []).filter(s => s.status === 'active' && !s.isCombo && !s.isSpecial)))
       .catch(() => setServices([]))
   }, [])
 

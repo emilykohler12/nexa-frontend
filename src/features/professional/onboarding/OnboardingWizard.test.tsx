@@ -9,8 +9,9 @@ vi.mock('@/shared/utils/api', () => ({ api: { post: vi.fn() } }))
 vi.mock('@/features/tenant/TenantContext', () => ({
   useTenant: () => ({ business: { primaryColor: '#069494', accentColor: '#d4af37' } }),
 }))
+const { logout } = vi.hoisted(() => ({ logout: vi.fn() }))
 vi.mock('@/features/auth/AuthContext', () => ({
-  useAuth: () => ({ user: { name: 'Ana', email: 'ana@x.com', phone: '1155550000', gender: '' } }),
+  useAuth: () => ({ user: { name: 'Ana', email: 'ana@x.com', phone: '1155550000', gender: '' }, logout }),
 }))
 // Solo interesan el paso de horarios y el avance; los demás pasos se reemplazan por stubs mínimos.
 vi.mock('./steps/PersonalStep', () => ({ PersonalStep: () => null }))
@@ -43,5 +44,18 @@ describe('OnboardingWizard — franjas', () => {
     expect(screen.getByText('Lunes: la hora de inicio tiene que ser anterior a la de fin.')).toBeInTheDocument()
     expect(screen.getByText('cargar franja invertida')).toBeInTheDocument()
     expect(api.post).not.toHaveBeenCalled()
+  })
+})
+
+describe('OnboardingWizard — salida', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('siempre hay un «Cerrar sesión» para salir del formulario (antes tapaba todo y no había cómo ir al login)', async () => {
+    const user = userEvent.setup()
+    render(<OnboardingWizard onComplete={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+
+    expect(logout).toHaveBeenCalledTimes(1)
   })
 })

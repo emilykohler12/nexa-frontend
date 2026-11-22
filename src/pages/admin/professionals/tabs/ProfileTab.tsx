@@ -89,6 +89,9 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
     set('schedule', schedule);
   };
 
+  // La administradora no tiene datos de profesional a la vista; igual se conservan y se mandan sin cambios al guardar.
+  const isAdmin = professional.role === 'admin';
+
   const handleSave = async () => {
     const errors = validateAllSocials(form.socials as Record<string, string | null>);
     if (Object.keys(errors).length > 0) {
@@ -142,10 +145,12 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
             <span>Nombre</span>
             <input value={form.name} onChange={(e) => set('name', e.target.value)} />
           </label>
+          {!isAdmin && (
           <label className="prof-field">
             <span>Especialidad</span>
             <input value={form.specialty} onChange={(e) => set('specialty', e.target.value)} />
           </label>
+          )}
           <label className="prof-field">
             <span>Teléfono</span>
             <input value={form.phone} onChange={(e) => set('phone', e.target.value)} />
@@ -198,6 +203,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
         </div>
       </div>
 
+      {!isAdmin && (<>
       {/* Redes sociales */}
       <div className="prof-section">
         <p className="prof-section-title">Redes sociales</p>
@@ -300,6 +306,7 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
           </label>
         </div>
       </div>
+      </>)}
 
       {saveError && <p className="prof-field-error" style={{ marginBottom: '10px' }}>{saveError}</p>}
 

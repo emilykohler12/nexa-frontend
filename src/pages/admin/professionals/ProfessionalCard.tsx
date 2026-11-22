@@ -35,11 +35,13 @@ export function ProfessionalCard({ professional: p, onClick, onToggleStatus, onT
               <p className="prof-card-name">{p.name}</p>
               {p.role === 'admin' && <span className="role-badge">Admin</span>}
             </div>
-            <p className="prof-card-specialty">{p.specialty}</p>
+            {/* La administradora no muestra especialidad ni métricas (son datos de profesional). */}
+            {p.role !== 'admin' && <p className="prof-card-specialty">{p.specialty}</p>}
           </div>
           <span className={`status-badge ${p.status}`}>{STATUS_LABELS[p.status]}</span>
         </div>
 
+        {p.role !== 'admin' && (
         <div className="prof-card-metrics">
           <div className="prof-metric">
             <span className="prof-metric-value">{p.metrics.totalAppointments}</span>
@@ -58,6 +60,7 @@ export function ProfessionalCard({ professional: p, onClick, onToggleStatus, onT
             <span className="prof-metric-label">Valoración</span>
           </div>
         </div>
+        )}
       </div>
 
       <div className="prof-card-actions">

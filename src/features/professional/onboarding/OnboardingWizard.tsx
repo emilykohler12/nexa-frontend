@@ -32,7 +32,7 @@ interface Props {
 
 export function OnboardingWizard({ onComplete }: Props) {
   const { business } = useTenant()
-  const { user }     = useAuth()
+  const { user, logout } = useAuth()
   const [step, setStep]       = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -124,9 +124,15 @@ export function OnboardingWizard({ onComplete }: Props) {
               <h2 className="onboarding-title">¡Bienvenida al sistema!</h2>
               <p className="onboarding-subtitle">Completá tu perfil para empezar a recibir turnos</p>
             </div>
-            <span className="onboarding-counter" style={{ background: `${primaryColor}18`, color: primaryColor }}>
-              {step + 1} / {STEPS.length}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+              <span className="onboarding-counter" style={{ background: `${primaryColor}18`, color: primaryColor }}>
+                {step + 1} / {STEPS.length}
+              </span>
+              {/* Salida siempre disponible: antes el formulario tapaba todo y no había cómo ir al login ni a otra página. */}
+              <button type="button" onClick={() => { void logout() }} style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '13px', textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cerrar sesión
+              </button>
+            </div>
           </div>
 
           <div className="onboarding-steps">
