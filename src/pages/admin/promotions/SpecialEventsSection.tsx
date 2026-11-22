@@ -9,6 +9,7 @@ import { Plus, Edit2, Trash2, Sparkles, Calendar } from 'lucide-react'
 import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { todayInArgentina } from '@/shared/utils/argentinaTime'
+import { formatDateDMY } from '@/shared/utils/dateFormat'
 import type { SpecialEvent, SpecialEventFormValues } from '@/app/data/admin/promotions/specialEventTypes'
 import { useToast } from '@/shared/ui/molecules/ToastProvider'
 
@@ -143,7 +144,7 @@ export function SpecialEventsSection() {
               <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Servicio: {e.service.name}</p>
               <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Con: {e.professional.name}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: isPast(e.date) ? '#e53935' : '#555' }}>
-                <Calendar size={13} /> {e.date}{isPast(e.date) ? ' — ya pasó, no se ve en el home' : ''}
+                <Calendar size={13} /> {formatDateDMY(e.date)}{isPast(e.date) ? ' — ya pasó, no se ve en el home' : ''}
               </div>
 
               {e.description && <p style={{ margin: 0, fontSize: '13px', color: '#888', fontStyle: 'italic' }}>"{e.description}"</p>}

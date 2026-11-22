@@ -9,6 +9,8 @@ import { getAppointmentStatusDisplay, NO_SHOW_AUTO_NOTICE } from '@/app/data/sha
 import { Calendar, Clock, User, Users, ChevronRight, X, CalendarClock } from 'lucide-react'
 import type { AppointmentStatus } from '@/features/client/types'
 import { RescheduleModal } from '@/features/client/booking/RescheduleModal'
+import { ComboRescheduleModal } from '@/features/client/booking/ComboRescheduleModal'
+import { formatDateDMY } from '@/shared/utils/dateFormat'
 import type { AppointmentDetailsValue } from '@/features/client/booking/PostBookingDetails'
 import { AppointmentDetailModal } from './AppointmentDetailModal'
 import './AppointmentsPage.css'
@@ -278,11 +280,8 @@ export function AppointmentsPage() {
     }
   }
 
+  // Un combo se reprograma entero (ComboRescheduleModal); un turno suelto, con RescheduleModal.
   const handleRescheduleClick = (appt: Appointment) => {
-    if (appt.comboGroupId) {
-      setToast({ type: 'info', text: 'Este turno es parte de un combo y no se puede reprogramar desde acá. Cancelalo y reservá de nuevo si necesitás cambiar el horario.' })
-      return
-    }
     setReschedulingAppt(appt)
   }
 
@@ -411,6 +410,15 @@ export function AppointmentsPage() {
                     </span>
                     {canCancel && (
                       <div className="appointment-actions">
+                        {!isPast(rowAppt) && (
+                          <button
+                            className="appointment-reschedule-btn"
+                            onClick={e => { e.stopPropagation(); handleRescheduleClick(rowAppt) }}
+                            disabled={cancellingId === rowAppt.id}
+                          >
+                            <CalendarClock size={14} /> Reprogramar combo
+                          </button>
+                        )}
                         <button
                           className="appointment-cancel-btn"
                           onClick={e => { e.stopPropagation(); setConfirmCancelAppt(rowAppt) }}
@@ -528,7 +536,24 @@ export function AppointmentsPage() {
         </div>
       )}
 
-      {reschedulingAppt && (
+      {reschedulingAppt && reschedulingAppt.comboGroupId && (
+        <ComboRescheduleModal<Appointment>
+          legs={appointments
+            .filter(a => a.comboGroupId === reschedulingAppt.comboGroupId && (a.status === 'confirmed' || a.status === 'pending'))
+            .map(a => ({ id: a.id, serviceId: a.serviceId, serviceName: a.serviceName, professionalId: a.professionalId, professionalName: a.professionalName }))}
+          initialDate={reschedulingAppt.date}
+          initialTime={reschedulingAppt.time}
+          onClose={() => setReschedulingAppt(null)}
+          onSuccess={updated => {
+            const byId = new Map(updated.map(a => [a.id, a]))
+            setAppointments(prev => prev.map(a => byId.get(a.id) ?? a))
+            setReschedulingAppt(null)
+            setToast({ type: 'success', text: 'Combo reprogramado con éxito.' })
+          }}
+        />
+      )}
+
+      {reschedulingAppt && !reschedulingAppt.comboGroupId && (
         <RescheduleModal<Appointment>
           appointmentId={reschedulingAppt.id}
           initialServiceId={reschedulingAppt.serviceId}
@@ -611,8 +636,8 @@ export function AppointmentsPage() {
             title="¿Cancelar este turno?"
             message={
               confirmCancelAppt.comboGroupId
-                ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date}.`
-                : `${confirmCancelAppt.serviceName} del ${confirmCancelAppt.date} a las ${confirmCancelAppt.time}.`
+                ? `Este turno es parte de un combo — se van a cancelar todos los servicios del combo. ${confirmCancelAppt.serviceName} del ${formatDateDMY(confirmCancelAppt.date)}.`
+                : `${confirmCancelAppt.serviceName} del ${formatDateDMY(confirmCancelAppt.date)} a las ${confirmCancelAppt.time}.`
             }
             date={first.date}
             time={first.time}

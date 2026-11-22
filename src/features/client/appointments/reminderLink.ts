@@ -50,7 +50,6 @@ export const REMINDER_LINK_MESSAGES = {
   cancelled:    'Ese turno ya está cancelado.',
   finished:     'Ese turno ya se realizó.',
   noShow:       'Ese turno figura como «No asistió». Si viniste, avisale al estudio para que lo corrijan.',
-  comboReschedule: 'Este turno es parte de un combo y no se puede reprogramar desde acá. Cancelalo y reservá de nuevo si necesitás cambiar el horario.',
   loadFailed:   'No pudimos cargar tus turnos para abrir ese enlace. Intentá de nuevo en unos minutos.',
 } as const
 
@@ -86,8 +85,6 @@ export function resolveReminderLink<T extends LinkAppointment>(
   if (link.accion !== 'cancelar' && appointmentInstant(target.date, target.time).getTime() <= now) {
     return { kind: 'message', text: REMINDER_LINK_MESSAGES.started }
   }
-  if (link.accion === 'reprogramar' && target.comboGroupId) {
-    return { kind: 'message', text: REMINDER_LINK_MESSAGES.comboReschedule }
-  }
+  // Un combo se reprograma entero desde la misma pantalla (ComboRescheduleModal): se abre con la pata activa.
   return { kind: 'open', accion: link.accion, target }
 }

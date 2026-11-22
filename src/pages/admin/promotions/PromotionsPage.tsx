@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Edit2, Trash2, Upload, Check } from 'lucide-react'
 import { todayInArgentina } from '@/shared/utils/argentinaTime'
+import { formatDateDMY } from '@/shared/utils/dateFormat'
 import { api } from '@/shared/utils/api'
 import { uploadImage } from '@/shared/utils/uploadImage'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -14,8 +15,8 @@ const todayISO = () => todayInArgentina()
 // del estado "activa/inactiva" que pone el admin.
 function vigencyLabel(promo: Promotion): { label: string; color: string } | null {
   const today = todayISO()
-  if (promo.startDate && promo.startDate > today) return { label: `Empieza el ${promo.startDate}`, color: '#d4af37' }
-  if (promo.endDate && promo.endDate < today) return { label: `Terminó el ${promo.endDate}`, color: '#999' }
+  if (promo.startDate && promo.startDate > today) return { label: `Empieza el ${formatDateDMY(promo.startDate)}`, color: '#d4af37' }
+  if (promo.endDate && promo.endDate < today) return { label: `Terminó el ${formatDateDMY(promo.endDate)}`, color: '#999' }
   return null
 }
 

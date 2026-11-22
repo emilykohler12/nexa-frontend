@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Bell, Sparkles, ShoppingBag, Tag, CalendarClock, CalendarX, Repeat } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
+import { dmyInText } from '@/shared/utils/dateFormat'
 import { ClientReviewsList } from '@/features/client/reviews/ClientReviewsList'
 import type { ClientNotification, ClientNotificationType } from './types'
 import '@/pages/client/AppointmentsPage.css'
@@ -130,7 +131,7 @@ export function Notifications() {
                     <h3 style={{ margin: 0, fontWeight: n.read ? 600 : 700, color: '#1a1a1a' }}>{n.title}</h3>
                     <span style={{ fontSize: '12px', color: '#aaa', whiteSpace: 'nowrap', fontFamily: "'Lato', sans-serif" }}>{timeAgo(n.createdAt)}</span>
                   </div>
-                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#666', fontFamily: "'Lato', sans-serif" }}>{n.body}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#666', fontFamily: "'Lato', sans-serif" }}>{dmyInText(n.body)}</p>
                 </div>
                 {!n.read && (
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: primary, flexShrink: 0, marginTop: '6px' }} />

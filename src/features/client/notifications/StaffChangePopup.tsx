@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CalendarX, CalendarClock, Repeat } from 'lucide-react'
 import { api } from '@/shared/utils/api'
+import { dmyInText } from '@/shared/utils/dateFormat'
 import { ROUTES } from '@/app/config/routes.config'
 import type { ClientNotification, ClientNotificationType } from './types'
 
@@ -62,7 +63,7 @@ export function StaffChangePopup({ primaryColor }: { primaryColor: string }) {
                 <span style={{ color: cfg.color, flexShrink: 0, marginTop: '2px' }}><Icon size={20} /></span>
                 <div>
                   <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: '#1a1a1a' }}>{n.title}</p>
-                  <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, color: '#555' }}>{n.body}</p>
+                  <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, color: '#555' }}>{dmyInText(n.body)}</p>
                 </div>
               </div>
             )
