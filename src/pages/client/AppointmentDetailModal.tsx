@@ -19,6 +19,8 @@ interface Appointment {
   depositAmount:     number
   status:            AppointmentStatus
   cancelReason?:     string | null
+  // Por qué no se pagó la seña (frase corta); solo viene cuando el turno se liberó por falta de pago.
+  paymentNote?:      string | null
   displayStatus?:    string
   statusLabel?:      string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'
@@ -136,6 +138,12 @@ export function AppointmentDetailModal({ appointment, onClose, onDetailsUpdated,
                 </div>
               ))}
             </div>
+          )}
+
+          {appointment.paymentNote && (
+            <p role="status" style={{ margin: 0, padding: '10px 14px', background: '#fff4f4', borderRadius: '10px', fontFamily: 'var(--font-lato)', fontSize: '14px', fontWeight: 700, color: '#c33' }}>
+              {appointment.paymentNote}
+            </p>
           )}
 
           <div style={{ background: '#f9f9f9', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>

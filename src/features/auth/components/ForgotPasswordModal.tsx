@@ -8,14 +8,18 @@ import { safeErrorMessage } from '@/shared/utils/errorMessage'
 interface Props {
   onClose: () => void
   defaultEmail?: string
+  // Cuenta creada por el estudio: el código ya se mandó al registrarse, así que se abre directo en «ingresar código».
+  activation?: boolean
+  // Al terminar con éxito (si falta, se usa onClose).
+  onDone?: () => void
 }
 
 const emailSchema = z.string().email('Email inválido')
 
 type Step = 'form' | 'sent' | 'reset' | 'done'
 
-export function ForgotPasswordModal({ onClose, defaultEmail }: Props) {
-  const [step, setStep]         = useState<Step>('form')
+export function ForgotPasswordModal({ onClose, defaultEmail, activation = false, onDone }: Props) {
+  const [step, setStep]         = useState<Step>(activation ? 'reset' : 'form')
   const [email, setEmail]       = useState(defaultEmail ?? '')
   const [code, setCode]         = useState('')
   const [password, setPassword] = useState('')
@@ -111,8 +115,12 @@ export function ForgotPasswordModal({ onClose, defaultEmail }: Props) {
         {/* Paso 3: código + nueva contraseña */}
         {step === 'reset' && (
           <form onSubmit={handleReset}>
-            <h2>Nueva contraseña</h2>
-            <p>Ingresá el código de 6 dígitos que recibiste y tu nueva contraseña.</p>
+            <h2>{activation ? 'Activá tu cuenta' : 'Nueva contraseña'}</h2>
+            <p>
+              {activation
+                ? 'El estudio ya cargó tus datos. Te mandamos un código por mail: ingresalo y elegí tu contraseña.'
+                : 'Ingresá el código de 6 dígitos que recibiste y tu nueva contraseña.'}
+            </p>
             {error && <div className="forgot-error">{error}</div>}
 
             <label className="forgot-field">
@@ -141,12 +149,12 @@ export function ForgotPasswordModal({ onClose, defaultEmail }: Props) {
 
             <div className="forgot-actions">
               <button type="button" className="forgot-btn-secondary"
-                onClick={() => setStep('sent')} disabled={loading}>
-                Atrás
+                onClick={() => (activation ? onClose() : setStep('sent'))} disabled={loading}>
+                {activation ? 'Cancelar' : 'Atrás'}
               </button>
               <button type="submit" className="btn-main btn-teal" disabled={loading}
                 style={{ padding: '10px 24px', width: 'auto' }}>
-                {loading ? 'Cambiando...' : 'Cambiar contraseña'}
+                {loading ? (activation ? 'Activando...' : 'Cambiando...') : (activation ? 'Activar cuenta' : 'Cambiar contraseña')}
               </button>
             </div>
           </form>
@@ -156,12 +164,12 @@ export function ForgotPasswordModal({ onClose, defaultEmail }: Props) {
         {step === 'done' && (
           <div>
             <div className="forgot-step-icon">✅</div>
-            <h2 style={{ textAlign: 'center' }}>¡Contraseña actualizada!</h2>
+            <h2 style={{ textAlign: 'center' }}>{activation ? '¡Cuenta activada!' : '¡Contraseña actualizada!'}</h2>
             <p style={{ textAlign: 'center' }}>
-              Tu contraseña fue cambiada correctamente. Ya podés iniciar sesión.
+              {activation ? 'Tu cuenta quedó lista. Ya podés iniciar sesión.' : 'Tu contraseña fue cambiada correctamente. Ya podés iniciar sesión.'}
             </p>
             <div className="forgot-success-actions">
-              <button className="btn-main btn-teal" onClick={onClose}
+              <button className="btn-main btn-teal" onClick={onDone ?? onClose}
                 style={{ padding: '10px 28px', width: 'auto' }}>
                 Ir al login
               </button>

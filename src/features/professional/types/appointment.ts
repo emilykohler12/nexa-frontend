@@ -41,6 +41,10 @@ export interface Appointment {
   servicePrice:   number
   // Seña de la reserva y, si ya se cobró algo en el local, ese cobro (para sugerir el saldo a cobrar).
   depositAmount?: number
+  // Lo que Mercado Pago cobró de verdad, solo cuando superó la seña: en el local se cobra de menos por la diferencia.
+  depositPaidAmount?: number | null
+  // Frase corta con el motivo de un pago fallido.
+  paymentNote?: string | null
   // Cómo se paga la seña: null/'mercadopago' (checkout automático) o 'whatsapp' (la marca paga el personal).
   depositMethod?: 'mercadopago' | 'whatsapp' | null
   balancePayment?: { method: 'cash' | 'transfer' | 'card' | 'other'; amount: number; collectedByName?: string | null } | null

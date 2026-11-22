@@ -71,6 +71,22 @@ export interface DashboardData {
   refundedDeposits: number;
   // Señas pagadas por Mercado Pago que el sistema marcó como devueltas y todavía falta devolver (no depende del período).
   pendingRefunds: PendingRefundStat[];
+  // Pagos de Mercado Pago en los que la clienta pagó y no se reservó nada (monto menor, otra moneda, llegó tarde): hay que devolverlos.
+  paymentsToRefund: PaymentToRefundStat[];
+}
+
+export interface PaymentToRefundStat {
+  id:             string;
+  outcome:        'underpaid' | 'wrong_currency' | 'late';
+  reason:         string;
+  paidAmount:     number | null;
+  expectedAmount: number | null;
+  currency:       string | null;
+  receivedAt:     string;
+  clientName:     string | null;
+  label:          string | null;
+  date:           string | null;
+  time:           string | null;
 }
 
 export interface PendingRefundStat {

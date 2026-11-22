@@ -123,6 +123,15 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
             <span style={{ fontSize: '22px', fontWeight: 700, color: accent }}>${appointment.servicePrice.toLocaleString('es-AR')}</span>
           </div>
 
+          {appointment.depositPaidAmount != null && (
+            <p style={{ margin: 0, padding: '10px 14px', background: '#fff8e6', borderRadius: '10px', fontSize: '14px', fontWeight: 700, color: '#000' }}>
+              El pago fue de ${appointment.depositPaidAmount.toLocaleString('es-AR')}: en el local cobrale ${(appointment.depositPaidAmount - (appointment.depositAmount ?? 0)).toLocaleString('es-AR')} menos.
+            </p>
+          )}
+          {appointment.paymentNote && (
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#c33' }}>{appointment.paymentNote}</p>
+          )}
+
           {/* Cobro del saldo en el local */}
           {onRegisterBalancePayment && (
             <BalancePaymentForm

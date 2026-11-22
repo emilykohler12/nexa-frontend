@@ -68,6 +68,10 @@ export interface CalendarAppointment {
   // Solo en turnos cancelados: quién canceló, si la seña se marcó devuelta y el aviso de la clienta.
   cancellation?: CancellationDetail | null;
   depositAmount?: number;
+  // Lo que Mercado Pago cobró de verdad, solo cuando superó la seña (la seña y el saldo no cambian).
+  depositPaidAmount?: number | null;
+  // Frase corta con el motivo de un pago fallido.
+  paymentNote?: string | null;
   depositMethod?: 'mercadopago' | 'whatsapp' | null;
   balancePayment?: BalancePayment | null;
   polishRemoval?: { label: string | null; price: number } | null;

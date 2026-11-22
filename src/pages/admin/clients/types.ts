@@ -25,6 +25,8 @@ export interface AdminClient {
   visits: ClientVisits
   createdAt: string
   blocked?: boolean
+  // Ficha creada por el estudio: la clienta todavía no activó su cuenta (no eligió contraseña).
+  pendingActivation?: boolean
 }
 
 export interface ClientAppointmentHistory {

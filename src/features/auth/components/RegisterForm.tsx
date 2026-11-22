@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '../model/schemas'
 import { useRegister } from '../hooks/useAuth'
 import { useTenant }   from '@/features/tenant/TenantContext'
-import { safeErrorMessage } from '@/shared/utils/errorMessage'
+import { safeErrorMessage, apiErrorCode } from '@/shared/utils/errorMessage'
+import { ForgotPasswordModal } from './ForgotPasswordModal'
 import { ROUTES } from '@/app/config/routes.config'
 
 export function RegisterForm() {
@@ -17,13 +18,18 @@ export function RegisterForm() {
   const registerUser  = useRegister()
   const { business }  = useTenant()
   const [showPass, setShowPass] = useState(false)
+  const navigate = useNavigate()
+  // Correo de una ficha creada por el estudio: el servidor ya mandó el código para activar la cuenta.
+  const [activationEmail, setActivationEmail] = useState<string | null>(null)
 
   const errorMessage = registerUser.error
     ? safeErrorMessage(registerUser.error, 'Error al registrarse. Intentá de nuevo.')
     : null
 
   return (
-    <form onSubmit={handleSubmit((data) => registerUser.mutate(data))} style={{ display: 'flex', flexDirection: 'column' }}>
+    <form onSubmit={handleSubmit((data) => registerUser.mutate(data, {
+      onError: (err) => { if (apiErrorCode(err) === 'ACCOUNT_PENDING_ACTIVATION') setActivationEmail(data.email) },
+    }))} style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="animate-in" style={{ flex: 1 }}>
 
         <div className="logo-wrap" style={{ marginBottom: 16 }}>
@@ -180,6 +186,14 @@ export function RegisterForm() {
 
 
       </div>
+      {activationEmail && (
+        <ForgotPasswordModal
+          activation
+          defaultEmail={activationEmail}
+          onClose={() => setActivationEmail(null)}
+          onDone={() => navigate(ROUTES.LOGIN)}
+        />
+      )}
     </form>
   )
 }
