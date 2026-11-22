@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { api } from '@/shared/utils/api';
 import { minutesSinceStart } from '@/shared/utils/argentinaTime';
+import { useClientAccountSearch } from '@/shared/hooks/useClientAccountSearch';
+import { ClientAccountMatches, type ClientMatch } from '@/shared/ui/molecules/ClientAccountMatches';
 import { generateSlots } from '@/features/professional/onboarding/types';
 import type { Appointment, Professional } from './types';
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
@@ -63,6 +65,28 @@ export function CreateAppointmentModal({ professionals, onClose, onCreated }: Pr
     if (professionalId) loadTimes(professionalId, d);
   };
 
+  // Al escribir el nombre se busca si la clienta ya tiene cuenta; al elegirla, el turno queda en SU cuenta (el correo
+  // identifica la cuenta y no se edita).
+  const account = useClientAccountSearch(async q => {
+    const res = await api.get<{ clients: ClientMatch[] }>('/api/admin/clients/search', { params: { q } });
+    return res.data.clients ?? [];
+  });
+  const handleNameChange = (value: string) => {
+    setClientName(value);
+    if (account.selected && value !== account.selected.name) clearAccount();
+    account.lookup(value);
+  };
+  const pickAccount = (m: ClientMatch) => {
+    account.select(m);
+    setClientName(m.name);
+    setClientPhone(m.phone);
+    setClientEmail(m.email);
+  };
+  const clearAccount = () => {
+    account.clear();
+    setClientEmail('');
+  };
+
   const selectedService = services.find(s => s.id === serviceId);
   const canSave = Boolean(clientName.trim() && serviceId && professionalId && date && time);
 
@@ -100,11 +124,12 @@ export function CreateAppointmentModal({ professionals, onClose, onCreated }: Pr
 
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <Field label="Nombre del cliente">
-            <input value={clientName} onChange={e => setClientName(e.target.value)} style={inputStyle} placeholder="Nombre y apellido" />
+            <input value={clientName} onChange={e => handleNameChange(e.target.value)} style={inputStyle} placeholder="Nombre y apellido" autoComplete="off" />
           </Field>
+          <ClientAccountMatches matches={account.matches} searched={account.searched} selected={account.selected} onSelect={pickAccount} onClear={clearAccount} />
           <div style={{ display: 'flex', gap: '10px' }}>
             <Field label="Teléfono"><input value={clientPhone} onChange={e => setClientPhone(e.target.value)} style={inputStyle} /></Field>
-            <Field label="Email"><input value={clientEmail} onChange={e => setClientEmail(e.target.value)} style={inputStyle} /></Field>
+            <Field label="Email"><input value={clientEmail} onChange={e => setClientEmail(e.target.value)} readOnly={Boolean(account.selected)} style={inputStyle} /></Field>
           </div>
 
           <Field label="Servicio">

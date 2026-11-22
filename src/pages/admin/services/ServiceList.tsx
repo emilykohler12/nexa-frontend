@@ -150,7 +150,7 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
                         {service.isSpecial ? <CalendarClock size={13} /> : <Clock size={13} />}
                         {service.isSpecial
                           ? `${categoryLabel(service.categoryId)} · ${service.specialDate ?? 'sin fecha'}`
-                          : `${categoryLabel(service.categoryId)} · ${service.duration} min`}
+                          : categoryLabel(service.categoryId)}
                       </p>
                     </div>
                     <div className="admin-service-card-actions" onClick={e => e.stopPropagation()}>
@@ -163,7 +163,8 @@ export function ServiceList({ services, categories, onEdit, onDelete, onToggleSt
                     </div>
                   </div>
 
-                  <p className="service-table-description admin-service-card-desc">{service.description}</p>
+                  {/* La descripción y la duración se ven solo al editar el servicio (menos texto en la pantalla). */}
+                  {/* <p className="service-table-description admin-service-card-desc">{service.description}</p> */}
 
                   <div className="admin-service-card-bottom" onClick={e => service.isSpecial && e.stopPropagation()}>
                     <span className="admin-service-card-price">

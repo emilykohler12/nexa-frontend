@@ -162,11 +162,6 @@ export function ProfileTab({ professional, onSave, onBack }: Props) {
               max={new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })}
               onChange={(e) => setForm((prev) => ({ ...prev, joinedAt: e.target.value, joinedAtIsDefault: e.target.value === '' }))}
             />
-            <small style={{ color: '#777' }}>
-              {form.joinedAtIsDefault
-                ? 'Sin cargar: se usa la fecha de alta de la cuenta. Desempata por antigüedad al asignar «cualquier profesional».'
-                : 'Desempata por antigüedad al asignar «cualquier profesional» cuando hay igual carga semanal.'}
-            </small>
           </label>
           <label className="prof-field">
             <span>Estado</span>

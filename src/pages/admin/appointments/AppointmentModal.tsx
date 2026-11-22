@@ -362,7 +362,6 @@ export function AppointmentModal({
                         <Scissors size={13} /> {leg.serviceName}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px', color: '#555' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Clock size={12} /> {leg.duration} min</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><DollarSign size={12} /> ${leg.price.toLocaleString('es-AR')}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: legColor, display: 'inline-block' }} />
@@ -432,9 +431,6 @@ export function AppointmentModal({
             ) : !appointment.isSimultaneous ? (
               // Turno normal: la lista de arriba ya cubre el caso del combo.
               <>
-                <InfoRow icon={<Clock size={14} />} label="Duración">
-                  {appointment.serviceDuration} min
-                </InfoRow>
                 <InfoRow icon={<DollarSign size={14} />} label="Precio">
                   ${appointment.servicePrice.toLocaleString('es-AR')}
                 </InfoRow>
@@ -474,10 +470,10 @@ export function AppointmentModal({
               <InfoRow icon={<Tag size={14} />} label="Zonas y paquetes elegidos">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   {appointment.selectedZones?.map((z, i) => (
-                    <span key={`z-${i}`}>{z.name} · {z.duration} min · ${z.price.toLocaleString('es-AR')}</span>
+                    <span key={`z-${i}`}>{z.name} · ${z.price.toLocaleString('es-AR')}</span>
                   ))}
                   {appointment.selectedPackages?.map((p, i) => (
-                    <span key={`p-${i}`}>{p.name} (paquete) · {p.duration} min · ${p.price.toLocaleString('es-AR')}</span>
+                    <span key={`p-${i}`}>{p.name} (paquete) · ${p.price.toLocaleString('es-AR')}</span>
                   ))}
                 </div>
               </InfoRow>

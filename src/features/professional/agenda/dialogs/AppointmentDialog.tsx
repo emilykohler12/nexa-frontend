@@ -56,7 +56,7 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
           <div>
             <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: "'Lato', sans-serif" }}>Turno</p>
             <h2 style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700, fontFamily: "'Lato', sans-serif" }}>{appointment.client.name}</h2>
-            <p style={{ margin: '4px 0 0', fontSize: '15px', opacity: 0.85, fontFamily: "'Lato', sans-serif" }}>{appointment.serviceName} · {appointment.time} · {appointment.duration} min</p>
+            <p style={{ margin: '4px 0 0', fontSize: '15px', opacity: 0.85, fontFamily: "'Lato', sans-serif" }}>{appointment.serviceName} · {appointment.time}</p>
           </div>
           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={16} />
@@ -139,10 +139,10 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
           {((appointment.selectedZones?.length ?? 0) > 0 || (appointment.selectedPackages?.length ?? 0) > 0) && (
             <Section title="Zonas y paquetes elegidos">
               {appointment.selectedZones?.map((z, i) => (
-                <Row key={`z-${i}`}><Tag size={14} /><span>{z.name} · {z.duration} min · ${z.price.toLocaleString('es-AR')}</span></Row>
+                <Row key={`z-${i}`}><Tag size={14} /><span>{z.name} · ${z.price.toLocaleString('es-AR')}</span></Row>
               ))}
               {appointment.selectedPackages?.map((p, i) => (
-                <Row key={`p-${i}`}><Tag size={14} /><span>{p.name} (paquete) · {p.duration} min · ${p.price.toLocaleString('es-AR')}</span></Row>
+                <Row key={`p-${i}`}><Tag size={14} /><span>{p.name} (paquete) · ${p.price.toLocaleString('es-AR')}</span></Row>
               ))}
             </Section>
           )}
