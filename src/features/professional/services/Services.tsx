@@ -1,10 +1,11 @@
 // src/features/professional/services/Services.tsx
 import { useState, useEffect } from 'react'
-import { Plus, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useTenant } from '@/features/tenant/TenantContext'
 import { api } from '@/shared/utils/api'
 import { safeErrorMessage } from '@/shared/utils/errorMessage'
 import { AddServiceModal } from './AddServiceModal'
+import { ServiceDetailModal } from './ServiceDetailModal'
 import { SERVICE_CATEGORIES } from '@/app/data/shared'
 import type { CatalogService, AssignedService } from './types'
 import './Services.css'
@@ -16,6 +17,7 @@ export function Services() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [detailId,  setDetailId]  = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -70,32 +72,24 @@ export function Services() {
     .map(cat => ({ ...cat, services: myServices.filter(s => s.service.categoryId === cat.id) }))
     .filter(col => col.services.length > 0)
 
+  // La tarjeta muestra solo el nombre y el precio; el resto de la información está en el detalle (al tocarla).
   const ServiceCard = ({ item }: { item: AssignedService & { service: CatalogService } }) => (
-    <div className="service-card" style={{ opacity: item.status === 'active' ? 1 : 0.6 }}>
-      <div className="service-card-top">
-        <div>
-          <p className="service-card-name">{item.service.name}</p>
-          <p className="service-card-meta">{item.service.duration} min</p>
-        </div>
-        <button
-          className="service-card-toggle"
-          onClick={() => toggleStatus(item.serviceId)}
-          style={{ color: item.status === 'active' ? primary : '#ccc' }}
-          title={item.status === 'active' ? 'Desactivar' : 'Activar'}
-        >
-          {item.status === 'active' ? <ToggleRight size={26} /> : <ToggleLeft size={26} />}
-        </button>
-      </div>
-
-      <p className="service-card-desc">{item.service.description}</p>
-
+    <button
+      type="button"
+      className="service-card"
+      onClick={() => setDetailId(item.serviceId)}
+      style={{ opacity: item.status === 'active' ? 1 : 0.6, textAlign: 'left', cursor: 'pointer', width: '100%', font: 'inherit' }}
+    >
+      <p className="service-card-name">{item.service.name}</p>
       <div className="service-card-bottom">
         <span className="service-card-price" style={{ color: accent }}>
           ${Number(item.service.price).toLocaleString('es-AR')}
         </span>
       </div>
-    </div>
+    </button>
   )
+
+  const detail = myServices.find(s => s.serviceId === detailId)
 
   if (loading) {
     return (
@@ -140,6 +134,18 @@ export function Services() {
             </div>
           ))}
         </div>
+      )}
+
+      {detail && (
+        <ServiceDetailModal
+          service={detail.service}
+          categoryLabel={SERVICE_CATEGORIES.find(c => c.id === detail.service.categoryId)?.label ?? detail.service.categoryId}
+          status={detail.status}
+          primary={primary}
+          accent={accent}
+          onToggle={() => toggleStatus(detail.serviceId)}
+          onClose={() => setDetailId(null)}
+        />
       )}
 
       {showModal && (

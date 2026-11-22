@@ -186,10 +186,8 @@ describe('Mis turnos: enlaces del mail de recordatorio', () => {
       await expectNotice('?turno=a1&accion=reprogramar', [appointment({ time: '09:30' })], /ya empezó/)
     })
 
-    it('turno que ya empezó: el enlace de cancelar abre el diálogo', async () => {
-      mockServer([appointment({ time: '09:30' })])
-      renderLink('?turno=a1&accion=cancelar')
-      expect(await screen.findByText(CANCEL_TITLE)).toBeInTheDocument()
+    it('turno que ya empezó: el enlace de cancelar tampoco abre el diálogo (ya no se cancela)', async () => {
+      await expectNotice('?turno=a1&accion=cancelar', [appointment({ time: '09:30' })], /ya empezó/)
     })
 
     it('«No asistió (automático)» explica que no se puede cancelar ni reprogramar', async () => {

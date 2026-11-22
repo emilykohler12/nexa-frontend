@@ -85,7 +85,9 @@ export function AppointmentsPage() {
   const [confirmCancelAppt, setConfirmCancelAppt] = useState<Appointment | null>(null)
   const [rescheduleNoticeQueue, setRescheduleNoticeQueue] = useState<Appointment[]>([])
   const [reviewQueue, setReviewQueue] = useState<{ appointmentId: string; serviceName: string }[]>([])
-  const [arrivingId, setArrivingId] = useState<string | null>(null)
+  // «No voy a asistir»: turno que se está por marcar (pide confirmación) y el que se está enviando.
+  const [noShowAppt, setNoShowAppt] = useState<Appointment | null>(null)
+  const [noShowingId, setNoShowingId] = useState<string | null>(null)
   // Cancelar UN servicio suelto de un combo (desde el detalle) también pide confirmación.
   const [confirmCancelLegId, setConfirmCancelLegId] = useState<string | null>(null)
   // Enlace del mail de recordatorio (?turno=<id>&accion=…): se resuelve una sola vez, cuando ya cargaron los turnos.
@@ -289,19 +291,25 @@ export function AppointmentsPage() {
     navigate(ROUTES.CLIENT_BOOK, { state: { serviceId: appt.serviceId, professionalId: appt.professionalId } })
   }
 
-  // Los turnos están en hora de Argentina: "hoy" también (toISOString() da la fecha en UTC y después de las 21:00 ya es mañana).
-  const canMarkArrival = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && a.date === todayInArgentina()
+  // Con el turno ya empezado la clienta no cancela ni reprograma: solo puede avisar que no va a asistir. La llegada la
+  // registra el personal; ella no la marca. Solo un turno confirmado y sin llegada registrada admite el aviso.
+  const canAnnounceNoShow = (a: Appointment) => a.status === 'confirmed' && !a.arrivedAt && isPast(a)
 
-  const markArrival = async (appt: Appointment) => {
-    setArrivingId(appt.id)
+  const announceNoShow = async () => {
+    const appt = noShowAppt
+    if (!appt) return
+    setNoShowingId(appt.id)
     try {
-      const res = await api.patch<{ appointment: Appointment }>(`/api/client/appointments/${appt.id}/arrival`)
-      setAppointments(prev => prev.map(a => a.id === appt.id ? res.data.appointment : a))
-      setToast({ type: 'success', text: '¡Listo! Avisamos que llegaste.' })
+      const res = await api.patch<{ appointment: Appointment; appointments: Appointment[] }>(`/api/client/appointments/${appt.id}/no-show`)
+      const changed = new Map(res.data.appointments.map(a => [a.id, a]))
+      setAppointments(prev => prev.map(a => changed.get(a.id) ?? a))
+      setDetailAppt(null)
+      setToast({ type: 'info', text: 'Listo, avisamos que no vas a asistir. La seña queda retenida y el horario se libera.' })
     } catch (err: unknown) {
-      setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo registrar tu llegada.') })
+      setToast({ type: 'error', text: safeErrorMessage(err, 'No se pudo avisar que no vas a asistir.') })
     } finally {
-      setArrivingId(null)
+      setNoShowingId(null)
+      setNoShowAppt(null)
     }
   }
 
@@ -372,8 +380,9 @@ export function AppointmentsPage() {
               const status = getAppointmentStatusDisplay(rowAppt.status, rowAppt.cancelReason, rowAppt.displayStatus, rowAppt.statusLabel)
               const totalPrice = legs.reduce((s, l) => s + Number(l.price), 0)
               const maxDuration = legs.reduce((m, l) => Math.max(m, l.duration), 0)
-              // Se puede cancelar aunque el turno ya haya empezado (la seña queda retenida).
-              const canCancel = activeLegs.length > 0
+              // Una vez empezado el turno ya no se cancela: solo se avisa que no se va a asistir.
+              const canCancel = activeLegs.length > 0 && !isPast(rowAppt)
+              const canNoShow = activeLegs.length > 0 && legs.some(canAnnounceNoShow)
               return (
                 <div
                   key={row.groupId}
@@ -408,17 +417,26 @@ export function AppointmentsPage() {
                     <span className="appointment-price" style={{ color: accentColor }}>
                       ${totalPrice.toLocaleString('es-AR')}
                     </span>
+                    {canNoShow && (
+                      <div className="appointment-actions">
+                        <button
+                          className="appointment-cancel-btn"
+                          onClick={e => { e.stopPropagation(); setNoShowAppt(legs.find(canAnnounceNoShow)!) }}
+                          disabled={noShowingId !== null}
+                        >
+                          <X size={14} /> No voy a asistir
+                        </button>
+                      </div>
+                    )}
                     {canCancel && (
                       <div className="appointment-actions">
-                        {!isPast(rowAppt) && (
-                          <button
-                            className="appointment-reschedule-btn"
-                            onClick={e => { e.stopPropagation(); handleRescheduleClick(rowAppt) }}
-                            disabled={cancellingId === rowAppt.id}
-                          >
-                            <CalendarClock size={14} /> Reprogramar combo
-                          </button>
-                        )}
+                        <button
+                          className="appointment-reschedule-btn"
+                          onClick={e => { e.stopPropagation(); handleRescheduleClick(rowAppt) }}
+                          disabled={cancellingId === rowAppt.id}
+                        >
+                          <CalendarClock size={14} /> Reprogramar combo
+                        </button>
                         <button
                           className="appointment-cancel-btn"
                           onClick={e => { e.stopPropagation(); setConfirmCancelAppt(rowAppt) }}
@@ -465,12 +483,6 @@ export function AppointmentsPage() {
                   <span><Clock size={14} />{appt.duration} min</span>
                 </div>
 
-                {canMarkArrival(appt) && (
-                  <div className="appointment-meta" style={{ color: '#b45309' }}>
-                    <span>Al llegar al local, marcá tu llegada — si pasan más de 30 min de tu hora sin avisar, el turno figura como «No asistió (automático)».</span>
-                  </div>
-                )}
-
                 {appt.status === 'no_show_auto' && (
                   <p role="note" className="appointment-meta" style={{ color: '#b45309', margin: 0 }}>
                     {NO_SHOW_AUTO_NOTICE}
@@ -481,19 +493,22 @@ export function AppointmentsPage() {
                   <span className="appointment-price" style={{ color: accentColor }}>
                     ${appt.price.toLocaleString('es-AR')}
                   </span>
-                  {/* Cancelar se ofrece también con el turno ya empezado; reprogramar, solo antes de la hora. */}
+                  {/* Con el turno ya empezado no se cancela ni se reprograma: solo se avisa que no se va a asistir. */}
                   {(appt.status === 'confirmed' || appt.status === 'pending') ? (
+                    isPast(appt) ? (
+                      canAnnounceNoShow(appt) ? (
+                        <div className="appointment-actions">
+                          <button
+                            className="appointment-cancel-btn"
+                            onClick={e => { e.stopPropagation(); setNoShowAppt(appt) }}
+                            disabled={noShowingId === appt.id}
+                          >
+                            <X size={14} /> {noShowingId === appt.id ? 'Avisando...' : 'No voy a asistir'}
+                          </button>
+                        </div>
+                      ) : null
+                    ) : (
                     <div className="appointment-actions">
-                      {canMarkArrival(appt) && (
-                        <button
-                          onClick={e => { e.stopPropagation(); markArrival(appt) }}
-                          disabled={arrivingId === appt.id}
-                          className="appointment-cancel-btn"
-                          style={{ color: '#0a7a4a' }}
-                        >
-                          {arrivingId === appt.id ? 'Marcando...' : 'Ya llegué'}
-                        </button>
-                      )}
                       {!appt.comboGroupId && !isPast(appt) && (
                         <button
                           className="appointment-reschedule-btn"
@@ -511,15 +526,7 @@ export function AppointmentsPage() {
                         <X size={14} /> {cancellingId === appt.id ? 'Cancelando...' : 'Cancelar'}
                       </button>
                     </div>
-                  ) : canMarkArrival(appt) ? (
-                    <button
-                      onClick={e => { e.stopPropagation(); markArrival(appt) }}
-                      disabled={arrivingId === appt.id}
-                      className="appointment-cancel-btn"
-                      style={{ color: '#0a7a4a' }}
-                    >
-                      {arrivingId === appt.id ? 'Marcando...' : 'Ya llegué'}
-                    </button>
+                    )
                   ) : (
                     <button
                       onClick={e => { e.stopPropagation(); handleRebook(appt) }}
@@ -584,8 +591,21 @@ export function AppointmentsPage() {
                   .map(a => ({ id: a.id, serviceName: a.serviceName, professionalName: a.professionalName, status: a.status, price: a.price }))
               : undefined
           }
-          onCancelLeg={setConfirmCancelLegId}
+          onCancelLeg={isPast(detailAppt) ? undefined : setConfirmCancelLegId}
           cancellingLegId={cancellingId}
+        />
+      )}
+
+      {noShowAppt && (
+        <ConfirmModal
+          title="¿No vas a asistir a este turno?"
+          message={`${noShowAppt.comboGroupId ? 'Se avisa por todos los servicios del combo. ' : ''}${noShowAppt.serviceName} del ${formatDateDMY(noShowAppt.date)} a las ${noShowAppt.time}. Le avisamos a la profesional y el horario se libera para otras clientas. La seña queda retenida y el turno no se puede deshacer desde acá.`}
+          confirmLabel="Sí, no voy a asistir"
+          cancelLabel="Volver"
+          accentColor={primaryColor}
+          loading={noShowingId === noShowAppt.id}
+          onConfirm={announceNoShow}
+          onCancel={() => setNoShowAppt(null)}
         />
       )}
 

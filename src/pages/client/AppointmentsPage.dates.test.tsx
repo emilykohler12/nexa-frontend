@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AppointmentsPage } from './AppointmentsPage'
 import { api } from '@/shared/utils/api'
@@ -46,17 +47,27 @@ describe('Mis turnos: «hoy» es el día de Argentina (cerca de las 21:00)', () 
   })
   afterEach(() => { vi.useRealTimers() })
 
-  it('a las 21:30 de Argentina (00:30 UTC del día siguiente) «Ya llegué» sigue disponible para un turno de hoy', async () => {
+  it('la clienta no tiene botón «Ya llegué»: la llegada la registra el personal', async () => {
     renderAt('2026-11-03T21:30:00-03:00', [appointment({ time: '22:00' })])
-
-    expect(await screen.findByRole('button', { name: 'Ya llegué' })).toBeInTheDocument()
-  })
-
-  it('a las 21:30 de Argentina un turno de mañana no ofrece «Ya llegué»', async () => {
-    renderAt('2026-11-03T21:30:00-03:00', [appointment({ date: '2026-11-04', time: '10:00' })])
 
     expect(await screen.findByText('Corte')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ya llegué' })).not.toBeInTheDocument()
+  })
+
+  it('a las 22:10 de Argentina (turno de las 22:00, ya empezado) ofrece «No voy a asistir» y no «Cancelar» ni «Reprogramar»', async () => {
+    renderAt('2026-11-03T22:10:00-03:00', [appointment({ time: '22:00' })])
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Historial' }))
+    expect(await screen.findByText('No voy a asistir')).toBeInTheDocument()
+    expect(screen.queryByText('Cancelar')).not.toBeInTheDocument()
+    expect(screen.queryByText('Reprogramar')).not.toBeInTheDocument()
+  })
+
+  it('un turno que todavía no empezó sigue ofreciendo «Cancelar» y no «No voy a asistir»', async () => {
+    renderAt('2026-11-03T21:30:00-03:00', [appointment({ date: '2026-11-04', time: '10:00' })])
+
+    expect(await screen.findByText('Cancelar')).toBeInTheDocument()
+    expect(screen.queryByText('No voy a asistir')).not.toBeInTheDocument()
   })
 
   it('un turno de hoy a las 22:00 sigue en «Próximos» a las 21:30', async () => {

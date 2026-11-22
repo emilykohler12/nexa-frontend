@@ -125,13 +125,23 @@ describe('Mis turnos: turnos que figuran como «No asistió»', () => {
       expect(await screen.findByText(/Faltan 11 h 0 min para el turno y el plazo para recuperar la seña es de 12 h: la seña queda retenida\./)).toBeInTheDocument()
     })
 
-    it('se puede cancelar con el turno ya empezado: la seña queda retenida', async () => {
-      // Un turno que ya empezó figura en «Historial» pero se puede cancelar igual.
-      await openCancel(new Date(START.getTime() + 10 * 60_000), {}, 'Historial')
+    it('con el turno ya empezado no se puede cancelar: solo «No voy a asistir», que pide confirmación', async () => {
+      // Un turno que ya empezó figura en «Historial».
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date(START.getTime() + 10 * 60_000))
+      mockWithRules([appointment({ date: '2026-11-03', time: '16:00' })])
+      vi.mocked(api.patch).mockResolvedValue({ data: { appointment: appointment({ date: '2026-11-03', time: '16:00', status: 'cancelled_no_show' }), appointments: [appointment({ date: '2026-11-03', time: '16:00', status: 'cancelled_no_show' })] } } as never)
+      const user = userEvent.setup()
+      render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter><AppointmentsPage /></MemoryRouter></QueryClientProvider>)
+      await user.click(await screen.findByRole('button', { name: 'Historial' }))
 
-      expect(await screen.findByText('El turno ya empezó: la seña queda retenida.')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Sí, cancelar' })).toBeEnabled()
-      expect(screen.queryByRole('button', { name: /Reprogramar/ })).not.toBeInTheDocument()
+      expect(screen.queryByText('Cancelar')).not.toBeInTheDocument()
+      expect(screen.queryByText(/Reprogramar/)).not.toBeInTheDocument()
+      await user.click(await screen.findByText('No voy a asistir'))
+      expect(vi.mocked(api.patch)).not.toHaveBeenCalled()
+      await user.click(await screen.findByRole('button', { name: 'Sí, no voy a asistir' }))
+
+      expect(vi.mocked(api.patch)).toHaveBeenCalledWith('/api/client/appointments/a1/no-show')
     })
 
     it('sin seña paga no hay nada para devolver', async () => {

@@ -47,7 +47,9 @@ export function AppointmentDialog({ appointment, primary, accent, onClose, onSav
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={onClose}>
-      <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '520px', overflow: 'hidden', boxShadow: '0 25px 60px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+      {/* El cuadro nunca pasa del alto de la pantalla y se desplaza por dentro: un turno confirmado que todavía no
+          se realizó tiene muchas secciones (llegada, cobro, cancelar) y antes quedaba cortado sin poder bajar. */}
+      <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '520px', maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto', overscrollBehavior: 'contain', boxShadow: '0 25px 60px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div style={{ background: `linear-gradient(135deg, ${primary}, #047a7a)`, padding: '20px 24px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

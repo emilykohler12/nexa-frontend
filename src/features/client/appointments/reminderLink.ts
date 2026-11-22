@@ -80,9 +80,9 @@ export function resolveReminderLink<T extends LinkAppointment>(
   if (active.length === 0) return { kind: 'message', text: closedMessage(found.status) }
 
   const target = isActive(found.status) ? found : active[0]
-  // Cancelar se permite aunque el turno ya haya empezado (la regla del backend lo admite); «No asistió (automático)»
-  // ya salió arriba porque no es un estado activo.
-  if (link.accion !== 'cancelar' && appointmentInstant(target.date, target.time).getTime() <= now) {
+  // Un turno que ya empezó no se abre desde el enlace (tampoco para cancelar: ya no se cancela, solo se avisa que no
+  // se va a asistir desde «Mis turnos»); «No asistió (automático)» ya salió arriba porque no es un estado activo.
+  if (appointmentInstant(target.date, target.time).getTime() <= now) {
     return { kind: 'message', text: REMINDER_LINK_MESSAGES.started }
   }
   // Un combo se reprograma entero desde la misma pantalla (ComboRescheduleModal): se abre con la pata activa.
