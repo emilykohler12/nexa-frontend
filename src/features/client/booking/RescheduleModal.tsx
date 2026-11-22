@@ -73,11 +73,7 @@ export function RescheduleModal<T extends { id: string }>({
         setTime(null)
         setRefreshSignal(s => s + 1)
       } else {
-        setError(
-          code === 'COMBO_NOT_RESCHEDULABLE'
-            ? 'Este turno es parte de un combo y no se puede reprogramar. Cancelalo y reservá de nuevo si necesitás cambiar el horario.'
-            : safeErrorMessage(err, 'No se pudo reprogramar el turno.')
-        )
+        setError(safeErrorMessage(err, 'No se pudo reprogramar el turno.'))
       }
     } finally {
       setSaving(false)

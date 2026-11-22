@@ -95,8 +95,8 @@ describe('resolveReminderLink', () => {
       appt({ id: 'a2', comboGroupId: 'g1', ...extra[1] }),
     ]
 
-    it('reprogramar no se puede en un combo', () => {
-      expect(resolveReminderLink(link('reprogramar'), legs(), NOW)).toEqual({ kind: 'message', text: REMINDER_LINK_MESSAGES.comboReschedule })
+    it('reprogramar abre la pata del enlace: el combo se reprograma entero', () => {
+      expect(resolveReminderLink(link('reprogramar'), legs(), NOW)).toMatchObject({ kind: 'open', accion: 'reprogramar', target: { id: 'a1' } })
     })
 
     it('cancelar y ver abren la pata del enlace', () => {

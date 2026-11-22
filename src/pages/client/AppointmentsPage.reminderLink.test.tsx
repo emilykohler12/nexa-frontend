@@ -27,6 +27,11 @@ vi.mock('@/features/client/booking/RescheduleModal', () => ({
     <div role="dialog" aria-label="Reprogramar turno">Reprogramando {appointmentId}</div>
   ),
 }))
+vi.mock('@/features/client/booking/ComboRescheduleModal', () => ({
+  ComboRescheduleModal: ({ legs }: { legs: { id: string }[] }) => (
+    <div role="dialog" aria-label="Reprogramar combo">Reprogramando combo de {legs.map(l => l.id).join(', ')}</div>
+  ),
+}))
 
 // Mediodía del 3/11/2026 en Argentina; los turnos de prueba son ese mismo día más tarde.
 const NOW = new Date('2026-11-03T10:00:00-03:00')
@@ -199,12 +204,10 @@ describe('Mis turnos: enlaces del mail de recordatorio', () => {
       await expectNotice('?turno=a1&accion=ver', [appointment({ status: 'finished' })], /ya se realizó/)
     })
 
-    it('combo con accion=reprogramar: se explica que no se puede reprogramar', async () => {
-      await expectNotice(
-        '?turno=a1&accion=reprogramar',
-        [appointment({ comboGroupId: 'g1' }), appointment({ id: 'a2', serviceName: 'Brushing', comboGroupId: 'g1' })],
-        /parte de un combo y no se puede reprogramar/,
-      )
+    it('combo con accion=reprogramar: abre la reprogramación del combo entero', async () => {
+      mockServer([appointment({ comboGroupId: 'g1' }), appointment({ id: 'a2', serviceName: 'Brushing', professionalId: 'p2', professionalName: 'Marta', comboGroupId: 'g1' })])
+      renderLink('?turno=a1&accion=reprogramar')
+      expect(await screen.findByRole('dialog', { name: 'Reprogramar combo' })).toBeInTheDocument()
     })
 
     it('si no se pudieron cargar los turnos, lo dice en vez de afirmar que el turno no existe', async () => {

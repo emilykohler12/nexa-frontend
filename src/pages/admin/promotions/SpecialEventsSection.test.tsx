@@ -38,8 +38,8 @@ describe('Eventos especiales: «hoy» es el día de Argentina', () => {
 
     expect(await screen.findByText('Evento hoy')).toBeInTheDocument()
     expect(screen.getAllByText(/ya pasó, no se ve en el home/)).toHaveLength(1)
-    expect(screen.getByText(/2026-10-30 — ya pasó/)).toBeInTheDocument()
-    expect(screen.queryByText(/2026-10-31 — ya pasó/)).not.toBeInTheDocument()
+    expect(screen.getByText(/30\/10\/2026 — ya pasó/)).toBeInTheDocument()
+    expect(screen.queryByText(/31\/10\/2026 — ya pasó/)).not.toBeInTheDocument()
   })
 
   it('un evento figura como pasado recién cuando termina el día de Argentina', async () => {
@@ -47,7 +47,7 @@ describe('Eventos especiales: «hoy» es el día de Argentina', () => {
     mockEvents([event('ayer', '2026-10-31')])
     render(<SpecialEventsSection />)
 
-    expect(await screen.findByText(/2026-10-31 — ya pasó/)).toBeInTheDocument()
+    expect(await screen.findByText(/31\/10\/2026 — ya pasó/)).toBeInTheDocument()
   })
 
   it('el campo «Fecha del evento» no deja elegir días anteriores a hoy (Argentina) ni siquiera a las 21:30', async () => {
