@@ -14,10 +14,9 @@ interface Form {
   email:     string
   phone:     string
   gender:    ClientGender | ''
-  password:  string
 }
 
-const EMPTY: Form = { name: '', email: '', phone: '', gender: '', password: '' }
+const EMPTY: Form = { name: '', email: '', phone: '', gender: '' }
 
 interface Props {
   onClose:   () => void
@@ -46,7 +45,6 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
         email:     form.email,
         phone:     form.phone || undefined,
         gender:    form.gender || undefined,
-        password:  form.password || undefined,
       })
       onCreated(res.data.client)
     } catch (err: unknown) {
@@ -80,10 +78,10 @@ export function CreateClientModal({ onClose, onCreated }: Props) {
               {Object.entries(GENDER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </Field>
-          <Field label="Contraseña">
-            <input type="text" value={form.password} onChange={e => set('password', e.target.value)} placeholder="Se genera una si la dejás vacía" style={inp} />
-          </Field>
         </div>
+        <p style={{ margin: '12px 0 0', fontSize: '13px', color: '#555' }}>
+          La clienta elige su contraseña: cuando se registre con este correo le llega un código para activar su cuenta y conserva todo lo que cargues acá.
+        </p>
 
         {error && <p style={{ color: '#c33', fontSize: '14px', fontWeight: 600, margin: '14px 0 0' }}>{error}</p>}
 

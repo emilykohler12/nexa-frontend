@@ -48,6 +48,7 @@ interface Appointment {
   depositAmount:     number
   status:            AppointmentStatus
   cancelReason?:     string | null
+  paymentNote?:      string | null
   displayStatus?:    string
   statusLabel?:      string
   paymentStatus:     'pending' | 'partial' | 'paid' | 'refunded'

@@ -8,6 +8,7 @@ import { KpiCard } from './KpiCard'
 // import { TopProductsChart } from './TopProductsChart'
 import { RevenueByCategoryChart } from './RevenueByCategoryChart'
 import { PendingRefundsChart } from './PendingRefundsChart'
+import { PaymentsToRefundCard } from './PaymentsToRefundCard'
 import { PeakHoursHeatmap } from './PeakHoursHeatmap'
 import { PromotionConversionChart } from './PromotionConversionChart'
 import { ServiceProfitabilityTable } from './ServiceProfitabilityTable'
@@ -49,6 +50,7 @@ const EMPTY_DASHBOARD_DATA: DashboardData = {
   pendingBalance: 0,
   refundedDeposits: 0,
   pendingRefunds: [],
+  paymentsToRefund: [],
 }
 
 export function DashboardPage() {
@@ -117,6 +119,10 @@ export function DashboardPage() {
             <PendingRefundsChart
               data={data.pendingRefunds ?? []}
               onRefunded={id => setData(prev => ({ ...prev, pendingRefunds: (prev.pendingRefunds ?? []).filter(r => r.appointmentId !== id) }))}
+            />
+            <PaymentsToRefundCard
+              data={data.paymentsToRefund ?? []}
+              onRefunded={id => setData(prev => ({ ...prev, paymentsToRefund: (prev.paymentsToRefund ?? []).filter(p => p.id !== id) }))}
             />
             <RevenueByCategoryChart data={data.categoryRevenue} />
             <PromotionConversionChart data={data.promotionConversion} />

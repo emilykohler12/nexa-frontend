@@ -459,6 +459,16 @@ export function AppointmentModal({
                     ${appointment.depositAmount.toLocaleString('es-AR')} — {appointment.paymentStatus === 'pending' ? 'sin pagar' : appointment.paymentStatus === 'refunded' ? 'reembolsada' : 'pagada'}
                   </InfoRow>
                 )}
+                {appointment.depositPaidAmount != null && (
+                  <InfoRow icon={<DollarSign size={14} />} label="Pago de más">
+                    El pago fue de ${appointment.depositPaidAmount.toLocaleString('es-AR')}: en el local cobrale ${(appointment.depositPaidAmount - (appointment.depositAmount ?? 0)).toLocaleString('es-AR')} menos.
+                  </InfoRow>
+                )}
+                {appointment.paymentNote && (
+                  <InfoRow icon={<DollarSign size={14} />} label="Pago">
+                    {appointment.paymentNote}
+                  </InfoRow>
+                )}
                 {appointment.depositMethod === 'whatsapp' && (
                   <WhatsappDepositSection appointment={appointment} />
                 )}
