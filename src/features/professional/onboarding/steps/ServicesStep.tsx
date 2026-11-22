@@ -80,7 +80,7 @@ export function ServicesStep({ selected, onChange }: Props) {
                   {service.name}
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: '16px', color: '#000', fontFamily: "'Lato', sans-serif" }}>
-                  Precio ${service.price.toLocaleString('es-AR')}
+                  Precio ${Number(service.price).toLocaleString('es-AR')}
                 </p>
               </div>
             </label>
