@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useClientAccountSearch } from '@/shared/hooks/useClientAccountSearch';
+import { ClientAccountMatches, type ClientMatch } from '@/shared/ui/molecules/ClientAccountMatches';
 import { X } from 'lucide-react';
 import { api } from '@/shared/utils/api';
+import { minutesSinceStart } from '@/shared/utils/argentinaTime';
 import { useAuth } from '@/features/auth/AuthContext';
 import { generateSlots } from '@/features/professional/onboarding/types';
 import type { Appointment } from '@/features/professional/types/appointment';
@@ -54,6 +57,33 @@ export function CreateAppointmentModal({ primary, onClose, onCreated }: Props) {
     }
   };
 
+  // La profesional busca entre SUS clientas (las que ya tuvieron turno con ella): no ve las cuentas de las demás. Se
+  // carga la lista una sola vez y se filtra acá.
+  const myClients = useRef<ClientMatch[] | null>(null);
+  const account = useClientAccountSearch(async q => {
+    if (myClients.current === null) {
+      const res = await api.get<{ clients: ClientMatch[] }>('/api/professional/clients');
+      myClients.current = (res.data.clients ?? []).map(c => ({ id: c.id, name: c.name, email: c.email, phone: c.phone ?? '' }));
+    }
+    const needle = q.toLowerCase();
+    return myClients.current.filter(c => c.name.toLowerCase().includes(needle) || c.email.toLowerCase().includes(needle)).slice(0, 8);
+  });
+  const handleNameChange = (value: string) => {
+    setClientName(value);
+    if (account.selected && value !== account.selected.name) clearAccount();
+    account.lookup(value);
+  };
+  const pickAccount = (m: ClientMatch) => {
+    account.select(m);
+    setClientName(m.name);
+    setClientPhone(m.phone);
+    setClientEmail(m.email);
+  };
+  const clearAccount = () => {
+    account.clear();
+    setClientEmail('');
+  };
+
   const selectedService = services.find(s => s.id === serviceId);
   const canSave = Boolean(clientName.trim() && serviceId && date && time);
 
@@ -90,11 +120,12 @@ export function CreateAppointmentModal({ primary, onClose, onCreated }: Props) {
 
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <Field label="Nombre del cliente">
-            <input value={clientName} onChange={e => setClientName(e.target.value)} style={inputStyle} placeholder="Nombre y apellido" />
+            <input value={clientName} onChange={e => handleNameChange(e.target.value)} style={inputStyle} placeholder="Nombre y apellido" autoComplete="off" />
           </Field>
+          <ClientAccountMatches matches={account.matches} searched={account.searched} selected={account.selected} onSelect={pickAccount} onClear={clearAccount} />
           <div style={{ display: 'flex', gap: '10px' }}>
             <Field label="Teléfono"><input value={clientPhone} onChange={e => setClientPhone(e.target.value)} style={inputStyle} /></Field>
-            <Field label="Email"><input value={clientEmail} onChange={e => setClientEmail(e.target.value)} style={inputStyle} /></Field>
+            <Field label="Email"><input value={clientEmail} onChange={e => setClientEmail(e.target.value)} readOnly={Boolean(account.selected)} style={inputStyle} /></Field>
           </div>
 
           <Field label="Servicio">
@@ -108,14 +139,27 @@ export function CreateAppointmentModal({ primary, onClose, onCreated }: Props) {
             <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} style={inputStyle} />
           </Field>
 
+          {/* El turno manual no está atado a tu franja (a propósito): la hora se escribe a mano y los horarios de tu
+              franja quedan como atajo. Si el día y la hora ya pasaron, el turno se carga como finalizado. */}
+          {date && (
+            <Field label="Hora">
+              <input type="time" step={300} value={time} onChange={e => setTime(e.target.value)} style={inputStyle} />
+            </Field>
+          )}
+          {date && time && minutesSinceStart(date, time) >= 0 && (
+            <p style={{ margin: 0, fontSize: '13px', color: '#444' }}>
+              El día y la hora ya pasaron: el turno se va a cargar como finalizado.
+            </p>
+          )}
+
           {date && (
             loadingTimes ? (
               <p style={{ fontSize: '14px', color: '#000' }}>Cargando horarios...</p>
             ) : availableTimes.length === 0 ? (
-              <p style={{ fontSize: '14px', color: '#000' }}>Sin horarios disponibles este día.</p>
+              <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>No tenés horarios cargados ese día: escribí la hora a mano.</p>
             ) : (
               <div>
-                <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hora</span>
+                <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Horarios de tu franja</span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '6px' }}>
                   {availableTimes.map(t => (
                     <button

@@ -4,10 +4,6 @@ import { useTenant } from '@/features/tenant/TenantContext'
 import { WEEK_DAYS, WEEK_DAY_LABEL, generateSlots } from '../types'
 import type { OnboardingData } from '../types'
 
-const PAYMENT_LABEL: Record<string, string> = {
-  cash: 'Efectivo', transfer: 'Transferencia', card: 'Tarjeta', mp: 'Mercado Pago',
-}
-
 // Fuera de ConfirmationStep para que no se vuelvan a crear en cada render.
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -32,7 +28,6 @@ interface Props { data: OnboardingData }
 export function ConfirmationStep({ data }: Props) {
   const { business } = useTenant()
   const primary = business?.primaryColor ?? '#069494'
-  const accent  = business?.accentColor  ?? '#d4af37'
   const services = business?.services ?? []
 
   const activeDays = WEEK_DAYS.filter(d => data.availability[d].length > 0)
@@ -59,7 +54,6 @@ export function ConfirmationStep({ data }: Props) {
         ) : data.services.map(s => (
           <div key={s.serviceId} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ fontSize: '16px', color: '#333', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{getName(s)}</span>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: accent, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>${s.ownPrice.toLocaleString('es-AR')}</span>
           </div>
         ))}
       </Section>
@@ -81,11 +75,6 @@ export function ConfirmationStep({ data }: Props) {
         })}
       </Section>
 
-      <Section title="Métodos de pago">
-        <p style={{ margin: 0, fontSize: '16px', color: '#333', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-          {data.policies.paymentMethods.map(m => PAYMENT_LABEL[m]).join(', ') || '—'}
-        </p>
-      </Section>
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { parseReminderLink, reminderLinkSearch, resolveReminderLink, REMINDER_LINK_MESSAGES } from './reminderLink'
-import { NO_SHOW_AUTO_NOTICE } from '@/app/data/shared/status.data'
 
 const params = (qs: string) => new URLSearchParams(qs)
 const NOW = new Date('2026-11-03T10:00:00-03:00').getTime()
@@ -54,7 +53,7 @@ describe('resolveReminderLink', () => {
   })
 
   it.each([
-    ['no_show_auto',      NO_SHOW_AUTO_NOTICE],
+    ['no_show_auto',      REMINDER_LINK_MESSAGES.noShow],
     ['cancelled_no_show', REMINDER_LINK_MESSAGES.noShow],
     ['finished',          REMINDER_LINK_MESSAGES.finished],
     ['cancelled',         REMINDER_LINK_MESSAGES.cancelled],

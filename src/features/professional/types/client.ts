@@ -18,10 +18,6 @@ export interface ProfessionalClient {
   preferences:   string
   observations:  string
   visits:        ClientVisit[]
-  nextAppointment: string | null
-  cancellations: number
 }
-// La alergia del perfil solo llega si la profesional atendió a la clienta (turno finalizado):
-// puede venir vacía, null o ausente.
-export const NO_ALLERGY_INFO =
-  'Sin alergias para mostrar. La alergia del perfil de la clienta se ve recién después de un turno finalizado con ella; la que anotó en un turno aparece en ese turno.'
+// La sección «Clientes» solo lista clientas con un turno finalizado con la profesional. La alergia del perfil puede venir
+// vacía, null o ausente: si no hay, no se muestra nada.

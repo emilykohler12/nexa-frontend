@@ -60,26 +60,26 @@ describe('AppointmentModal (administrador): estados e inasistencia', () => {
     expect(screen.getByText('No asistió')).toBeInTheDocument()
   })
 
-  it('un turno confirmado ofrece «Marcar No asistió» (ya no «Marcar cancelado por inasistencia»)', () => {
+  it('un turno confirmado ofrece «No asistió» (ya no «Marcar cancelado por inasistencia»)', () => {
     vi.setSystemTime(new Date(START_ART.getTime() + 5 * 60_000))
     setup()
 
-    expect(screen.getByRole('button', { name: 'Marcar No asistió' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'No asistió' })).toBeEnabled()
     expect(screen.queryByRole('button', { name: /cancelado por inasistencia/i })).not.toBeInTheDocument()
   })
 
-  it('antes de la hora de inicio «Marcar No asistió» está deshabilitado', () => {
+  it('antes de la hora de inicio «No asistió» está deshabilitado', () => {
     vi.setSystemTime(new Date(START_ART.getTime() - 60_000))
     setup()
 
-    expect(screen.getByRole('button', { name: 'Marcar No asistió' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'No asistió' })).toBeDisabled()
   })
 
   it('marcar «No asistió» pide confirmación, cambia el estado por onChangeStatus y cierra el modal', async () => {
     vi.setSystemTime(new Date(START_ART.getTime() + 50 * 60_000))
     const { user, onChangeStatus, onClose } = setup()
 
-    await user.click(screen.getByRole('button', { name: 'Marcar No asistió' }))
+    await user.click(screen.getByRole('button', { name: 'No asistió' }))
     expect(screen.getByText(/Pasaron más de 40 minutos: no se abre horario nuevo/)).toBeInTheDocument()
     expect(onChangeStatus).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Sí, marcar «No asistió»' }))
@@ -116,7 +116,8 @@ describe('AppointmentModal (administrador): estados e inasistencia', () => {
     vi.setSystemTime(START_ART)
     const { user, onChangeStatus, onSave } = setup()
 
-    await user.click(screen.getByRole('button', { name: 'Marcar finalizado' }))
+    await user.click(screen.getByRole('button', { name: 'Finalizado' }))
+    await user.click(screen.getByRole('button', { name: 'Sí, marcar finalizado' }))
 
     expect(onChangeStatus).toHaveBeenCalledWith('a1', 'finished')
     expect(onSave).not.toHaveBeenCalled()
@@ -126,7 +127,7 @@ describe('AppointmentModal (administrador): estados e inasistencia', () => {
     vi.setSystemTime(new Date(START_ART.getTime() - 13 * 3_600_000))
     const { user, onCancel, onClose } = setup({ paymentStatus: 'partial' })
 
-    await user.click(screen.getByRole('button', { name: 'Cancelar turno' }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
     await user.click(screen.getByRole('radio', { name: /La clienta avisó/ }))
     expect(screen.getByRole('status')).toHaveTextContent('Avisó con 13 h 0 min de anticipación: se devuelve la seña.')
     await user.click(screen.getByRole('button', { name: 'Sí, cancelar el turno' }))

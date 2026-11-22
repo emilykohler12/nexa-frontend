@@ -4,21 +4,15 @@ export const appointmentStatus = {
   cancelled:  { label: "Cancelado",   color: "#e57373" },
   finished:   { label: "Finalizado",  color: "#4caf50" },
   noShow:     { label: "No asistió",  color: "#9e9e9e" },
-  // Lo marca solo el sistema (más de 30 minutos sin llegada): el personal puede corregirlo.
-  noShowAuto: { label: "No asistió (automático)", color: "#b45309" },
 } as const;
 
 export type AppointmentStatus = keyof typeof appointmentStatus;
 
-// "Mis turnos": un turno en «No asistió (automático)» no se cancela ni se reprograma — solo el
-// personal puede corregir su estado.
-export const NO_SHOW_AUTO_NOTICE =
-  'Este turno figura como «No asistió (automático)» porque no se registró tu llegada. No se puede cancelar ni reprogramar. Si viniste, avisale al estudio para que lo corrijan.';
-
 // Estados que manda el backend (columna status) y su clave en el mapa de arriba.
+// Para la clienta «No asistió» es un solo estado: no se distingue si lo marcó el sistema o el personal, ni se le avisa nada.
 const BACKEND_STATUS_KEY: Record<string, AppointmentStatus> = {
   cancelled_no_show: 'noShow',
-  no_show_auto:      'noShowAuto',
+  no_show_auto:      'noShow',
 };
 
 // Un turno "cancelado" por falta de pago nunca llegó a confirmarse de verdad —

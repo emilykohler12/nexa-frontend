@@ -41,6 +41,8 @@ export interface Appointment {
   servicePrice:   number
   // Seña de la reserva y, si ya se cobró algo en el local, ese cobro (para sugerir el saldo a cobrar).
   depositAmount?: number
+  // Cómo se paga la seña: null/'mercadopago' (checkout automático) o 'whatsapp' (la marca paga el personal).
+  depositMethod?: 'mercadopago' | 'whatsapp' | null
   balancePayment?: { method: 'cash' | 'transfer' | 'card' | 'other'; amount: number; collectedByName?: string | null } | null
   duration:       number
   date:           string

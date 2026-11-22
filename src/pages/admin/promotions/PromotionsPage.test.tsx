@@ -35,12 +35,12 @@ describe('PromotionsPage', () => {
     })
   })
 
-  it('no ofrece campañas: solo promociones de servicios, de productos y eventos especiales', async () => {
+  it('no ofrece campañas: solo promociones de servicios y eventos especiales (las de productos están ocultas)', async () => {
     setup()
 
     expect(await screen.findByText('Brushing a mitad de precio')).toBeInTheDocument()
     const tabs = screen.getAllByRole('button').filter(b => b.textContent && ['Servicios', 'Productos', 'Eventos especiales'].includes(b.textContent))
-    expect(tabs.map(b => b.textContent)).toEqual(['Servicios', 'Productos', 'Eventos especiales'])
+    expect(tabs.map(b => b.textContent)).toEqual(['Servicios', 'Eventos especiales'])
     expect(screen.queryByText(/campañas?/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/cumpleaños/i)).not.toBeInTheDocument()
   })
@@ -50,7 +50,7 @@ describe('PromotionsPage', () => {
     setup()
     await screen.findByText('Brushing a mitad de precio')
 
-    await user.click(screen.getByRole('button', { name: 'Productos' }))
+    // (pestaña «Productos» oculta por ahora)
     await user.click(screen.getByRole('button', { name: 'Eventos especiales' }))
 
     const urls = vi.mocked(api.get).mock.calls.map(([url]) => url)
@@ -59,13 +59,11 @@ describe('PromotionsPage', () => {
   })
 
   it('conserva las promociones que carga el administrador', async () => {
-    const user = userEvent.setup()
     setup()
 
     expect(await screen.findByText('Brushing a mitad de precio')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Nueva promoción/ })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Productos' }))
-    expect(screen.getByText('Todavía no hay promociones de productos')).toBeInTheDocument()
+// Pestaña «Productos» oculta por ahora: no hay forma de llegar a las promociones de productos.    expect(screen.queryByRole('button', { name: 'Productos' })).not.toBeInTheDocument()
   })
 })

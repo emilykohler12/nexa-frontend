@@ -113,10 +113,34 @@ export function Agenda() {
     return `${start} – ${we.getDate()} ${MONTH_NAMES[we.getMonth()].slice(0,3)} ${we.getFullYear()}`
   }
 
+  // Mover el turno a otra fecha y hora, aunque ya haya empezado. El backend avisa a la clienta (correo, avisos de su página y
+  // ventana al iniciar sesión). Si lo rechaza (horario ocupado, etc.), el mensaje vuelve al diálogo.
+  const handleReschedule = async (appointment: Appointment, date: string, time: string): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}`, { date, time })
+      setAppointments(prev => prev.map(a => a.id === appointment.id ? res.data.appointment : a))
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo reprogramar el turno. Intentá de nuevo.')
+    }
+  }
+
+  // Marca pagada la seña coordinada por WhatsApp: el turno queda confirmado y con la seña pagada.
+  const handleMarkDepositPaid = async (appointment: Appointment): Promise<string | null> => {
+    try {
+      const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/deposit-paid`)
+      setAppointments(prev => prev.map(a => a.id === appointment.id ? res.data.appointment : a))
+      setSelected(res.data.appointment)
+      return null
+    } catch (err: unknown) {
+      return safeErrorMessage(err, 'No se pudo marcar la seña como pagada. Intentá de nuevo.')
+    }
+  }
+
+  // «Editar»: solo guarda las notas internas (la fecha y la hora van por handleReschedule). No toca el estado.
   const handleSave = async (updated: Appointment) => {
     try {
       const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${updated.id}`, {
-        status:        updated.status,
         internalNotes: updated.internalNotes,
       })
       setAppointments(prev => prev.map(a => a.id === updated.id ? res.data.appointment : a))
@@ -176,16 +200,6 @@ export function Agenda() {
       return null
     } catch (err: unknown) {
       return safeErrorMessage(err, 'No se pudo cambiar la profesional. Intentá de nuevo.')
-    }
-  }
-
-  const handleMarkArrival = async (appointment: Appointment) => {
-    try {
-      const res = await api.patch<{ appointment: Appointment }>(`/api/professional/appointments/${appointment.id}/arrival`)
-      setAppointments(prev => prev.map(a => a.id === appointment.id ? res.data.appointment : a))
-      setSelected(res.data.appointment)
-    } catch {
-      // si falla, se puede reintentar desde el mismo diálogo
     }
   }
 
@@ -250,12 +264,13 @@ export function Agenda() {
           accent={accent}
           onClose={() => setSelected(null)}
           onSave={handleSave}
-          onMarkArrival={handleMarkArrival}
           onChangeStatus={handleChangeStatus}
           onCancel={handleCancel}
           onRegisterBalancePayment={handleRegisterBalancePayment}
           colleagues={colleagues}
           onChangeProfessional={handleChangeProfessional}
+          onReschedule={handleReschedule}
+          onMarkDepositPaid={handleMarkDepositPaid}
         />
       )}
 

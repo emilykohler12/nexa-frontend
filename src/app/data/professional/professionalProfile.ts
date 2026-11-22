@@ -18,7 +18,6 @@ export const mockProfessionalProfile: ProfessionalProfile = {
     { id: 'c1', name: 'Colorimetría avanzada', issuer: 'Instituto Belleza Pro', year: 2022 },
     { id: 'c2', name: 'Técnicas de keratina', issuer: 'L\'Oréal Argentina', year: 2023 },
   ],
-  languages:       ['Español'],
   joinedAt:        '2024-01-15',
   status:          'active',
   profileComplete: true,

@@ -1,4 +1,3 @@
-import { NO_ALLERGY_INFO } from '@/features/professional/types/client'
 import { useState } from 'react'
 import { ArrowLeft, Phone, Mail, AlertCircle, ChevronDown, FileText } from 'lucide-react'
 import type { ProfessionalClient } from '@/features/professional/types/client'
@@ -41,23 +40,21 @@ export function ClientDetail({ client, primary, accent, onBack }: Props) {
         <div style={{ flex: 1 }}>
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#000' }}>{client.name}</h2>
           <div style={{ display: 'flex', gap: '16px', marginTop: '8px', flexWrap: 'wrap' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#000' }}><Phone size={14} />{client.phone}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#000' }}><Mail size={14} />{client.email}</span>
-            {client.allergies ? (
+            {/* Solo lo que hay cargado: sin teléfono, correo o alergia no se muestra nada. */}
+            {client.phone && <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#000' }}><Phone size={14} />{client.phone}</span>}
+            {client.email && <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#000' }}><Mail size={14} />{client.email}</span>}
+            {client.allergies && (
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', color: '#e53935' }}><AlertCircle size={14} />{client.allergies}</span>
-            ) : (
-              <span style={{ fontSize: '13px', color: '#666' }}>{NO_ALLERGY_INFO}</span>
             )}
           </div>
         </div>
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
         {[
           { label: 'Visitas totales',    value: visits.length },
-          { label: 'Facturación total',  value: `$${totalRevenue.toLocaleString('es-AR')}` },
-          { label: 'Cancelaciones',      value: client.cancellations },
+          { label: 'Facturación total',  value: `${totalRevenue.toLocaleString('es-AR')}` },
         ].map(kpi => (
           <div key={kpi.label} style={{ background: '#fff', border: '1px solid #eeeeee', borderRadius: '14px', padding: '18px 20px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <p style={{ fontSize: '26px', fontWeight: 700, color: '#000', margin: 0 }}>{kpi.value}</p>

@@ -4,8 +4,10 @@ import { DollarSign, CalendarCheck2, UserPlus, Percent, CalendarX2, Repeat, Wall
 import { api } from '@/shared/utils/api'
 import { formatCurrency } from '@/shared/utils/format'
 import { KpiCard } from './KpiCard'
-import { TopProductsChart } from './TopProductsChart'
+// Gráfico de productos oculto por ahora (el código y los datos siguen): para volver a mostrarlo, descomentar el import y el gráfico.
+// import { TopProductsChart } from './TopProductsChart'
 import { RevenueByCategoryChart } from './RevenueByCategoryChart'
+import { PendingRefundsChart } from './PendingRefundsChart'
 import { PeakHoursHeatmap } from './PeakHoursHeatmap'
 import { PromotionConversionChart } from './PromotionConversionChart'
 import { ServiceProfitabilityTable } from './ServiceProfitabilityTable'
@@ -26,8 +28,9 @@ const PERIOD_OPTIONS: { key: PeriodFilter; label: string }[] = [
 // flex-grow) para que todas las cards midan exactamente lo mismo sin importar
 // cuántas entren en cada fila — si no, una fila con menos cards que otra
 // terminaba estirando las suyas más que las demás.
-const KPI_ROW_STYLE: CSSProperties = { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px' }
-const KPI_ITEM_STYLE: CSSProperties = { flex: '0 0 240px', maxWidth: '100%' }
+const KPI_ROW_STYLE: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '14px' }
+// Las tarjetas se reparten TODO el ancho de la pantalla (antes tenían ancho fijo y quedaba espacio vacío a los costados).
+const KPI_ITEM_STYLE: CSSProperties = { flex: '1 1 220px', minWidth: 0 }
 
 const EMPTY_DASHBOARD_DATA: DashboardData = {
   depositRevenueTotal: 0,
@@ -45,6 +48,7 @@ const EMPTY_DASHBOARD_DATA: DashboardData = {
   returningWindowDays: 30,
   pendingBalance: 0,
   refundedDeposits: 0,
+  pendingRefunds: [],
 }
 
 export function DashboardPage() {
@@ -109,7 +113,11 @@ export function DashboardPage() {
 
           {/* Gráficos */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '14px' }}>
-            <TopProductsChart data={data.topProducts} />
+            {/* <TopProductsChart data={data.topProducts} /> */}
+            <PendingRefundsChart
+              data={data.pendingRefunds ?? []}
+              onRefunded={id => setData(prev => ({ ...prev, pendingRefunds: (prev.pendingRefunds ?? []).filter(r => r.appointmentId !== id) }))}
+            />
             <RevenueByCategoryChart data={data.categoryRevenue} />
             <PromotionConversionChart data={data.promotionConversion} />
           </div>

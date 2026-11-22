@@ -31,7 +31,6 @@ export interface ProfessionalProfile {
   specialty:       string
   yearsExperience: number
   certifications:  Certification[]
-  languages:       string[]
   joinedAt:        string
   status:          ProfessionalStatus
   profileComplete: boolean

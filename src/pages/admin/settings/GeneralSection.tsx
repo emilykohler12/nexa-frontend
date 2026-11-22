@@ -103,21 +103,25 @@ export function GeneralSection() {
 
       <SectionCard title="Información del negocio">
         <div style={grid}>
-          <Field label="Nombre del negocio">
-            <input value={form.name} onChange={e => set('name', e.target.value)} style={input} />
-          </Field>
-          <Field label="Correo electrónico">
-            <input type="email" value={form.email} onChange={e => set('email', e.target.value)} style={input} />
-          </Field>
-          <Field label="WhatsApp (número)">
-            <input
-              value={form.socials.whatsapp ?? ''}
-              onChange={e => setSocial('whatsapp', e.target.value)}
-              placeholder="5493765018665"
-              style={input}
-            />
-            <span style={hint}>Número con código de país, sin espacios ni símbolos.</span>
-          </Field>
+          {/* Nombre, correo y WhatsApp en su propia fila: reparten TODO el ancho (con auto-fit en la grilla general quedaban
+              columnas vacías a la derecha por los campos de ancho completo). */}
+          <div style={{ ...grid, gridColumn: '1 / -1' }}>
+            <Field label="Nombre del negocio">
+              <input value={form.name} onChange={e => set('name', e.target.value)} style={input} />
+            </Field>
+            <Field label="Correo electrónico">
+              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} style={input} />
+            </Field>
+            <Field label="WhatsApp (número)">
+              <input
+                value={form.socials.whatsapp ?? ''}
+                onChange={e => setSocial('whatsapp', e.target.value)}
+                placeholder="5493765018665"
+                style={input}
+              />
+              <span style={hint}>Número con código de país, sin espacios ni símbolos.</span>
+            </Field>
+          </div>
           <Field label="Dirección" fullWidth>
             <input value={form.address} onChange={e => set('address', e.target.value)} style={input} />
           </Field>

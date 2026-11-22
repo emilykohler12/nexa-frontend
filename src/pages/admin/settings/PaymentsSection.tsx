@@ -90,19 +90,9 @@ export function PaymentsSection() {
               style={inp}
             />
           </Field>
-          <Field label="Política de reembolso de seña">
-            <select
-              value={form.refundPolicy}
-              onChange={e => set('refundPolicy', e.target.value as PaymentSettings['refundPolicy'])}
-              style={inp}
-            >
-              <option value="full">Reembolso completo</option>
-              <option value="none">Sin reembolso</option>
-            </select>
-          </Field>
         </div>
         <p style={{ margin: '10px 0 0', fontSize: '13px', color: '#444' }}>
-          El sistema solo marca la seña como devuelta: el dinero se devuelve por fuera, coordinándolo con la clienta.
+          El sistema solo marca la seña como devuelta: el dinero se devuelve por fuera. Las señas pagadas por Mercado Pago que faltan devolver figuran en el Dashboard.
         </p>
       </SectionCard>
 

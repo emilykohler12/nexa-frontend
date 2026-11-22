@@ -37,6 +37,10 @@ function translateStatusInDetail(detail: string): string {
   return dmyInText(result)
 }
 
+// Módulos que no traen ningún aviso para el administrador: no se ofrecen en el filtro ni se listan sus entradas (el
+// backend sigue registrándolas). Para volver a mostrarlos, sacar el módulo de esta lista.
+const HIDDEN_MODULES: ActivityModule[] = ['store', 'clients', 'services', 'config', 'auth']
+
 export function ActivityPage() {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,6 +58,7 @@ export function ActivityPage() {
   }, [])
 
   const filtered = useMemo(() => logs.filter(log => {
+    if (HIDDEN_MODULES.includes(log.module)) return false
     if (filterUser) {
       const q = filterUser.toLowerCase()
       const matches = (log.user ?? '').toLowerCase().includes(q)
@@ -110,7 +115,7 @@ export function ActivityPage() {
           <span className="activity-filter-label">Módulo</span>
           <select className="activity-input" value={filterModule} onChange={e => setFilterModule(e.target.value as ActivityModule | '')}>
             <option value="">Todos</option>
-            {(Object.entries(ACTIVITY_MODULE_LABEL) as [ActivityModule, string][]).map(([k, v]) => (
+            {(Object.entries(ACTIVITY_MODULE_LABEL) as [ActivityModule, string][]).filter(([k]) => !HIDDEN_MODULES.includes(k)).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
           </select>
