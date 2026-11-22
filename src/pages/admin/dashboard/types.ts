@@ -69,4 +69,15 @@ export interface DashboardData {
   returningWindowDays: number;
   pendingBalance: number;
   refundedDeposits: number;
+  // Señas pagadas por Mercado Pago que el sistema marcó como devueltas y todavía falta devolver (no depende del período).
+  pendingRefunds: PendingRefundStat[];
+}
+
+export interface PendingRefundStat {
+  appointmentId: string;
+  clientName:    string;
+  serviceName:   string;
+  date:          string;
+  time:          string;
+  amount:        number;
 }

@@ -7,6 +7,7 @@ import { KpiCard } from './KpiCard'
 // Gráfico de productos oculto por ahora (el código y los datos siguen): para volver a mostrarlo, descomentar el import y el gráfico.
 // import { TopProductsChart } from './TopProductsChart'
 import { RevenueByCategoryChart } from './RevenueByCategoryChart'
+import { PendingRefundsChart } from './PendingRefundsChart'
 import { PeakHoursHeatmap } from './PeakHoursHeatmap'
 import { PromotionConversionChart } from './PromotionConversionChart'
 import { ServiceProfitabilityTable } from './ServiceProfitabilityTable'
@@ -46,6 +47,7 @@ const EMPTY_DASHBOARD_DATA: DashboardData = {
   returningWindowDays: 30,
   pendingBalance: 0,
   refundedDeposits: 0,
+  pendingRefunds: [],
 }
 
 export function DashboardPage() {
@@ -111,6 +113,10 @@ export function DashboardPage() {
           {/* Gráficos */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '14px' }}>
             {/* <TopProductsChart data={data.topProducts} /> */}
+            <PendingRefundsChart
+              data={data.pendingRefunds ?? []}
+              onRefunded={id => setData(prev => ({ ...prev, pendingRefunds: (prev.pendingRefunds ?? []).filter(r => r.appointmentId !== id) }))}
+            />
             <RevenueByCategoryChart data={data.categoryRevenue} />
             <PromotionConversionChart data={data.promotionConversion} />
           </div>
