@@ -33,7 +33,8 @@ interface CatalogItem { id: string; name: string; price: number | string; status
 
 const TABS: { id: PageTab; label: string }[] = [
   { id: 'service',   label: 'Servicios' },
-  { id: 'product',   label: 'Productos' },
+  // Promociones de productos ocultas por ahora (el código y la base siguen): para volver a mostrarlas, descomentar esta pestaña.
+  // { id: 'product',   label: 'Productos' },
   { id: 'events',    label: 'Eventos especiales' },
 ]
 

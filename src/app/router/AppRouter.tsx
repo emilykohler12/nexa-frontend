@@ -34,7 +34,8 @@ import { SchedulePage } from '@/pages/professional/SchedulePage'
 import { DashboardPage }     from '@/pages/admin/dashboard/DashboardPage'
 import { AppointmentsPage }  from '@/pages/admin/AppointmentsPage'
 import { ServicesPage }      from '@/pages/admin/ServicesPage'
-import { StorePage }         from '@/pages/admin/StorePage'
+// Tienda del administrador oculta por ahora (el código y la base siguen): para volver a mostrarla, descomentar el import y la ruta.
+// import { StorePage }         from '@/pages/admin/StorePage'
 import { ProfessionalsPage } from '@/pages/admin/ProfessionalsPage'
 import { ActivityPage }      from '@/pages/admin/ActivityPage'
 import { PromotionsPage }    from '@/pages/admin/PromotionsPage'
@@ -91,7 +92,7 @@ export function AppRouter() {
           <Route path={ROUTES.ADMIN_DASHBOARD}     element={<DashboardPage />} />
           <Route path={ROUTES.ADMIN_APPOINTMENTS}  element={<AppointmentsPage />} />
           <Route path={ROUTES.ADMIN_SERVICES}      element={<ServicesPage />} />
-          <Route path={ROUTES.ADMIN_STORE}         element={<StorePage />} />
+          {/* <Route path={ROUTES.ADMIN_STORE}         element={<StorePage />} /> */}
           <Route path={ROUTES.ADMIN_PROFESSIONALS} element={<ProfessionalsPage />} />
           <Route path={ROUTES.ADMIN_CLIENTS}       element={<AdminClientsPage />} />
           <Route path={ROUTES.ADMIN_ACTIVITY}      element={<ActivityPage />} />

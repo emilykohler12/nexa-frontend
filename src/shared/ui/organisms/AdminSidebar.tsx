@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  CalendarDays, LayoutDashboard, Scissors, ShoppingBag,
+  CalendarDays, LayoutDashboard, Scissors, /* ShoppingBag, (Tienda oculta por ahora) */
   Users, UserCheck, Activity, Settings, LogOut, Menu, X, Home, Tag,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -15,7 +15,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.ADMIN_DASHBOARD,     icon: LayoutDashboard, label: 'Dashboard'     },
   { to: ROUTES.ADMIN_SERVICES,      icon: Scissors,        label: 'Servicios'     },
   { to: ROUTES.ADMIN_PROFESSIONALS, icon: Users,           label: 'Profesionales' },
-  { to: ROUTES.ADMIN_STORE,         icon: ShoppingBag,     label: 'Tienda'        },
+  // Tienda oculta por ahora (el código y la base siguen): para volver a mostrarla, descomentar esta línea y el import de ShoppingBag.
+  //   { to: ROUTES.ADMIN_STORE,         icon: ShoppingBag,     label: 'Tienda'        },
   { to: ROUTES.ADMIN_CLIENTS,       icon: UserCheck,       label: 'Clientes'      },
   { to: ROUTES.ADMIN_ACTIVITY,      icon: Activity,        label: 'Actividad'     },
   { to: ROUTES.ADMIN_PROMOTIONS,    icon: Tag,             label: 'Promociones'   },

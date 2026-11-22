@@ -8,7 +8,8 @@ import { TestimonialsSection }from '@/features/home/components/TestimonialsSecti
 import { GallerySection }     from '@/features/home/components/GallerySection';
 import { ServicePromotionsSection } from '@/features/home/components/ServicePromotionsSection';
 import { SpecialEventSection }      from '@/features/home/components/SpecialEventSection';
-import { ProductPromotionsSection } from '@/features/home/components/ProductPromotionsSection';
+// Promociones de productos ocultas por ahora (el código y la base siguen): para volver a mostrarlas, descomentar el import y la sección.
+// import { ProductPromotionsSection } from '@/features/home/components/ProductPromotionsSection';
 import { JoinUsSection }      from '@/features/home/components/JoinUsSection';
 import { Footer }             from '@/features/home/components/Footer';
 import { KologicBar }         from '@/features/home/components/KologicBar';
@@ -80,7 +81,7 @@ export function HomePage() {
       <ServicePromotionsSection />
       <TestimonialsSection />
       <GallerySection />
-      <ProductPromotionsSection />
+      {/* <ProductPromotionsSection /> */}
       <JoinUsSection />
       <Footer onNavigate={navigateTo} />
       <KologicBar />

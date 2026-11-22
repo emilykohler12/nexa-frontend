@@ -4,7 +4,8 @@ import { DollarSign, CalendarCheck2, UserPlus, Percent, CalendarX2, Repeat, Wall
 import { api } from '@/shared/utils/api'
 import { formatCurrency } from '@/shared/utils/format'
 import { KpiCard } from './KpiCard'
-import { TopProductsChart } from './TopProductsChart'
+// Gráfico de productos oculto por ahora (el código y los datos siguen): para volver a mostrarlo, descomentar el import y el gráfico.
+// import { TopProductsChart } from './TopProductsChart'
 import { RevenueByCategoryChart } from './RevenueByCategoryChart'
 import { PeakHoursHeatmap } from './PeakHoursHeatmap'
 import { PromotionConversionChart } from './PromotionConversionChart'
@@ -109,7 +110,7 @@ export function DashboardPage() {
 
           {/* Gráficos */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '14px' }}>
-            <TopProductsChart data={data.topProducts} />
+            {/* <TopProductsChart data={data.topProducts} /> */}
             <RevenueByCategoryChart data={data.categoryRevenue} />
             <PromotionConversionChart data={data.promotionConversion} />
           </div>
